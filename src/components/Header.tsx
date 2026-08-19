@@ -21,7 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="app-header">
       <div className="header-row">
         <div className="app-title">
-          <img src="/logo.png" alt="SpaGuard Logo" className="header-logo-img" />
+          <img src="/logo.png" alt="Blue Ocean Wellness Spa Logo" className="header-logo-img" />
           <span dangerouslySetInnerHTML={{ __html: titleText }} />
         </div>
         <div className="header-btns">

@@ -79,7 +79,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             <tbody>
               <tr>
                 <th style={{ width: '15%' }}>업 소 명</th>
-                <td style={{ width: '35%' }}>{state.storeName || '스파랜드'}</td>
+                <td style={{ width: '35%' }}>블루오션 웰니스 스파</td>
                 <th style={{ width: '20%' }}>신 고 번 호</th>
                 <td style={{ width: '30%' }}>제 2026-0815 호</td>
               </tr>

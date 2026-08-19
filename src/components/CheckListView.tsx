@@ -6,6 +6,7 @@ interface CheckListViewProps {
   currentTab: TabId;
   itemsState: Record<string, ItemState>;
   summaryText: string;
+  isReadOnly: boolean;
   onSetStatus: (id: string, status: StatusType) => void;
   onSaveNote: (id: string, note: string) => void;
   onChangeSummary: (summary: string) => void;
@@ -15,6 +16,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   currentTab,
   itemsState,
   summaryText,
+  isReadOnly,
   onSetStatus,
   onSaveNote,
   onChangeSummary
@@ -43,7 +45,11 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
               <div key={item.id} className={`slim-item ${statusClass}`}>
                 <div 
                   className="slim-row" 
-                  onClick={() => onSetStatus(item.id, state.status === 'normal' ? null : 'normal')}
+                  onClick={() => {
+                    if (!isReadOnly) {
+                      onSetStatus(item.id, state.status === 'normal' ? null : 'normal');
+                    }
+                  }}
                 >
                   <div className="item-left">
                     <span className="dot"></span>
@@ -52,13 +58,15 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                   <div className="item-btns" onClick={(e) => e.stopPropagation()}>
                     <button 
                       className="btn-toggle btn-normal"
-                      onClick={() => onSetStatus(item.id, state.status === 'normal' ? null : 'normal')}
+                      disabled={isReadOnly}
+                      onClick={() => !isReadOnly && onSetStatus(item.id, state.status === 'normal' ? null : 'normal')}
                     >
                       이상무
                     </button>
                     <button 
                       className="btn-toggle btn-issue"
-                      onClick={() => onSetStatus(item.id, state.status === 'issue' ? null : 'issue')}
+                      disabled={isReadOnly}
+                      onClick={() => !isReadOnly && onSetStatus(item.id, state.status === 'issue' ? null : 'issue')}
                     >
                       이상
                     </button>
@@ -71,7 +79,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                     className="slim-note-input"
                     placeholder="⚠️ 이상 내용 입력" 
                     value={state.note || ''}
-                    onChange={(e) => onSaveNote(item.id, e.target.value)}
+                    disabled={isReadOnly}
+                    onChange={(e) => !isReadOnly && onSaveNote(item.id, e.target.value)}
                   />
                 </div>
               </div>
@@ -82,13 +91,14 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
       <div className="summary-box">
         <label htmlFor="summaryText">
-          📝 <span>{tabNameClean}</span> 종합 의견
+          📝 <span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}
         </label>
         <textarea
           id="summaryText"
           placeholder="해당 시설의 특이사항이나 점검 의견을 기재하세요."
           value={summaryText || ''}
-          onChange={(e) => onChangeSummary(e.target.value)}
+          disabled={isReadOnly}
+          onChange={(e) => !isReadOnly && onChangeSummary(e.target.value)}
         />
       </div>
     </main>

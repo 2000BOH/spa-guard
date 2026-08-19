@@ -1,38 +1,29 @@
 import React from 'react';
 
 interface MetaStripProps {
-  storeName: string;
   checkDate: string;
   inspector: string;
   cntN: number;
   cntI: number;
   cntP: number;
-  onChangeStoreName: (val: string) => void;
+  isReadOnly: boolean;
   onChangeCheckDate: (val: string) => void;
   onChangeInspector: (val: string) => void;
 }
 
 export const MetaStrip: React.FC<MetaStripProps> = ({
-  storeName,
   checkDate,
   inspector,
   cntN,
   cntI,
   cntP,
-  onChangeStoreName,
+  isReadOnly,
   onChangeCheckDate,
   onChangeInspector,
 }) => {
   return (
     <div className="meta-strip">
       <div className="meta-inputs">
-        <input 
-          type="text" 
-          className="store-input" 
-          value={storeName} 
-          placeholder="업소명" 
-          onChange={(e) => onChangeStoreName(e.target.value)} 
-        />
         <input 
           type="date" 
           value={checkDate} 
@@ -42,8 +33,14 @@ export const MetaStrip: React.FC<MetaStripProps> = ({
           type="text" 
           value={inspector} 
           placeholder="이름" 
+          disabled={isReadOnly}
           onChange={(e) => onChangeInspector(e.target.value)} 
         />
+        {isReadOnly && (
+          <span style={{ fontSize: '11px', color: '#dc2626', background: '#fef2f2', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+            🔒 과거 기록 (조회 전용)
+          </span>
+        )}
       </div>
       <div className="meta-counts">
         <span className="badge-n">정상 <b>{cntN}</b></span>

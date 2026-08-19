@@ -11,7 +11,24 @@ import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { saveInspectionToSupabase } from './lib/supabase';
 
-const STORAGE_KEY = 'spa_multi_facility_data_v9';
+const getStorageKey = (date: string) => `spa_date_data_${date}`;
+
+function getTodayStr(): string {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function getYesterdayStr(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabId>('tab2');
@@ -19,15 +36,13 @@ export default function App() {
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
+  const todayStr = getTodayStr();
+  const yesterdayStr = getYesterdayStr();
+
   const [state, setState] = useState<AppState>(() => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    
     return {
-      storeName: '스파랜드',
-      date: `${yyyy}-${mm}-${dd}`,
+      storeName: '블루오션 웰니스 스파',
+      date: todayStr,
       inspector: '점검자',
       items: {},
       summaries: { tab1: '', tab2: '', tab3: '', tab4: '' },
@@ -36,12 +51,14 @@ export default function App() {
     };
   });
 
+  const isReadOnly = state.date < yesterdayStr;
+
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 2500);
   };
 
-  // 1. LocalStorage & Security Log Helper
+  // Security Log Generator
   const generateSecurityLog = (items: Record<string, { status: StatusType; note: string }>, inspector: string) => {
     const now = new Date();
     const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
@@ -58,24 +75,53 @@ export default function App() {
     return { lastModified: timeStr, securityCode: finalCode };
   };
 
-  // Load from LocalStorage on initial render
-  useEffect(() => {
+  // Load Data for current date
+  const loadDateData = (targetDate: string) => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(getStorageKey(targetDate));
       if (raw) {
         const saved = JSON.parse(raw);
-        setState((prev) => ({
-          ...prev,
-          ...saved
-        }));
+        return {
+          storeName: '블루오션 웰니스 스파',
+          date: targetDate,
+          inspector: saved.inspector || '점검자',
+          items: saved.items || {},
+          summaries: saved.summaries || { tab1: '', tab2: '', tab3: '', tab4: '' },
+          securityCode: saved.securityCode || '',
+          lastModified: saved.lastModified || ''
+        };
       }
     } catch (e) {
       console.error(e);
     }
+    return {
+      storeName: '블루오션 웰니스 스파',
+      date: targetDate,
+      inspector: '점검자',
+      items: {},
+      summaries: { tab1: '', tab2: '', tab3: '', tab4: '' },
+      securityCode: '',
+      lastModified: ''
+    };
+  };
+
+  // Initial load
+  useEffect(() => {
+    const initialData = loadDateData(todayStr);
+    const sec = generateSecurityLog(initialData.items, initialData.inspector);
+    setState({
+      ...initialData,
+      ...sec
+    });
   }, []);
 
-  // Sync state to LocalStorage and update Security Log
+  // Update & Save for current date
   const updateStateAndSave = (updater: (prev: AppState) => AppState) => {
+    if (isReadOnly) {
+      showToast("⚠️ 과거 기록은 수정할 수 없습니다 (조회 전용).");
+      return;
+    }
+
     setState((prev) => {
       const next = updater(prev);
       const secLog = generateSecurityLog(next.items, next.inspector);
@@ -84,7 +130,7 @@ export default function App() {
         ...secLog
       };
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(finalState));
+        localStorage.setItem(getStorageKey(finalState.date), JSON.stringify(finalState));
       } catch (e) {
         console.error(e);
       }
@@ -92,7 +138,22 @@ export default function App() {
     });
   };
 
-  // 2. Handlers
+  // Date Change Handler
+  const handleDateChange = (newDate: string) => {
+    const loaded = loadDateData(newDate);
+    const sec = generateSecurityLog(loaded.items, loaded.inspector);
+    setState({
+      ...loaded,
+      ...sec
+    });
+    if (newDate < yesterdayStr) {
+      showToast("🔒 과거 기록 조회 모드 (수정 불가)");
+    } else {
+      showToast(`📅 ${newDate} 점검표 불러옴`);
+    }
+  };
+
+  // Input Handlers
   const handleSetStatus = (id: string, status: StatusType) => {
     updateStateAndSave((prev) => ({
       ...prev,
@@ -129,7 +190,7 @@ export default function App() {
     }));
   };
 
-  // 3. Counts & Progress
+  // Counts & Progress
   const activeSections = CHECKLIST_DATA[currentTab] || [];
   const activeItems = activeSections.flatMap((s) => s.items);
 
@@ -147,7 +208,7 @@ export default function App() {
   const cntP = total - done;
   const progressPct = Math.round((done / total) * 100);
 
-  // 4. Image Capture & PDF Export Logic
+  // Image & PDF Export Logic
   const downloadA4SplitImages = async () => {
     setIsSaveModalOpen(false);
     showToast("⏳ A4 규격 2장 이미지 생성 중...");
@@ -163,14 +224,14 @@ export default function App() {
 
       const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
       const link1 = document.createElement('a');
-      link1.download = `자율점검표_${state.storeName || '스파랜드'}_${state.date}_1페이지(앞면).jpg`;
+      link1.download = `자율점검표_블루오션웰니스스파_${state.date}_1페이지(앞면).jpg`;
       link1.href = canvas1.toDataURL('image/jpeg', 0.95);
       link1.click();
 
       setTimeout(async () => {
         const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
         const link2 = document.createElement('a');
-        link2.download = `자율점검표_${state.storeName || '스파랜드'}_${state.date}_2페이지(뒷면).jpg`;
+        link2.download = `자율점검표_블루오션웰니스스파_${state.date}_2페이지(뒷면).jpg`;
         link2.href = canvas2.toDataURL('image/jpeg', 0.95);
         link2.click();
 
@@ -216,7 +277,7 @@ export default function App() {
       container.style.position = 'absolute';
       container.style.left = '-9999px';
 
-      pdf.save(`자율점검표_${state.storeName || '스파랜드'}_${state.date}_A4.pdf`);
+      pdf.save(`자율점검표_블루오션웰니스스파_${state.date}_A4.pdf`);
       showToast("✅ A4 2페이지 PDF 문서가 다운로드되었습니다.");
     } catch (err) {
       container.style.position = 'absolute';
@@ -225,11 +286,10 @@ export default function App() {
     }
   };
 
-  // 5. Kakao & Supabase Submit Logic
+  // Kakao & Supabase Submit Logic
   const handleSubmitToKakao = async () => {
     showToast("⏳ 데이터 DB 보관 및 카톡 전송 준비 중...");
 
-    // Supabase DB에 점검 로그 보관
     saveInspectionToSupabase(state).then((res) => {
       if (res.success) {
         console.log('Supabase Saved Successfully');
@@ -336,14 +396,13 @@ export default function App() {
       />
 
       <MetaStrip
-        storeName={state.storeName}
         checkDate={state.date}
         inspector={state.inspector}
         cntN={cntN}
         cntI={cntI}
         cntP={cntP}
-        onChangeStoreName={(val) => updateStateAndSave((p) => ({ ...p, storeName: val }))}
-        onChangeCheckDate={(val) => updateStateAndSave((p) => ({ ...p, date: val }))}
+        isReadOnly={isReadOnly}
+        onChangeCheckDate={handleDateChange}
         onChangeInspector={(val) => updateStateAndSave((p) => ({ ...p, inspector: val }))}
       />
 
@@ -351,6 +410,7 @@ export default function App() {
         currentTab={currentTab}
         itemsState={state.items}
         summaryText={state.summaries[currentTab]}
+        isReadOnly={isReadOnly}
         onSetStatus={handleSetStatus}
         onSaveNote={handleSaveNote}
         onChangeSummary={handleChangeSummary}
