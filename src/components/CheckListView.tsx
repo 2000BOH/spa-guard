@@ -13,6 +13,42 @@ interface CheckListViewProps {
   onUpdateTab4ItemBatch: (id: string, updates: Partial<ItemState>) => void;
 }
 
+// Helper: Calculate item-specific historical average pressure across all saved dates in localStorage
+function getItemHistoricalAvg(itemId: string, itemsState: Record<string, ItemState>): number | null {
+  const dateMap: Record<string, number> = {};
+
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('spa_date_data_')) {
+        const dateStr = key.replace('spa_date_data_', '');
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const val = parsed.items?.[itemId]?.pressure;
+          if (typeof val === 'number' && !isNaN(val)) {
+            dateMap[dateStr] = val;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+
+  // Include in-memory current state for itemId if present
+  const currentVal = itemsState[itemId]?.pressure;
+  if (typeof currentVal === 'number' && !isNaN(currentVal)) {
+    // If active date data is already in dateMap or new, update it
+    dateMap['__current_memory__'] = currentVal;
+  }
+
+  const values = Object.values(dateMap);
+  if (values.length === 0) return null;
+  const sum = values.reduce((acc, v) => acc + v, 0);
+  return sum / values.length;
+}
+
 export const CheckListView: React.FC<CheckListViewProps> = ({
   currentTab,
   itemsState,
@@ -25,22 +61,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 }) => {
   const sections = CHECKLIST_DATA[currentTab] || [];
   const tabNameClean = TAB_INFO[currentTab].htmlName.replace('<br>', ' ').replace('\n', ' ');
-
-  // Calculate Average Pressure for Tab 4 Filters
-  let pressureSum = 0;
-  let pressureCount = 0;
-  if (currentTab === 'tab4') {
-    Object.keys(itemsState).forEach((key) => {
-      if (key.startsWith('tab4_f')) {
-        const val = itemsState[key]?.pressure;
-        if (typeof val === 'number' && !isNaN(val)) {
-          pressureSum += val;
-          pressureCount++;
-        }
-      }
-    });
-  }
-  const avgPressure = pressureCount > 0 ? (pressureSum / pressureCount) : null;
 
   // Pressure options 1.0 to 2.4 (step 0.1)
   const pressureOptions: number[] = [];
@@ -59,11 +79,9 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
         <div className="section-card">
           <div className="section-title">
             <span>여과기 및 펌프 점검표 (엑셀 표)</span>
-            {avgPressure !== null && (
-              <span className="badge-count" style={{ color: '#2563eb', fontWeight: 700 }}>
-                여과기 평균 압력: {avgPressure.toFixed(1)} bar
-              </span>
-            )}
+            <span className="badge-count" style={{ color: '#2563eb', fontWeight: 600 }}>
+              * 각 여과기별 누적 평균 대비 차이 표시
+            </span>
           </div>
 
           {/* Sticky Excel Table Container */}
@@ -132,16 +150,21 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                       const currentP = state.pressure ?? null;
                       let diffText = '';
                       let diffColor = '#6b7280';
-                      if (isFilter && currentP !== null && avgPressure !== null) {
-                        const diff = Math.round((currentP - avgPressure) * 10) / 10;
-                        if (diff > 0) {
-                          diffText = `+${diff.toFixed(1)}`;
-                          diffColor = '#dc2626';
-                        } else if (diff < 0) {
-                          diffText = `${diff.toFixed(1)}`;
-                          diffColor = '#2563eb';
-                        } else {
-                          diffText = `±0.0`;
+                      let itemAvgVal: number | null = null;
+
+                      if (isFilter && currentP !== null) {
+                        itemAvgVal = getItemHistoricalAvg(item.id, itemsState);
+                        if (itemAvgVal !== null) {
+                          const diff = Math.round((currentP - itemAvgVal) * 10) / 10;
+                          if (diff > 0) {
+                            diffText = `+${diff.toFixed(1)}`;
+                            diffColor = '#dc2626';
+                          } else if (diff < 0) {
+                            diffText = `${diff.toFixed(1)}`;
+                            diffColor = '#2563eb';
+                          } else {
+                            diffText = `±0.0`;
+                          }
                         }
                       }
 
@@ -171,7 +194,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             {item.text}
                           </td>
 
-                          {/* Column 2: 압력 (bar) */}
+                          {/* Column 2: 압력 (bar) - 해당 항목 누적 평균 대비 차이 */}
                           <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
                             {isFilter ? (
                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
@@ -187,7 +210,10 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                                   ))}
                                 </select>
                                 {diffText && (
-                                  <span style={{ fontSize: '10px', fontWeight: 700, color: diffColor }}>
+                                  <span 
+                                    title={itemAvgVal !== null ? `${item.text} 누적 평균: ${itemAvgVal.toFixed(1)} bar` : ''}
+                                    style={{ fontSize: '10px', fontWeight: 700, color: diffColor, cursor: 'help' }}
+                                  >
                                     ({diffText})
                                   </span>
                                 )}
