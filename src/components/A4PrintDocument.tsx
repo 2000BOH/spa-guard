@@ -50,12 +50,12 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
                 <span className={isIssue ? 'a4-res-issue' : 'a4-res-ok'}>
                   {isIssue ? '이상 발생' : '정상'}
                 </span>
-                <div style={{ fontSize: '9px', color: '#4b5563', marginTop: '2px' }}>
+                <div style={{ fontSize: '11px', color: '#4b5563', marginTop: '2px' }}>
                   압력:{p} | 역세척:{bw}
                 </div>
               </td>
               <td>
-                <span style={{ fontSize: '10.5px' }}>
+                <span style={{ fontSize: '12px' }}>
                   헤어캐처:{hc}
                   {itemState.note ? ` (${itemState.note})` : ''}
                 </span>
@@ -85,7 +85,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
                 </span>
               </td>
               <td>
-                <span style={{ fontSize: '10.5px' }}>
+                <span style={{ fontSize: '12px' }}>
                   헤어캐처:{hc}
                   {itemState.note ? ` (${itemState.note})` : ''}
                 </span>
@@ -112,13 +112,13 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             </td>
             <td>
               {itemState.status === 'issue' && itemState.note && (
-                <span style={{ color: '#dc2626', fontWeight: 700, fontSize: '11px' }}>{itemState.note}</span>
+                <span style={{ color: '#dc2626', fontWeight: 700, fontSize: '12.5px' }}>{itemState.note}</span>
               )}
               {itemState.status === 'normal' && (
-                <span style={{ color: '#059669', fontSize: '11px' }}>적합</span>
+                <span style={{ color: '#059669', fontSize: '12.5px' }}>적합</span>
               )}
               {(!itemState.status || itemState.status === null) && (
-                <span style={{ color: '#9ca3af', fontSize: '11px' }}>-</span>
+                <span style={{ color: '#9ca3af', fontSize: '12.5px' }}>-</span>
               )}
             </td>
           </tr>
@@ -162,10 +162,10 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
           <table className="a4-table">
             <thead>
               <tr>
-                <th style={{ width: '17%' }}>점검분야</th>
-                <th style={{ width: '51%' }}>점 검 항 목</th>
-                <th style={{ width: '14%' }}>점검결과</th>
-                <th style={{ width: '18%' }}>비고 및 조치</th>
+                <th style={{ width: '12%' }}>점검분야</th>
+                <th style={{ width: '38%' }}>점 검 항 목</th>
+                <th style={{ width: '22%' }}>점검결과</th>
+                <th style={{ width: '28%' }}>비고 및 조치</th>
               </tr>
             </thead>
             <tbody>
@@ -192,10 +192,10 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
           <table className="a4-table">
             <thead>
               <tr>
-                <th style={{ width: '17%' }}>점검분야</th>
-                <th style={{ width: '51%' }}>점 검 항 목</th>
-                <th style={{ width: '14%' }}>점검결과</th>
-                <th style={{ width: '18%' }}>비고 및 조치</th>
+                <th style={{ width: '12%' }}>점검분야</th>
+                <th style={{ width: '38%' }}>점 검 항 목</th>
+                <th style={{ width: '22%' }}>점검결과</th>
+                <th style={{ width: '28%' }}>비고 및 조치</th>
               </tr>
             </thead>
             <tbody>
@@ -209,7 +209,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
               {overallSummary}
             </div>
             
-            <div style={{ marginTop: '6px', fontSize: '10px', color: '#6b7280', borderTop: '1px dashed #d1d5db', paddingTop: '4px' }}>
+            <div style={{ marginTop: '6px', fontSize: '11px', color: '#6b7280', borderTop: '1px dashed #d1d5db', paddingTop: '4px' }}>
               🔒 <b>위변조 방지 인증코드:</b> <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1d4ed8' }}>{state.securityCode}</span>
               &nbsp;|&nbsp; ⏰ <b>기록일시:</b> <span>{state.lastModified || '-'} (KST)</span>
             </div>
