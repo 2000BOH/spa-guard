@@ -2,10 +2,11 @@ export const TAB_INFO = {
   tab1: { id: 'tab1', name: '시설 Ⅰ (2층)', htmlName: '시설 Ⅰ\n(2층)', title: '시설 Ⅰ (2층) 점검' },
   tab2: { id: 'tab2', name: '시설 Ⅱ (지하)', htmlName: '시설 Ⅱ\n(지하)', title: '시설 Ⅱ (지하) 점검' },
   tab3: { id: 'tab3', name: '시설 Ⅲ (3층 찜질)', htmlName: '시설 Ⅲ\n(3층 찜질)', title: '시설 Ⅲ (3층 찜질) 점검' },
-  tab4: { id: 'tab4', name: '시설 Ⅳ (여과/펌프/기타)', htmlName: '시설 Ⅳ\n(여과/기타)', title: '시설 Ⅳ (여과기, 펌프 및 기타설비) 점검' }
+  tab4: { id: 'tab4', name: '시설 Ⅳ (여과/기타)', htmlName: '시설 Ⅳ\n(여과/기타)', title: '시설 Ⅳ (여과기, 펌프 및 기타설비) 점검' },
+  tab5: { id: 'tab5', name: '시설 Ⅴ (온도체크)', htmlName: '시설 Ⅴ\n(온도체크)', title: '시설 Ⅴ (수온 및 실내 온도체크) 점검' }
 };
 
-export const CHECKLIST_DATA = {
+export const CHECKLIST_DATA: Record<string, { category: string; items: { id: string; text: string; type?: string }[] }[]> = {
   "tab1": [
     {
       "category": "🌀 1. 공조 및 환기설비",
@@ -150,6 +151,37 @@ export const CHECKLIST_DATA = {
         { "id": "tab4_g1", "text": "메인전기 판넬 점검", "type": "general" },
         { "id": "tab4_g2", "text": "사무실 방송장비 및 음향시스템 확인", "type": "general" },
         { "id": "tab4_g3", "text": "리셉션 PC , 보조전력장치 확인", "type": "general" }
+      ]
+    }
+  ],
+  "tab5": [
+    {
+      "category": "♨️ 2층 남탕 수온 및 사우나 온도",
+      "items": [
+        { "id": "tab5_m1", "text": "2층 남탕 온탕", "type": "temp" },
+        { "id": "tab5_m2", "text": "2층 남탕 열탕", "type": "temp" },
+        { "id": "tab5_m3", "text": "2층 남탕 냉탕", "type": "temp" },
+        { "id": "tab5_m4", "text": "2층 남탕 사우나", "type": "temp" }
+      ]
+    },
+    {
+      "category": "♨️ 2층 여탕 수온 및 사우나 온도",
+      "items": [
+        { "id": "tab5_w1", "text": "2층 여탕 온탕", "type": "temp" },
+        { "id": "tab5_w2", "text": "2층 여탕 열탕", "type": "temp" },
+        { "id": "tab5_w3", "text": "2층 여탕 냉탕", "type": "temp" },
+        { "id": "tab5_w4", "text": "2층 여탕 건식", "type": "temp" },
+        { "id": "tab5_w5", "text": "2층 여탕 습식", "type": "temp" }
+      ]
+    },
+    {
+      "category": "🔥 3층 찜질방 테마룸 온도",
+      "items": [
+        { "id": "tab5_s1", "text": "3층 찜질방 불가마", "type": "temp" },
+        { "id": "tab5_s2", "text": "3층 찜질방 소금방", "type": "temp" },
+        { "id": "tab5_s3", "text": "3층 찜질방 맥반석", "type": "temp" },
+        { "id": "tab5_s4", "text": "3층 찜질방 아이스방", "type": "temp" },
+        { "id": "tab5_s5", "text": "3층 찜질방 편백방", "type": "temp" }
       ]
     }
   ]

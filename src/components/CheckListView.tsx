@@ -36,10 +36,8 @@ function getItemHistoricalAvg(itemId: string, itemsState: Record<string, ItemSta
     console.error(e);
   }
 
-  // Include in-memory current state for itemId if present
   const currentVal = itemsState[itemId]?.pressure;
   if (typeof currentVal === 'number' && !isNaN(currentVal)) {
-    // If active date data is already in dateMap or new, update it
     dateMap['__current_memory__'] = currentVal;
   }
 
@@ -66,6 +64,210 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   const pressureOptions: number[] = [];
   for (let p = 1.0; p <= 2.41; p += 0.1) {
     pressureOptions.push(Math.round(p * 10) / 10);
+  }
+
+  // Render Excel Table View for Tab 5 (온도체크)
+  if (currentTab === 'tab5') {
+    return (
+      <main className="main-container">
+        <div className="section-card">
+          <div className="section-title">
+            <span>시설 Ⅴ 수온 및 실내 온도 점검표 (시간대별 엑셀 표)</span>
+            <span className="badge-count" style={{ color: '#2563eb', fontWeight: 600 }}>
+              * 온도 입력 시 기준온도 대비 차이자동 계산
+            </span>
+          </div>
+
+          <div style={{ overflow: 'auto', maxHeight: 'calc(100vh - 250px)', border: '1px solid #cbd5e1' }}>
+            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
+              <thead>
+                <tr>
+                  <th style={{
+                    position: 'sticky',
+                    top: 0,
+                    left: 0,
+                    zIndex: 20,
+                    background: '#e2e8f0',
+                    color: '#0f172a',
+                    padding: '8px 8px',
+                    borderRight: '2px solid #94a3b8',
+                    borderBottom: '2px solid #94a3b8',
+                    textAlign: 'left',
+                    whiteSpace: 'nowrap',
+                    width: '1%'
+                  }}>
+                    구역 / 시설명
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
+                    기준 온도 (℃)
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
+                    새벽 (04~06시)
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
+                    오전 (10~12시)
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
+                    오후 (16~18시)
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8' }}>
+                    비고 및 특이사항
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sections.map((section, sIdx) => (
+                  <React.Fragment key={sIdx}>
+                    <tr>
+                      <td 
+                        colSpan={6} 
+                        style={{
+                          background: '#f8fafc',
+                          fontWeight: 700,
+                          fontSize: '12px',
+                          color: '#1e293b',
+                          padding: '6px 8px',
+                          borderBottom: '1px solid #cbd5e1',
+                          borderTop: sIdx > 0 ? '2px solid #cbd5e1' : 'none'
+                        }}
+                      >
+                        {section.category}
+                      </td>
+                    </tr>
+
+                    {section.items.map((item: CheckItem, iIdx) => {
+                      const state = itemsState[item.id] || {};
+                      const target = state.targetTemp ?? null;
+                      const rowBg = iIdx % 2 === 1 ? '#f8fafc' : '#ffffff';
+
+                      const renderTempCell = (field: 'tempDawn' | 'tempMorning' | 'tempAfternoon') => {
+                        const val = state[field] ?? null;
+                        let diffText = '';
+                        let diffColor = '#6b7280';
+
+                        if (val !== null && target !== null && typeof val === 'number' && typeof target === 'number') {
+                          const diff = Math.round((val - target) * 10) / 10;
+                          if (diff > 0) {
+                            diffText = `+${diff.toFixed(1)}`;
+                            diffColor = '#dc2626';
+                          } else if (diff < 0) {
+                            diffText = `${diff.toFixed(1)}`;
+                            diffColor = '#2563eb';
+                          } else {
+                            diffText = `±0.0`;
+                          }
+                        }
+
+                        return (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <input 
+                              type="number"
+                              step="0.1"
+                              placeholder="℃"
+                              style={{ width: '52px', height: '23px', fontSize: '11px', textAlign: 'center', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                              value={val ?? ''}
+                              disabled={isReadOnly}
+                              onChange={(e) => {
+                                const num = e.target.value !== '' ? parseFloat(e.target.value) : null;
+                                onUpdateTab4ItemBatch(item.id, { [field]: num });
+                              }}
+                            />
+                            {diffText && (
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: diffColor }}>
+                                ({diffText})
+                              </span>
+                            )}
+                          </div>
+                        );
+                      };
+
+                      return (
+                        <tr key={item.id} style={{ background: rowBg }}>
+                          {/* Column 1: 구역/시설명 */}
+                          <td style={{
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 10,
+                            background: rowBg,
+                            fontWeight: 600,
+                            color: '#1e293b',
+                            padding: '6px 8px',
+                            borderRight: '2px solid #cbd5e1',
+                            borderBottom: '1px solid #e2e8f0',
+                            whiteSpace: 'nowrap',
+                            width: '1%'
+                          }}>
+                            {item.text}
+                          </td>
+
+                          {/* Column 2: 기준 온도 (℃) */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
+                            <input 
+                              type="number"
+                              step="0.1"
+                              placeholder="기준"
+                              style={{ width: '54px', height: '23px', fontSize: '11px', textAlign: 'center', fontWeight: 700, borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f1f5f9' }}
+                              value={target ?? ''}
+                              disabled={isReadOnly}
+                              onChange={(e) => {
+                                const num = e.target.value !== '' ? parseFloat(e.target.value) : null;
+                                onUpdateTab4ItemBatch(item.id, { targetTemp: num });
+                              }}
+                            />
+                          </td>
+
+                          {/* Column 3: 새벽 */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
+                            {renderTempCell('tempDawn')}
+                          </td>
+
+                          {/* Column 4: 오전 */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
+                            {renderTempCell('tempMorning')}
+                          </td>
+
+                          {/* Column 5: 오후 */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
+                            {renderTempCell('tempAfternoon')}
+                          </td>
+
+                          {/* Column 6: 비고 및 특이사항 */}
+                          <td style={{ padding: '4px 6px', borderBottom: '1px solid #e2e8f0' }}>
+                            <input 
+                              type="text"
+                              className="slim-note-input"
+                              style={{ height: '24px', fontSize: '11px', width: '100%' }}
+                              placeholder="온도 이상/특이사항"
+                              value={state.note || ''}
+                              disabled={isReadOnly}
+                              onChange={(e) => !isReadOnly && onSaveNote(item.id, e.target.value)}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 종합 의견 */}
+        <div className="summary-box">
+          <label htmlFor="summaryText">
+            <span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}
+          </label>
+          <textarea
+            id="summaryText"
+            placeholder="온도 상태의 특이사항이나 관리 의견을 기재하세요."
+            value={summaryText || ''}
+            disabled={isReadOnly}
+            onChange={(e) => !isReadOnly && onChangeSummary(e.target.value)}
+          />
+        </div>
+      </main>
+    );
   }
 
   // Render Excel Table View for Tab 4
@@ -194,7 +396,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             {item.text}
                           </td>
 
-                          {/* Column 2: 압력 (bar) - 해당 항목 누적 평균 대비 차이 */}
+                          {/* Column 2: 압력 (bar) */}
                           <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
                             {isFilter ? (
                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>

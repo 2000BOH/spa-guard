@@ -107,7 +107,7 @@ body {
 /* 4개 탭 메뉴 */
 .tab-nav {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 1px;
   padding: 2px 0 0;
 }

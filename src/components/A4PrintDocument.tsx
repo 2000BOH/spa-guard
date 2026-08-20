@@ -10,9 +10,9 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
   const checkDateDot = state.date.replace(/-/g, '.');
 
   let summaryArr: string[] = [];
-  (['tab1', 'tab2', 'tab3', 'tab4'] as TabId[]).forEach(tid => {
+  (['tab1', 'tab2', 'tab3', 'tab4', 'tab5'] as TabId[]).forEach(tid => {
     const txt = state.summaries[tid];
-    if (txt) summaryArr.push(`• [${TAB_INFO[tid].name}] ${txt}`);
+    if (txt && TAB_INFO[tid]) summaryArr.push(`• [${TAB_INFO[tid].name}] ${txt}`);
   });
 
   const overallSummary = summaryArr.length > 0 
@@ -22,12 +22,52 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
   const renderTableRows = (tabIds: TabId[]) => {
     return tabIds.map(tid => {
       const tabInfo = TAB_INFO[tid];
+      if (!tabInfo) return null;
+
       const sections = CHECKLIST_DATA[tid] || [];
       const allItems = sections.flatMap(s => s.items);
       const itemCount = allItems.length;
 
       return allItems.map((item: CheckItem, index) => {
         const itemState = state.items[item.id] || {};
+
+        // Custom Tab 5 Temperature check rendering in A4 table
+        if (item.type === 'temp') {
+          const target = itemState.targetTemp ?? null;
+          const d = itemState.tempDawn ?? null;
+          const m = itemState.tempMorning ?? null;
+          const a = itemState.tempAfternoon ?? null;
+
+          const formatTemp = (val: number | null) => {
+            if (val === null) return '-';
+            let diffStr = '';
+            if (target !== null && typeof val === 'number') {
+              const diff = Math.round((val - target) * 10) / 10;
+              diffStr = diff > 0 ? `(+${diff.toFixed(1)})` : diff < 0 ? `(${diff.toFixed(1)})` : `(±0.0)`;
+            }
+            return `${val}℃${diffStr}`;
+          };
+
+          return (
+            <tr key={item.id}>
+              {index === 0 && (
+                <td 
+                  className="a4-field-cell" 
+                  rowSpan={itemCount}
+                  dangerouslySetInnerHTML={{ __html: tabInfo.htmlName.replace('\n', '<br>') }}
+                />
+              )}
+              <td className="a4-item-title" style={{ whiteSpace: 'nowrap' }}>• {item.text}</td>
+              <td className="center" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                새벽:{formatTemp(d)} | 오전:{formatTemp(m)} | 오후:{formatTemp(a)}
+              </td>
+              <td style={{ fontSize: '11.5px' }}>
+                기준:{target !== null ? `${target}℃` : '미설정'}
+                {itemState.note ? ` (${itemState.note})` : ''}
+              </td>
+            </tr>
+          );
+        }
 
         // Custom Tab 4 Filter rendering in A4 table
         if (item.type === 'filter') {
@@ -140,7 +180,6 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             <h1 className="a4-title">목욕장업 영업주 자율점검표 (앞면)</h1>
           </div>
 
-          {/* 제목 바로 밑 업소현황 & 점검자 라인 */}
           <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 업 소 현 황 및 점 검 자</div>
           <table className="a4-table" style={{ marginBottom: '14px' }}>
             <tbody>
@@ -178,7 +217,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
         <div className="a4-page-number">- 1 -</div>
       </div>
 
-      {/* 2페이지 (뒷면 - 시설 III, IV) */}
+      {/* 2페이지 (뒷면 - 시설 III, IV, V) */}
       <div className="a4-page-box" id="a4Page2">
         <div>
           <div className="a4-header">
@@ -189,7 +228,6 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             <h1 className="a4-title">목욕장업 영업주 자율점검표 (뒷면)</h1>
           </div>
 
-          {/* 2페이지 제목 바로 밑 업소현황 & 점검자 라인 */}
           <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 업 소 현 황 및 점 검 자</div>
           <table className="a4-table" style={{ marginBottom: '14px' }}>
             <tbody>
@@ -208,7 +246,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             </tbody>
           </table>
 
-          <div className="a4-subhead">2. 시설별 점검사항 및 결과 (시설 Ⅲ, Ⅳ)</div>
+          <div className="a4-subhead">2. 시설별 점검사항 및 결과 (시설 Ⅲ, Ⅳ, Ⅴ)</div>
           <table className="a4-table">
             <thead>
               <tr>
@@ -219,7 +257,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
               </tr>
             </thead>
             <tbody>
-              {renderTableRows(['tab3', 'tab4'])}
+              {renderTableRows(['tab3', 'tab4', 'tab5'])}
             </tbody>
           </table>
 

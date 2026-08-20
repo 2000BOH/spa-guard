@@ -45,7 +45,7 @@ export default function App() {
       date: todayStr,
       inspector: '점검자',
       items: {},
-      summaries: { tab1: '', tab2: '', tab3: '', tab4: '' },
+      summaries: { tab1: '', tab2: '', tab3: '', tab4: '', tab5: '' },
       securityCode: '',
       lastModified: ''
     };
@@ -84,7 +84,7 @@ export default function App() {
           date: targetDate,
           inspector: saved.inspector || '점검자',
           items: saved.items || {},
-          summaries: saved.summaries || { tab1: '', tab2: '', tab3: '', tab4: '' },
+          summaries: saved.summaries || { tab1: '', tab2: '', tab3: '', tab4: '', tab5: '' },
           securityCode: saved.securityCode || '',
           lastModified: saved.lastModified || ''
         };
@@ -97,7 +97,7 @@ export default function App() {
       date: targetDate,
       inspector: '점검자',
       items: {},
-      summaries: { tab1: '', tab2: '', tab3: '', tab4: '' },
+      summaries: { tab1: '', tab2: '', tab3: '', tab4: '', tab5: '' },
       securityCode: '',
       lastModified: ''
     };
@@ -212,6 +212,9 @@ export default function App() {
       const isInspected = itemState.pressure !== undefined || itemState.sound !== undefined || itemState.backwash !== undefined || itemState.hairCatcher !== undefined;
       if (isIssue) { cntI++; done++; }
       else if (isInspected) { cntN++; done++; }
+    } else if (item.type === 'temp') {
+      const isInspected = itemState.tempDawn !== undefined || itemState.tempMorning !== undefined || itemState.tempAfternoon !== undefined;
+      if (isInspected) { cntN++; done++; }
     } else {
       const st = itemState.status;
       if (st === 'normal') { cntN++; done++; }
@@ -318,8 +321,9 @@ export default function App() {
     msg += `⏰ 기록시간: ${state.lastModified}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    (['tab1', 'tab2', 'tab3', 'tab4'] as TabId[]).forEach((tid) => {
+    (['tab1', 'tab2', 'tab3', 'tab4', 'tab5'] as TabId[]).forEach((tid) => {
       const tabInfo = TAB_INFO[tid];
+      if (!tabInfo) return;
       const sections = CHECKLIST_DATA[tid] || [];
       const items = sections.flatMap((s) => s.items);
 
@@ -337,6 +341,9 @@ export default function App() {
           } else if (itemState.pressure !== undefined || itemState.sound !== undefined || itemState.backwash !== undefined || itemState.hairCatcher !== undefined) {
             n++;
           }
+        } else if (item.type === 'temp') {
+          const isInspected = itemState.tempDawn !== undefined || itemState.tempMorning !== undefined || itemState.tempAfternoon !== undefined;
+          if (isInspected) n++;
         } else {
           const st = itemState.status;
           if (st === 'normal') n++;
@@ -347,7 +354,7 @@ export default function App() {
         }
       });
 
-      msg += `■ ${tabInfo.name} (정상 ${n} / 이상 ${i})\n`;
+      msg += `■ ${tabInfo.name} (정상/기록 ${n} / 이상 ${i})\n`;
       msg += issues.length > 0 ? `${issues.join('\n')}\n` : `  ✅ 전 항목 '이상무 (O)' 적합\n`;
 
       const sumText = state.summaries[tid];
