@@ -134,7 +134,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             onUpdateTab4Item(item.id, 'vibration', next);
                           }}
                         >
-                          전체정상
+                          이상무
                         </button>
                         <button 
                           className={`btn-toggle ${state.sound === 'issue' || state.leak === 'issue' || state.vibration === 'issue' ? 'btn-issue' : ''}`}
