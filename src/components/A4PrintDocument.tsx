@@ -163,10 +163,10 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
           <table className="a4-table">
             <thead>
               <tr>
-                <th style={{ width: '13%', whiteSpace: 'nowrap' }}>점검분야</th>
-                <th style={{ width: '47%', whiteSpace: 'nowrap' }}>점 검 항 목 (1행 고정)</th>
-                <th style={{ width: '18%', whiteSpace: 'nowrap' }}>점검결과</th>
-                <th style={{ width: '22%', whiteSpace: 'nowrap' }}>비고 및 조치</th>
+                <th style={{ width: '12%', whiteSpace: 'nowrap' }}>점검분야</th>
+                <th style={{ width: '37%', whiteSpace: 'nowrap' }}>점 검 항 목</th>
+                <th style={{ width: '21%', whiteSpace: 'nowrap' }}>점검결과</th>
+                <th style={{ width: '30%', whiteSpace: 'nowrap' }}>비고 및 조치</th>
               </tr>
             </thead>
             <tbody>
@@ -212,10 +212,10 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
           <table className="a4-table">
             <thead>
               <tr>
-                <th style={{ width: '13%', whiteSpace: 'nowrap' }}>점검분야</th>
-                <th style={{ width: '47%', whiteSpace: 'nowrap' }}>점 검 항 목 (1행 고정)</th>
-                <th style={{ width: '18%', whiteSpace: 'nowrap' }}>점검결과</th>
-                <th style={{ width: '22%', whiteSpace: 'nowrap' }}>비고 및 조치</th>
+                <th style={{ width: '12%', whiteSpace: 'nowrap' }}>점검분야</th>
+                <th style={{ width: '37%', whiteSpace: 'nowrap' }}>점 검 항 목</th>
+                <th style={{ width: '21%', whiteSpace: 'nowrap' }}>점검결과</th>
+                <th style={{ width: '30%', whiteSpace: 'nowrap' }}>비고 및 조치</th>
               </tr>
             </thead>
             <tbody>

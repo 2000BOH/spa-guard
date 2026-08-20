@@ -6,15 +6,18 @@ interface HeaderProps {
   currentTab: TabId;
   onSelectTab: (tabId: TabId) => void;
   progressPct: number;
+  children?: React.ReactNode;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentTab,
   onSelectTab,
-  progressPct
+  progressPct,
+  children
 }) => {
   return (
     <header className="app-header">
+      {/* 1. 최상단 타이틀 행 */}
       <div className="header-row">
         <div className="app-title">
           <img src="/logo.png" alt="Blue Ocean Wellness Spa Logo" className="header-logo-img" />
@@ -24,7 +27,11 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="save-badge">저장됨</span>
         </div>
       </div>
+
+      {/* 2. 날짜, 점검자, 통계 메타바 행 (제목 바로 밑) */}
+      {children}
       
+      {/* 3. 시설 Ⅰ ~ Ⅳ 탭 선택 행 (날짜 라인 아래) */}
       <nav className="tab-nav">
         {(Object.keys(TAB_INFO) as TabId[]).map((tabId) => (
           <button
@@ -37,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
         ))}
       </nav>
 
+      {/* 4. 진행률 바 */}
       <div className="progress-bg">
         <div className="progress-fill" style={{ width: `${progressPct}%` }}></div>
       </div>

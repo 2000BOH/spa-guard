@@ -415,18 +415,18 @@ export default function App() {
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         progressPct={progressPct}
-      />
-
-      <MetaStrip
-        checkDate={state.date}
-        inspector={state.inspector}
-        cntN={cntN}
-        cntI={cntI}
-        cntP={cntP}
-        isReadOnly={isReadOnly}
-        onChangeCheckDate={handleDateChange}
-        onChangeInspector={(val) => updateStateAndSave((p) => ({ ...p, inspector: val }))}
-      />
+      >
+        <MetaStrip
+          checkDate={state.date}
+          inspector={state.inspector}
+          cntN={cntN}
+          cntI={cntI}
+          cntP={cntP}
+          isReadOnly={isReadOnly}
+          onChangeCheckDate={handleDateChange}
+          onChangeInspector={(val) => updateStateAndSave((p) => ({ ...p, inspector: val }))}
+        />
+      </Header>
 
       <CheckListView
         currentTab={currentTab}
