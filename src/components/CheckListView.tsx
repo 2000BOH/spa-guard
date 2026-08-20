@@ -10,7 +10,7 @@ interface CheckListViewProps {
   onSetStatus: (id: string, status: StatusType) => void;
   onSaveNote: (id: string, note: string) => void;
   onChangeSummary: (summary: string) => void;
-  onUpdateTab4Item: (id: string, field: keyof ItemState, value: any) => void;
+  onUpdateTab4ItemBatch: (id: string, updates: Partial<ItemState>) => void;
 }
 
 export const CheckListView: React.FC<CheckListViewProps> = ({
@@ -21,7 +21,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   onSetStatus,
   onSaveNote,
   onChangeSummary,
-  onUpdateTab4Item
+  onUpdateTab4ItemBatch
 }) => {
   const sections = CHECKLIST_DATA[currentTab] || [];
   const tabNameClean = TAB_INFO[currentTab].htmlName.replace('<br>', ' ').replace('\n', ' ');
@@ -50,7 +50,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
   // Render Excel Table View for Tab 4
   if (currentTab === 'tab4') {
-    // Separate table sections (filter, pump) and general sections
     const tableSections = sections.filter(s => s.items.some((i: CheckItem) => i.type === 'filter' || i.type === 'pump'));
     const generalSections = sections.filter(s => s.items.every((i: CheckItem) => i.type === 'general' || !i.type));
 
@@ -72,7 +71,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
             <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr>
-                  {/* Column 1: 기기명 */}
                   <th style={{
                     position: 'sticky',
                     top: 0,
@@ -89,23 +87,18 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                   }}>
                     기기명
                   </th>
-                  {/* Column 2: 압력 */}
                   <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
                     압력 (bar)
                   </th>
-                  {/* Column 3: 상태 */}
                   <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
                     상태 (소리/누수/진동)
                   </th>
-                  {/* Column 4: 역세척 */}
                   <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
                     역세척 (주 2회)
                   </th>
-                  {/* Column 5: 헤어캐처 */}
                   <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
                     헤어캐처 (2주 1회)
                   </th>
-                  {/* Column 6: 비고 */}
                   <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8' }}>
                     비고 및 특이사항
                   </th>
@@ -114,7 +107,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
               <tbody>
                 {tableSections.map((section, sIdx) => (
                   <React.Fragment key={sIdx}>
-                    {/* Category Header Row */}
                     <tr>
                       <td 
                         colSpan={6} 
@@ -155,8 +147,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
                       const bw = state.backwash || 0;
                       const hc = state.hairCatcher || 0;
-                      const isIssue = state.sound === 'issue' || state.leak === 'issue' || state.vibration === 'issue';
-                      const isNormal = state.sound === 'normal' && state.leak === 'normal' && state.vibration === 'normal';
+                      const isIssue = state.status === 'issue' || state.sound === 'issue' || state.leak === 'issue' || state.vibration === 'issue';
+                      const isNormal = state.status === 'normal' || (state.sound === 'normal' && state.leak === 'normal' && state.vibration === 'normal');
 
                       const rowBg = iIdx % 2 === 1 ? '#f8fafc' : '#ffffff';
 
@@ -187,7 +179,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                                   value={currentP ?? ''} 
                                   disabled={isReadOnly}
                                   style={{ fontSize: '11px', padding: '2px 3px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                                  onChange={(e) => onUpdateTab4Item(item.id, 'pressure', e.target.value ? parseFloat(e.target.value) : null)}
+                                  onChange={(e) => onUpdateTab4ItemBatch(item.id, { pressure: e.target.value ? parseFloat(e.target.value) : null })}
                                 >
                                   <option value="">미선택</option>
                                   {pressureOptions.map(val => (
@@ -215,9 +207,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                                 onClick={() => {
                                   if (isReadOnly) return;
                                   const next = isNormal ? null : 'normal';
-                                  onUpdateTab4Item(item.id, 'sound', next);
-                                  onUpdateTab4Item(item.id, 'leak', next);
-                                  onUpdateTab4Item(item.id, 'vibration', next);
+                                  onUpdateTab4ItemBatch(item.id, { sound: next, leak: next, vibration: next, status: next });
                                 }}
                               >
                                 이상무
@@ -228,7 +218,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                                 style={{ height: '23px', fontSize: '11px', padding: '0 6px' }}
                                 onClick={() => {
                                   if (isReadOnly) return;
-                                  onUpdateTab4Item(item.id, 'sound', 'issue');
+                                  const next = isIssue ? null : 'issue';
+                                  onUpdateTab4ItemBatch(item.id, { sound: next, leak: next, vibration: next, status: next });
                                 }}
                               >
                                 이상
@@ -255,7 +246,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                                 onClick={() => {
                                   if (isReadOnly) return;
                                   const nextBw = (bw + 1) % 3;
-                                  onUpdateTab4Item(item.id, 'backwash', nextBw);
+                                  onUpdateTab4ItemBatch(item.id, { backwash: nextBw });
                                 }}
                               >
                                 {bw === 2 ? '2회 최종완료' : bw === 1 ? '1회 완료' : '미실시'}
@@ -284,7 +275,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                                 onClick={() => {
                                   if (isReadOnly) return;
                                   const nextHc = (hc + 1) % 3;
-                                  onUpdateTab4Item(item.id, 'hairCatcher', nextHc);
+                                  onUpdateTab4ItemBatch(item.id, { hairCatcher: nextHc });
                                 }}
                               >
                                 {hc === 2 ? '2회 완료(등록)' : hc === 1 ? '1회 완료' : '미실시'}
@@ -316,7 +307,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
           </div>
         </div>
 
-        {/* 2. 기타설비 점검 (일반 카드 항목으로 표에서 밖으로 이동) */}
+        {/* 2. 기타설비 점검 */}
         {generalSections.map((section, gIdx) => (
           <div key={gIdx} className="section-card" style={{ marginTop: '10px' }}>
             <div className="section-title">

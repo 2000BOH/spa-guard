@@ -174,14 +174,14 @@ export default function App() {
     }));
   };
 
-  const handleUpdateTab4Item = (id: string, field: keyof ItemState, value: any) => {
+  const handleUpdateTab4ItemBatch = (id: string, updates: Partial<ItemState>) => {
     updateStateAndSave((prev) => ({
       ...prev,
       items: {
         ...prev.items,
         [id]: {
           ...prev.items[id],
-          [field]: value
+          ...updates
         }
       }
     }));
@@ -436,7 +436,7 @@ export default function App() {
         onSetStatus={handleSetStatus}
         onSaveNote={handleSaveNote}
         onChangeSummary={handleChangeSummary}
-        onUpdateTab4Item={handleUpdateTab4Item}
+        onUpdateTab4ItemBatch={handleUpdateTab4ItemBatch}
       />
 
       <footer className="bottom-bar">
