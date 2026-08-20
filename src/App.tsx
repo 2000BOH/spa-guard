@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
-import type { AppState, TabId, StatusType } from './types';
+import type { AppState, TabId, StatusType, ItemState, CheckItem } from './types';
 import { TAB_INFO, CHECKLIST_DATA } from './data/checklistData';
 import { Header } from './components/Header';
 import { MetaStrip } from './components/MetaStrip';
@@ -58,8 +58,7 @@ export default function App() {
     setTimeout(() => setToastMsg(null), 2500);
   };
 
-  // Security Log Generator
-  const generateSecurityLog = (items: Record<string, { status: StatusType; note: string }>, inspector: string) => {
+  const generateSecurityLog = (items: Record<string, ItemState>, inspector: string) => {
     const now = new Date();
     const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
 
@@ -75,7 +74,6 @@ export default function App() {
     return { lastModified: timeStr, securityCode: finalCode };
   };
 
-  // Load Data for current date
   const loadDateData = (targetDate: string) => {
     try {
       const raw = localStorage.getItem(getStorageKey(targetDate));
@@ -105,7 +103,6 @@ export default function App() {
     };
   };
 
-  // Initial load
   useEffect(() => {
     const initialData = loadDateData(todayStr);
     const sec = generateSecurityLog(initialData.items, initialData.inspector);
@@ -115,7 +112,6 @@ export default function App() {
     });
   }, []);
 
-  // Update & Save for current date
   const updateStateAndSave = (updater: (prev: AppState) => AppState) => {
     if (isReadOnly) {
       showToast("⚠️ 과거 기록은 수정할 수 없습니다 (조회 전용).");
@@ -138,7 +134,6 @@ export default function App() {
     });
   };
 
-  // Date Change Handler
   const handleDateChange = (newDate: string) => {
     const loaded = loadDateData(newDate);
     const sec = generateSecurityLog(loaded.items, loaded.inspector);
@@ -153,15 +148,14 @@ export default function App() {
     }
   };
 
-  // Input Handlers
   const handleSetStatus = (id: string, status: StatusType) => {
     updateStateAndSave((prev) => ({
       ...prev,
       items: {
         ...prev.items,
         [id]: {
-          status,
-          note: prev.items[id]?.note || ''
+          ...prev.items[id],
+          status
         }
       }
     }));
@@ -173,8 +167,21 @@ export default function App() {
       items: {
         ...prev.items,
         [id]: {
-          status: prev.items[id]?.status || null,
+          ...prev.items[id],
           note
+        }
+      }
+    }));
+  };
+
+  const handleUpdateTab4Item = (id: string, field: keyof ItemState, value: any) => {
+    updateStateAndSave((prev) => ({
+      ...prev,
+      items: {
+        ...prev.items,
+        [id]: {
+          ...prev.items[id],
+          [field]: value
         }
       }
     }));
@@ -190,7 +197,7 @@ export default function App() {
     }));
   };
 
-  // Counts & Progress
+  // Counts Calculation
   const activeSections = CHECKLIST_DATA[currentTab] || [];
   const activeItems = activeSections.flatMap((s) => s.items);
 
@@ -198,10 +205,18 @@ export default function App() {
   let cntI = 0;
   let done = 0;
 
-  activeItems.forEach((item) => {
-    const st = state.items[item.id]?.status;
-    if (st === 'normal') { cntN++; done++; }
-    else if (st === 'issue') { cntI++; done++; }
+  activeItems.forEach((item: CheckItem) => {
+    const itemState = state.items[item.id] || {};
+    if (item.type === 'filter' || item.type === 'pump') {
+      const isIssue = itemState.sound === 'issue' || itemState.leak === 'issue' || itemState.vibration === 'issue';
+      const isInspected = itemState.pressure !== undefined || itemState.sound !== undefined || itemState.backwash !== undefined || itemState.hairCatcher !== undefined;
+      if (isIssue) { cntI++; done++; }
+      else if (isInspected) { cntN++; done++; }
+    } else {
+      const st = itemState.status;
+      if (st === 'normal') { cntN++; done++; }
+      else if (st === 'issue') { cntI++; done++; }
+    }
   });
 
   const total = activeItems.length || 1;
@@ -312,15 +327,23 @@ export default function App() {
       let i = 0;
       const issues: string[] = [];
 
-      items.forEach((item) => {
-        const itemState = state.items[item.id];
-        const st = itemState?.status;
-        const note = itemState?.note;
-
-        if (st === 'normal') n++;
-        else if (st === 'issue') {
-          i++;
-          issues.push(`  ⚠️ [이상] ${item.text}\n    ↳ 조치: ${note || '상세 없음'}`);
+      items.forEach((item: CheckItem) => {
+        const itemState = state.items[item.id] || {};
+        if (item.type === 'filter' || item.type === 'pump') {
+          const isIssue = itemState.sound === 'issue' || itemState.leak === 'issue' || itemState.vibration === 'issue';
+          if (isIssue) {
+            i++;
+            issues.push(`  ⚠️ [이상] ${item.text}\n    ↳ 조치: ${itemState.note || '상세 없음'}`);
+          } else if (itemState.pressure !== undefined || itemState.sound !== undefined || itemState.backwash !== undefined || itemState.hairCatcher !== undefined) {
+            n++;
+          }
+        } else {
+          const st = itemState.status;
+          if (st === 'normal') n++;
+          else if (st === 'issue') {
+            i++;
+            issues.push(`  ⚠️ [이상] ${item.text}\n    ↳ 조치: ${itemState.note || '상세 없음'}`);
+          }
         }
       });
 
@@ -414,6 +437,7 @@ export default function App() {
         onSetStatus={handleSetStatus}
         onSaveNote={handleSaveNote}
         onChangeSummary={handleChangeSummary}
+        onUpdateTab4Item={handleUpdateTab4Item}
       />
 
       <footer className="bottom-bar">

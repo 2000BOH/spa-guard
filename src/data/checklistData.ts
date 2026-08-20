@@ -2,7 +2,7 @@ export const TAB_INFO = {
   tab1: { id: 'tab1', name: '시설 Ⅰ (2층)', htmlName: '시설 Ⅰ\n(2층)', title: '시설 Ⅰ (2층) 점검' },
   tab2: { id: 'tab2', name: '시설 Ⅱ (지하)', htmlName: '시설 Ⅱ\n(지하)', title: '시설 Ⅱ (지하) 점검' },
   tab3: { id: 'tab3', name: '시설 Ⅲ (3층 찜질)', htmlName: '시설 Ⅲ\n(3층 찜질)', title: '시설 Ⅲ (3층 찜질) 점검' },
-  tab4: { id: 'tab4', name: '시설 Ⅳ (기타)', htmlName: '시설 Ⅳ\n(기타)', title: '시설 Ⅳ (기타) 점검' }
+  tab4: { id: 'tab4', name: '시설 Ⅳ (여과/펌프/기타)', htmlName: '시설 Ⅳ\n(여과/기타)', title: '시설 Ⅳ (여과기, 펌프 및 기타설비) 점검' }
 };
 
 export const CHECKLIST_DATA = {
@@ -116,5 +116,41 @@ export const CHECKLIST_DATA = {
       ]
     }
   ],
-  "tab4": []
+  "tab4": [
+    {
+      "category": "🌊 1. 여과기 점검",
+      "items": [
+        { "id": "tab4_f1", "text": "① 열탕여과기(여)", "type": "filter" },
+        { "id": "tab4_f2", "text": "② 벤치Z 여과기(여)", "type": "filter" },
+        { "id": "tab4_f3", "text": "③ 족탕 여과기", "type": "filter" },
+        { "id": "tab4_f4", "text": "④ 온탕 여과기(남)", "type": "filter" },
+        { "id": "tab4_f5", "text": "⑤ 냉탕 여과기(남)", "type": "filter" },
+        { "id": "tab4_f6", "text": "⑥ 열탕 여과기(남)", "type": "filter" },
+        { "id": "tab4_f7", "text": "⑦ 냉탕 여과기(여)", "type": "filter" },
+        { "id": "tab4_f8", "text": "⑧ 온탕 여과기(여)", "type": "filter" },
+        { "id": "tab4_f9", "text": "⑨ 벤치Z 여과기(남)", "type": "filter" }
+      ]
+    },
+    {
+      "category": "⚡ 2. 벤치Z 펌프 점검",
+      "items": [
+        { "id": "tab4_p11", "text": "⑪ 샤워펌프(여)", "type": "pump" },
+        { "id": "tab4_p12", "text": "⑫ 파도펌프(여)", "type": "pump" },
+        { "id": "tab4_p13", "text": "⑬ 벤치Z 펌프3(여)", "type": "pump" },
+        { "id": "tab4_p14", "text": "⑭ 벤치Z 펌프2(여)", "type": "pump" },
+        { "id": "tab4_p15", "text": "⑮ 벤치Z 펌프1(여)", "type": "pump" },
+        { "id": "tab4_p16", "text": "⑯ 벤치Z 펌프3(남)", "type": "pump" },
+        { "id": "tab4_p17", "text": "⑰ 벤치Z 펌프2(남)", "type": "pump" },
+        { "id": "tab4_p18", "text": "⑱ 벤치Z 펌프1(남)", "type": "pump" }
+      ]
+    },
+    {
+      "category": "🏢 3. 기타설비 점검",
+      "items": [
+        { "id": "tab4_g1", "text": "메인전기 판넬 점검", "type": "general" },
+        { "id": "tab4_g2", "text": "사무실 방송장비 및 음향시스템 확인", "type": "general" },
+        { "id": "tab4_g3", "text": "리셉션 PC , 보조전력장치 확인", "type": "general" }
+      ]
+    }
+  ]
 };

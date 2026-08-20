@@ -1,5 +1,5 @@
 import React from 'react';
-import type { AppState, TabId } from '../types';
+import type { AppState, TabId, CheckItem } from '../types';
 import { CHECKLIST_DATA, TAB_INFO } from '../data/checklistData';
 
 interface A4PrintDocumentProps {
@@ -26,9 +26,75 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
       const allItems = sections.flatMap(s => s.items);
       const itemCount = allItems.length;
 
-      return allItems.map((item, index) => {
-        const itemState = state.items[item.id] || { status: null, note: '' };
+      return allItems.map((item: CheckItem, index) => {
+        const itemState = state.items[item.id] || {};
 
+        // Custom Tab 4 Filter rendering in A4 table
+        if (item.type === 'filter') {
+          const p = itemState.pressure !== undefined && itemState.pressure !== null ? `${itemState.pressure.toFixed(1)}bar` : '미선택';
+          const bw = itemState.backwash === 2 ? '2회 최종완료' : itemState.backwash === 1 ? '1회 완료' : '미실시';
+          const hc = itemState.hairCatcher === 2 ? '2회 완료' : itemState.hairCatcher === 1 ? '1회 완료' : '미실시';
+          const isIssue = itemState.sound === 'issue' || itemState.leak === 'issue' || itemState.vibration === 'issue';
+
+          return (
+            <tr key={item.id}>
+              {index === 0 && (
+                <td 
+                  className="a4-field-cell" 
+                  rowSpan={itemCount}
+                  dangerouslySetInnerHTML={{ __html: tabInfo.htmlName.replace('\n', '<br>') }}
+                />
+              )}
+              <td className="a4-item-title">• {item.text}</td>
+              <td className="center">
+                <span className={isIssue ? 'a4-res-issue' : 'a4-res-ok'}>
+                  {isIssue ? '이상 발생' : '정상'}
+                </span>
+                <div style={{ fontSize: '9px', color: '#4b5563', marginTop: '2px' }}>
+                  압력:{p} | 역세척:{bw}
+                </div>
+              </td>
+              <td>
+                <span style={{ fontSize: '10.5px' }}>
+                  헤어캐처:{hc}
+                  {itemState.note ? ` (${itemState.note})` : ''}
+                </span>
+              </td>
+            </tr>
+          );
+        }
+
+        // Custom Tab 4 Pump rendering in A4 table
+        if (item.type === 'pump') {
+          const hc = itemState.hairCatcher === 2 ? '2회 완료' : itemState.hairCatcher === 1 ? '1회 완료' : '미실시';
+          const isIssue = itemState.sound === 'issue' || itemState.leak === 'issue' || itemState.vibration === 'issue';
+
+          return (
+            <tr key={item.id}>
+              {index === 0 && (
+                <td 
+                  className="a4-field-cell" 
+                  rowSpan={itemCount}
+                  dangerouslySetInnerHTML={{ __html: tabInfo.htmlName.replace('\n', '<br>') }}
+                />
+              )}
+              <td className="a4-item-title">• {item.text}</td>
+              <td className="center">
+                <span className={isIssue ? 'a4-res-issue' : 'a4-res-ok'}>
+                  {isIssue ? '이상 발생' : '양호'}
+                </span>
+              </td>
+              <td>
+                <span style={{ fontSize: '10.5px' }}>
+                  헤어캐처:{hc}
+                  {itemState.note ? ` (${itemState.note})` : ''}
+                </span>
+              </td>
+            </tr>
+          );
+        }
+
+        // Standard item rendering
         return (
           <tr key={item.id}>
             {index === 0 && (
@@ -42,7 +108,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             <td className="center">
               {itemState.status === 'normal' && <span className="a4-res-ok">이상무 (O)</span>}
               {itemState.status === 'issue' && <span className="a4-res-issue">이상 (X)</span>}
-              {itemState.status === null && <span className="a4-res-pending">미점검</span>}
+              {(!itemState.status || itemState.status === null) && <span className="a4-res-pending">미점검</span>}
             </td>
             <td>
               {itemState.status === 'issue' && itemState.note && (
@@ -51,7 +117,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
               {itemState.status === 'normal' && (
                 <span style={{ color: '#059669', fontSize: '11px' }}>적합</span>
               )}
-              {itemState.status === null && (
+              {(!itemState.status || itemState.status === null) && (
                 <span style={{ color: '#9ca3af', fontSize: '11px' }}>-</span>
               )}
             </td>
