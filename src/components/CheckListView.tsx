@@ -50,11 +50,16 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
   // Render Excel Table View for Tab 4
   if (currentTab === 'tab4') {
+    // Separate table sections (filter, pump) and general sections
+    const tableSections = sections.filter(s => s.items.some((i: CheckItem) => i.type === 'filter' || i.type === 'pump'));
+    const generalSections = sections.filter(s => s.items.every((i: CheckItem) => i.type === 'general' || !i.type));
+
     return (
       <main className="main-container">
+        {/* 1. 여과기 및 펌프 엑셀 표 */}
         <div className="section-card">
           <div className="section-title">
-            <span>시설 Ⅳ 여과기·펌프·기타 점검표 (엑셀 표 형태)</span>
+            <span>여과기 및 펌프 점검표 (엑셀 표)</span>
             {avgPressure !== null && (
               <span className="badge-count" style={{ color: '#2563eb', fontWeight: 700 }}>
                 여과기 평균 압력: {avgPressure.toFixed(1)} bar
@@ -63,10 +68,11 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
           </div>
 
           {/* Sticky Excel Table Container */}
-          <div style={{ overflow: 'auto', maxHeight: 'calc(100vh - 210px)', border: '1px solid #cbd5e1' }}>
-            <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
+          <div style={{ overflow: 'auto', maxHeight: 'calc(100vh - 250px)', border: '1px solid #cbd5e1' }}>
+            <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr>
+                  {/* Column A: Tight width fit for 기기명 */}
                   <th style={{
                     position: 'sticky',
                     top: 0,
@@ -74,33 +80,34 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                     zIndex: 20,
                     background: '#e2e8f0',
                     color: '#0f172a',
-                    padding: '8px 10px',
+                    padding: '8px 8px',
                     borderRight: '2px solid #94a3b8',
                     borderBottom: '2px solid #94a3b8',
                     textAlign: 'left',
-                    minWidth: '150px'
+                    whiteSpace: 'nowrap',
+                    width: '1%'
                   }}>
-                    기기 명칭
+                    기기명
                   </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '110px' }}>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '100px' }}>
                     압력 (bar)
                   </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '120px' }}>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '115px' }}>
                     상태 (소리/누수/진동)
                   </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '120px' }}>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '115px' }}>
                     역세척 (주 2회)
                   </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '140px' }}>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '130px' }}>
                     헤어캐처 (2주 1회)
                   </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8', minWidth: '160px' }}>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8', minWidth: '150px' }}>
                     비고 및 특이사항
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {sections.map((section, sIdx) => (
+                {tableSections.map((section, sIdx) => (
                   <React.Fragment key={sIdx}>
                     {/* Category Header Row */}
                     <tr>
@@ -111,7 +118,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                           fontWeight: 700,
                           fontSize: '12px',
                           color: '#1e293b',
-                          padding: '6px 10px',
+                          padding: '6px 8px',
                           borderBottom: '1px solid #cbd5e1',
                           borderTop: sIdx > 0 ? '2px solid #cbd5e1' : 'none'
                         }}
@@ -124,7 +131,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                       const state = itemsState[item.id] || {};
                       const isFilter = item.type === 'filter';
                       const isPump = item.type === 'pump';
-                      const isGeneral = item.type === 'general';
 
                       const currentP = state.pressure ?? null;
                       let diffText = '';
@@ -144,18 +150,14 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
                       const bw = state.backwash || 0;
                       const hc = state.hairCatcher || 0;
-                      const isIssue = isGeneral 
-                        ? state.status === 'issue'
-                        : (state.sound === 'issue' || state.leak === 'issue' || state.vibration === 'issue');
-                      const isNormal = isGeneral 
-                        ? state.status === 'normal'
-                        : (state.sound === 'normal' && state.leak === 'normal' && state.vibration === 'normal');
+                      const isIssue = state.sound === 'issue' || state.leak === 'issue' || state.vibration === 'issue';
+                      const isNormal = state.sound === 'normal' && state.leak === 'normal' && state.vibration === 'normal';
 
                       const rowBg = iIdx % 2 === 1 ? '#f8fafc' : '#ffffff';
 
                       return (
                         <tr key={item.id} style={{ background: rowBg }}>
-                          {/* Sticky Left Column: 기기 명칭 */}
+                          {/* Sticky Left Column: 기기 명칭 (글자폭 딱맞춤) */}
                           <td style={{
                             position: 'sticky',
                             left: 0,
@@ -163,10 +165,11 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             background: rowBg,
                             fontWeight: 600,
                             color: '#1e293b',
-                            padding: '6px 10px',
+                            padding: '6px 8px',
                             borderRight: '2px solid #cbd5e1',
                             borderBottom: '1px solid #e2e8f0',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
+                            width: '1%'
                           }}>
                             {item.text}
                           </td>
@@ -206,14 +209,10 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                                 style={{ height: '23px', fontSize: '11px', padding: '0 6px' }}
                                 onClick={() => {
                                   if (isReadOnly) return;
-                                  if (isGeneral) {
-                                    onSetStatus(item.id, isNormal ? null : 'normal');
-                                  } else {
-                                    const next = isNormal ? null : 'normal';
-                                    onUpdateTab4Item(item.id, 'sound', next);
-                                    onUpdateTab4Item(item.id, 'leak', next);
-                                    onUpdateTab4Item(item.id, 'vibration', next);
-                                  }
+                                  const next = isNormal ? null : 'normal';
+                                  onUpdateTab4Item(item.id, 'sound', next);
+                                  onUpdateTab4Item(item.id, 'leak', next);
+                                  onUpdateTab4Item(item.id, 'vibration', next);
                                 }}
                               >
                                 이상무
@@ -224,11 +223,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                                 style={{ height: '23px', fontSize: '11px', padding: '0 6px' }}
                                 onClick={() => {
                                   if (isReadOnly) return;
-                                  if (isGeneral) {
-                                    onSetStatus(item.id, 'issue');
-                                  } else {
-                                    onUpdateTab4Item(item.id, 'sound', 'issue');
-                                  }
+                                  onUpdateTab4Item(item.id, 'sound', 'issue');
                                 }}
                               >
                                 이상
@@ -316,6 +311,71 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
           </div>
         </div>
 
+        {/* 2. 기타설비 점검 (일반 카드 항목으로 표에서 밖으로 이동) */}
+        {generalSections.map((section, gIdx) => (
+          <div key={gIdx} className="section-card" style={{ marginTop: '10px' }}>
+            <div className="section-title">
+              <span>{section.category}</span>
+              <span className="badge-count">{section.items.length} 항목</span>
+            </div>
+
+            {section.items.map((item: CheckItem) => {
+              const state = itemsState[item.id] || {};
+              const statusClass = state.status === 'normal' 
+                ? 'status-normal' 
+                : state.status === 'issue' 
+                  ? 'status-issue' 
+                  : '';
+
+              return (
+                <div key={item.id} className={`slim-item ${statusClass}`}>
+                  <div 
+                    className="slim-row" 
+                    onClick={() => {
+                      if (!isReadOnly) {
+                        onSetStatus(item.id, state.status === 'normal' ? null : 'normal');
+                      }
+                    }}
+                  >
+                    <div className="item-left">
+                      <span className="dot"></span>
+                      <span className="item-text">{item.text}</span>
+                    </div>
+                    <div className="item-btns" onClick={(e) => e.stopPropagation()}>
+                      <button 
+                        className="btn-toggle btn-normal"
+                        disabled={isReadOnly}
+                        onClick={() => !isReadOnly && onSetStatus(item.id, state.status === 'normal' ? null : 'normal')}
+                      >
+                        이상무
+                      </button>
+                      <button 
+                        className="btn-toggle btn-issue"
+                        disabled={isReadOnly}
+                        onClick={() => !isReadOnly && onSetStatus(item.id, state.status === 'issue' ? null : 'issue')}
+                      >
+                        이상
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={`slim-note-box ${state.status === 'issue' ? 'show' : ''}`}>
+                    <input 
+                      type="text" 
+                      className="slim-note-input"
+                      placeholder="⚠️ 이상 내용 입력" 
+                      value={state.note || ''}
+                      disabled={isReadOnly}
+                      onChange={(e) => !isReadOnly && onSaveNote(item.id, e.target.value)}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+
+        {/* 종합 의견 */}
         <div className="summary-box">
           <label htmlFor="summaryText">
             <span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}
