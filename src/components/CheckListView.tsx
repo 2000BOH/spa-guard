@@ -58,7 +58,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   onUpdateTab4ItemBatch
 }) => {
   const sections = CHECKLIST_DATA[currentTab] || [];
-  const tabNameClean = TAB_INFO[currentTab].htmlName.replace('<br>', ' ').replace('\n', ' ');
+  const tabNameClean = TAB_INFO[currentTab]?.name || '';
 
   // Pressure options 1.0 to 2.4 (step 0.1)
   const pressureOptions: number[] = [];
@@ -72,9 +72,9 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
       <main className="main-container">
         <div className="section-card">
           <div className="section-title">
-            <span>시설 Ⅴ 수온 및 실내 온도 점검표 (시간대별 엑셀 표)</span>
+            <span>수온 및 실내 온도 점검표 (시간대별 엑셀 표)</span>
             <span className="badge-count" style={{ color: '#2563eb', fontWeight: 600 }}>
-              * 온도 입력 시 기준온도 대비 차이자동 계산
+              * 기본 기준온도 10.0℃ (변경 가능)
             </span>
           </div>
 
@@ -137,7 +137,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
                     {section.items.map((item: CheckItem, iIdx) => {
                       const state = itemsState[item.id] || {};
-                      const target = state.targetTemp ?? null;
+                      // Default all target temperatures to 10.0 ℃ as requested
+                      const target = state.targetTemp !== undefined && state.targetTemp !== null ? state.targetTemp : 10.0;
                       const rowBg = iIdx % 2 === 1 ? '#f8fafc' : '#ffffff';
 
                       const renderTempCell = (field: 'tempDawn' | 'tempMorning' | 'tempAfternoon') => {
@@ -200,17 +201,17 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             {item.text}
                           </td>
 
-                          {/* Column 2: 기준 온도 (℃) */}
+                          {/* Column 2: 기준 온도 (℃) - 기본값 10.0 ℃ */}
                           <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
                             <input 
                               type="number"
                               step="0.1"
-                              placeholder="기준"
+                              placeholder="10.0"
                               style={{ width: '54px', height: '23px', fontSize: '11px', textAlign: 'center', fontWeight: 700, borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f1f5f9' }}
-                              value={target ?? ''}
+                              value={target}
                               disabled={isReadOnly}
                               onChange={(e) => {
-                                const num = e.target.value !== '' ? parseFloat(e.target.value) : null;
+                                const num = e.target.value !== '' ? parseFloat(e.target.value) : 10.0;
                                 onUpdateTab4ItemBatch(item.id, { targetTemp: num });
                               }}
                             />

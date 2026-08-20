@@ -1,9 +1,9 @@
 export const TAB_INFO = {
-  tab1: { id: 'tab1', name: '시설 Ⅰ (2층)', htmlName: '시설 Ⅰ\n(2층)', title: '시설 Ⅰ (2층) 점검' },
-  tab2: { id: 'tab2', name: '시설 Ⅱ (지하)', htmlName: '시설 Ⅱ\n(지하)', title: '시설 Ⅱ (지하) 점검' },
-  tab3: { id: 'tab3', name: '시설 Ⅲ (3층 찜질)', htmlName: '시설 Ⅲ\n(3층 찜질)', title: '시설 Ⅲ (3층 찜질) 점검' },
-  tab4: { id: 'tab4', name: '시설 Ⅳ (여과/기타)', htmlName: '시설 Ⅳ\n(여과/기타)', title: '시설 Ⅳ (여과기, 펌프 및 기타설비) 점검' },
-  tab5: { id: 'tab5', name: '시설 Ⅴ (온도체크)', htmlName: '시설 Ⅴ\n(온도체크)', title: '시설 Ⅴ (수온 및 실내 온도체크) 점검' }
+  tab1: { id: 'tab1', name: '2층', htmlName: '2층', title: '2층 점검' },
+  tab2: { id: 'tab2', name: '지하', htmlName: '지하', title: '지하 점검' },
+  tab3: { id: 'tab3', name: '3층 찜질', htmlName: '3층 찜질', title: '3층 찜질 점검' },
+  tab4: { id: 'tab4', name: '여과/기타', htmlName: '여과/기타', title: '여과기, 펌프 및 기타설비 점검' },
+  tab5: { id: 'tab5', name: '온도체크', htmlName: '온도체크', title: '수온 및 실내 온도체크 점검' }
 };
 
 export const CHECKLIST_DATA: Record<string, { category: string; items: { id: string; text: string; type?: string }[] }[]> = {
