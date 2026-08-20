@@ -48,6 +48,291 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
     pressureOptions.push(Math.round(p * 10) / 10);
   }
 
+  // Render Excel Table View for Tab 4
+  if (currentTab === 'tab4') {
+    return (
+      <main className="main-container">
+        <div className="section-card">
+          <div className="section-title">
+            <span>시설 Ⅳ 여과기·펌프·기타 점검표 (엑셀 표 형태)</span>
+            {avgPressure !== null && (
+              <span className="badge-count" style={{ color: '#2563eb', fontWeight: 700 }}>
+                여과기 평균 압력: {avgPressure.toFixed(1)} bar
+              </span>
+            )}
+          </div>
+
+          {/* Sticky Excel Table Container */}
+          <div style={{ overflow: 'auto', maxHeight: 'calc(100vh - 210px)', border: '1px solid #cbd5e1' }}>
+            <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
+              <thead>
+                <tr>
+                  <th style={{
+                    position: 'sticky',
+                    top: 0,
+                    left: 0,
+                    zIndex: 20,
+                    background: '#e2e8f0',
+                    color: '#0f172a',
+                    padding: '8px 10px',
+                    borderRight: '2px solid #94a3b8',
+                    borderBottom: '2px solid #94a3b8',
+                    textAlign: 'left',
+                    minWidth: '150px'
+                  }}>
+                    기기 명칭
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '110px' }}>
+                    압력 (bar)
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '120px' }}>
+                    상태 (소리/누수/진동)
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '120px' }}>
+                    역세척 (주 2회)
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '140px' }}>
+                    헤어캐처 (2주 1회)
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8', minWidth: '160px' }}>
+                    비고 및 특이사항
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sections.map((section, sIdx) => (
+                  <React.Fragment key={sIdx}>
+                    {/* Category Header Row */}
+                    <tr>
+                      <td 
+                        colSpan={6} 
+                        style={{
+                          background: '#f8fafc',
+                          fontWeight: 700,
+                          fontSize: '12px',
+                          color: '#1e293b',
+                          padding: '6px 10px',
+                          borderBottom: '1px solid #cbd5e1',
+                          borderTop: sIdx > 0 ? '2px solid #cbd5e1' : 'none'
+                        }}
+                      >
+                        {section.category}
+                      </td>
+                    </tr>
+
+                    {section.items.map((item: CheckItem, iIdx) => {
+                      const state = itemsState[item.id] || {};
+                      const isFilter = item.type === 'filter';
+                      const isPump = item.type === 'pump';
+                      const isGeneral = item.type === 'general';
+
+                      const currentP = state.pressure ?? null;
+                      let diffText = '';
+                      let diffColor = '#6b7280';
+                      if (isFilter && currentP !== null && avgPressure !== null) {
+                        const diff = Math.round((currentP - avgPressure) * 10) / 10;
+                        if (diff > 0) {
+                          diffText = `+${diff.toFixed(1)}`;
+                          diffColor = '#dc2626';
+                        } else if (diff < 0) {
+                          diffText = `${diff.toFixed(1)}`;
+                          diffColor = '#2563eb';
+                        } else {
+                          diffText = `±0.0`;
+                        }
+                      }
+
+                      const bw = state.backwash || 0;
+                      const hc = state.hairCatcher || 0;
+                      const isIssue = isGeneral 
+                        ? state.status === 'issue'
+                        : (state.sound === 'issue' || state.leak === 'issue' || state.vibration === 'issue');
+                      const isNormal = isGeneral 
+                        ? state.status === 'normal'
+                        : (state.sound === 'normal' && state.leak === 'normal' && state.vibration === 'normal');
+
+                      const rowBg = iIdx % 2 === 1 ? '#f8fafc' : '#ffffff';
+
+                      return (
+                        <tr key={item.id} style={{ background: rowBg }}>
+                          {/* Sticky Left Column: 기기 명칭 */}
+                          <td style={{
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 10,
+                            background: rowBg,
+                            fontWeight: 600,
+                            color: '#1e293b',
+                            padding: '6px 10px',
+                            borderRight: '2px solid #cbd5e1',
+                            borderBottom: '1px solid #e2e8f0',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {item.text}
+                          </td>
+
+                          {/* 압력 (bar) */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            {isFilter ? (
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <select 
+                                  value={currentP ?? ''} 
+                                  disabled={isReadOnly}
+                                  style={{ fontSize: '11px', padding: '2px 4px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                                  onChange={(e) => onUpdateTab4Item(item.id, 'pressure', e.target.value ? parseFloat(e.target.value) : null)}
+                                >
+                                  <option value="">미선택</option>
+                                  {pressureOptions.map(val => (
+                                    <option key={val} value={val}>{val.toFixed(1)}</option>
+                                  ))}
+                                </select>
+                                {diffText && (
+                                  <span style={{ fontSize: '10px', fontWeight: 700, color: diffColor }}>
+                                    ({diffText})
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span style={{ color: '#94a3b8' }}>-</span>
+                            )}
+                          </td>
+
+                          {/* 상태 (소리/누수/진동) */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            <div style={{ display: 'inline-flex', gap: '4px' }}>
+                              <button 
+                                className={`btn-toggle ${isNormal ? 'btn-normal' : ''}`}
+                                disabled={isReadOnly}
+                                style={{ height: '23px', fontSize: '11px', padding: '0 6px' }}
+                                onClick={() => {
+                                  if (isReadOnly) return;
+                                  if (isGeneral) {
+                                    onSetStatus(item.id, isNormal ? null : 'normal');
+                                  } else {
+                                    const next = isNormal ? null : 'normal';
+                                    onUpdateTab4Item(item.id, 'sound', next);
+                                    onUpdateTab4Item(item.id, 'leak', next);
+                                    onUpdateTab4Item(item.id, 'vibration', next);
+                                  }
+                                }}
+                              >
+                                이상무
+                              </button>
+                              <button 
+                                className={`btn-toggle ${isIssue ? 'btn-issue' : ''}`}
+                                disabled={isReadOnly}
+                                style={{ height: '23px', fontSize: '11px', padding: '0 6px' }}
+                                onClick={() => {
+                                  if (isReadOnly) return;
+                                  if (isGeneral) {
+                                    onSetStatus(item.id, 'issue');
+                                  } else {
+                                    onUpdateTab4Item(item.id, 'sound', 'issue');
+                                  }
+                                }}
+                              >
+                                이상
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* 역세척 (주 2회) */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            {isFilter ? (
+                              <button 
+                                disabled={isReadOnly}
+                                style={{
+                                  height: '23px',
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  padding: '0 6px',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  backgroundColor: bw === 2 ? '#10b981' : bw === 1 ? '#3b82f6' : '#e2e8f0',
+                                  color: bw > 0 ? '#fff' : '#64748b'
+                                }}
+                                onClick={() => {
+                                  if (isReadOnly) return;
+                                  const nextBw = (bw + 1) % 3;
+                                  onUpdateTab4Item(item.id, 'backwash', nextBw);
+                                }}
+                              >
+                                {bw === 2 ? '2회 최종완료' : bw === 1 ? '1회 완료' : '미실시'}
+                              </button>
+                            ) : (
+                              <span style={{ color: '#94a3b8' }}>-</span>
+                            )}
+                          </td>
+
+                          {/* 헤어캐처 (2주 1회) */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            {isFilter || isPump ? (
+                              <button 
+                                disabled={isReadOnly}
+                                style={{
+                                  height: '23px',
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  padding: '0 6px',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  backgroundColor: hc === 2 ? '#059669' : hc === 1 ? '#3b82f6' : '#e2e8f0',
+                                  color: hc > 0 ? '#fff' : '#64748b'
+                                }}
+                                onClick={() => {
+                                  if (isReadOnly) return;
+                                  const nextHc = (hc + 1) % 3;
+                                  onUpdateTab4Item(item.id, 'hairCatcher', nextHc);
+                                }}
+                              >
+                                {hc === 2 ? '2회 완료(등록)' : hc === 1 ? '1회 완료' : '미실시'}
+                              </button>
+                            ) : (
+                              <span style={{ color: '#94a3b8' }}>-</span>
+                            )}
+                          </td>
+
+                          {/* 비고 및 특이사항 */}
+                          <td style={{ padding: '4px 6px', borderBottom: '1px solid #e2e8f0' }}>
+                            <input 
+                              type="text"
+                              className="slim-note-input"
+                              style={{ height: '24px', fontSize: '11px', width: '100%' }}
+                              placeholder="특이사항 기재"
+                              value={state.note || ''}
+                              disabled={isReadOnly}
+                              onChange={(e) => !isReadOnly && onSaveNote(item.id, e.target.value)}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="summary-box">
+          <label htmlFor="summaryText">
+            <span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}
+          </label>
+          <textarea
+            id="summaryText"
+            placeholder="해당 시설의 특이사항이나 점검 의견을 기재하세요."
+            value={summaryText || ''}
+            disabled={isReadOnly}
+            onChange={(e) => !isReadOnly && onChangeSummary(e.target.value)}
+          />
+        </div>
+      </main>
+    );
+  }
+
+  // Standard View for Tabs 1, 2, 3
   return (
     <main className="main-container">
       {sections.map((section, sIdx) => (
@@ -59,254 +344,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
           {section.items.map((item: CheckItem) => {
             const state = itemsState[item.id] || {};
-
-            // Render Tab 4 Filter Item (Matrix row)
-            if (item.type === 'filter') {
-              const currentP = state.pressure ?? null;
-              let diffText = '';
-              let diffColor = '#6b7280';
-              if (currentP !== null && avgPressure !== null) {
-                const diff = Math.round((currentP - avgPressure) * 10) / 10;
-                if (diff > 0) {
-                  diffText = `+${diff.toFixed(1)}`;
-                  diffColor = '#dc2626'; // Red for higher pressure
-                } else if (diff < 0) {
-                  diffText = `${diff.toFixed(1)}`;
-                  diffColor = '#2563eb'; // Blue for lower pressure
-                } else {
-                  diffText = `±0.0`;
-                }
-              }
-
-              const bw = state.backwash || 0;
-              const hc = state.hairCatcher || 0;
-
-              return (
-                <div key={item.id} className="slim-item" style={{ padding: '8px 10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>{item.text}</span>
-                    {avgPressure !== null && (
-                      <span style={{ fontSize: '10px', color: '#64748b' }}>
-                        평균: {avgPressure.toFixed(1)}bar
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Matrix Control Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '6px', fontSize: '11px' }}>
-                    {/* 압력 셀렉터 */}
-                    <div style={{ background: '#f8fafc', padding: '4px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 600, color: '#475569', marginBottom: '2px' }}>📊 압력 (bar)</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <select 
-                          value={currentP ?? ''} 
-                          disabled={isReadOnly}
-                          style={{ fontSize: '11px', padding: '2px 4px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                          onChange={(e) => onUpdateTab4Item(item.id, 'pressure', e.target.value ? parseFloat(e.target.value) : null)}
-                        >
-                          <option value="">미선택</option>
-                          {pressureOptions.map(val => (
-                            <option key={val} value={val}>{val.toFixed(1)}</option>
-                          ))}
-                        </select>
-                        {diffText && (
-                          <span style={{ fontSize: '10px', fontWeight: 700, color: diffColor }}>
-                            ({diffText})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 소리 / 누수 / 진동 */}
-                    <div style={{ background: '#f8fafc', padding: '4px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 600, color: '#475569', marginBottom: '2px' }}>🔊/💧/📳 상태</div>
-                      <div style={{ display: 'flex', gap: '2px' }}>
-                        <button 
-                          className={`btn-toggle ${state.sound === 'normal' && state.leak === 'normal' && state.vibration === 'normal' ? 'btn-normal' : ''}`}
-                          disabled={isReadOnly}
-                          style={{ height: '22px', fontSize: '10px', padding: '0 4px' }}
-                          onClick={() => {
-                            if (isReadOnly) return;
-                            const isAllNormal = state.sound === 'normal' && state.leak === 'normal' && state.vibration === 'normal';
-                            const next = isAllNormal ? null : 'normal';
-                            onUpdateTab4Item(item.id, 'sound', next);
-                            onUpdateTab4Item(item.id, 'leak', next);
-                            onUpdateTab4Item(item.id, 'vibration', next);
-                          }}
-                        >
-                          이상무
-                        </button>
-                        <button 
-                          className={`btn-toggle ${state.sound === 'issue' || state.leak === 'issue' || state.vibration === 'issue' ? 'btn-issue' : ''}`}
-                          disabled={isReadOnly}
-                          style={{ height: '22px', fontSize: '10px', padding: '0 4px' }}
-                          onClick={() => {
-                            if (isReadOnly) return;
-                            onUpdateTab4Item(item.id, 'sound', 'issue');
-                          }}
-                        >
-                          이상
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 역세척 (주 2회) */}
-                    <div style={{ background: '#f8fafc', padding: '4px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 600, color: '#475569', marginBottom: '2px' }}>🔄 역세척 (주2회)</div>
-                      <button 
-                        disabled={isReadOnly}
-                        style={{
-                          height: '22px',
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          padding: '0 6px',
-                          borderRadius: '4px',
-                          border: 'none',
-                          cursor: 'pointer',
-                          backgroundColor: bw === 2 ? '#10b981' : bw === 1 ? '#3b82f6' : '#e2e8f0',
-                          color: bw > 0 ? '#fff' : '#64748b'
-                        }}
-                        onClick={() => {
-                          if (isReadOnly) return;
-                          const nextBw = (bw + 1) % 3;
-                          onUpdateTab4Item(item.id, 'backwash', nextBw);
-                        }}
-                      >
-                        {bw === 2 ? '✅ 2회 최종완료' : bw === 1 ? '🔵 1회 완료' : '⚪ 미실시'}
-                      </button>
-                    </div>
-
-                    {/* 헤어캐처 (2주 1회) */}
-                    <div style={{ background: '#f8fafc', padding: '4px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 600, color: '#475569', marginBottom: '2px' }}>🧹 헤어캐처 (2주1회)</div>
-                      <button 
-                        disabled={isReadOnly}
-                        style={{
-                          height: '22px',
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          padding: '0 6px',
-                          borderRadius: '4px',
-                          border: 'none',
-                          cursor: 'pointer',
-                          backgroundColor: hc === 2 ? '#059669' : hc === 1 ? '#3b82f6' : '#e2e8f0',
-                          color: hc > 0 ? '#fff' : '#64748b'
-                        }}
-                        onClick={() => {
-                          if (isReadOnly) return;
-                          const nextHc = (hc + 1) % 3;
-                          onUpdateTab4Item(item.id, 'hairCatcher', nextHc);
-                        }}
-                      >
-                        {hc === 2 ? '✅ 2회 완료 (등록!)' : hc === 1 ? '🔵 1회 완료' : '⚪ 미실시'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 메모/특이사항 */}
-                  <div style={{ marginTop: '6px' }}>
-                    <input 
-                      type="text"
-                      className="slim-note-input"
-                      style={{ height: '26px', fontSize: '11px' }}
-                      placeholder="⚠️ 특이사항 및 내용 기재"
-                      value={state.note || ''}
-                      disabled={isReadOnly}
-                      onChange={(e) => !isReadOnly && onSaveNote(item.id, e.target.value)}
-                    />
-                  </div>
-                </div>
-              );
-            }
-
-            // Render Tab 4 Pump Item
-            if (item.type === 'pump') {
-              const hc = state.hairCatcher || 0;
-              const isIssue = state.sound === 'issue' || state.leak === 'issue' || state.vibration === 'issue';
-              const isNormal = state.sound === 'normal' && state.leak === 'normal' && state.vibration === 'normal';
-
-              return (
-                <div key={item.id} className="slim-item" style={{ padding: '8px 10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>{item.text}</span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '6px', fontSize: '11px' }}>
-                    {/* 상태 (소리/누수/진동) */}
-                    <div style={{ background: '#f8fafc', padding: '4px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 600, color: '#475569', marginBottom: '2px' }}>🔊/💧/📳 소리·누수·진동</div>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <button 
-                          className={`btn-toggle ${isNormal ? 'btn-normal' : ''}`}
-                          disabled={isReadOnly}
-                          style={{ height: '24px', fontSize: '11px' }}
-                          onClick={() => {
-                            if (isReadOnly) return;
-                            const next = isNormal ? null : 'normal';
-                            onUpdateTab4Item(item.id, 'sound', next);
-                            onUpdateTab4Item(item.id, 'leak', next);
-                            onUpdateTab4Item(item.id, 'vibration', next);
-                          }}
-                        >
-                          이상무
-                        </button>
-                        <button 
-                          className={`btn-toggle ${isIssue ? 'btn-issue' : ''}`}
-                          disabled={isReadOnly}
-                          style={{ height: '24px', fontSize: '11px' }}
-                          onClick={() => {
-                            if (isReadOnly) return;
-                            onUpdateTab4Item(item.id, 'sound', 'issue');
-                          }}
-                        >
-                          이상
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 헤어캐처 (2주 1회) */}
-                    <div style={{ background: '#f8fafc', padding: '4px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 600, color: '#475569', marginBottom: '2px' }}>🧹 헤어캐처 (2주1회)</div>
-                      <button 
-                        disabled={isReadOnly}
-                        style={{
-                          height: '24px',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          padding: '0 8px',
-                          borderRadius: '4px',
-                          border: 'none',
-                          cursor: 'pointer',
-                          backgroundColor: hc === 2 ? '#059669' : hc === 1 ? '#3b82f6' : '#e2e8f0',
-                          color: hc > 0 ? '#fff' : '#64748b'
-                        }}
-                        onClick={() => {
-                          if (isReadOnly) return;
-                          const nextHc = (hc + 1) % 3;
-                          onUpdateTab4Item(item.id, 'hairCatcher', nextHc);
-                        }}
-                      >
-                        {hc === 2 ? '✅ 2회 완료 (등록!)' : hc === 1 ? '🔵 1회 완료' : '⚪ 미실시'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: '6px' }}>
-                    <input 
-                      type="text"
-                      className="slim-note-input"
-                      style={{ height: '26px', fontSize: '11px' }}
-                      placeholder="⚠️ 특이사항 및 내용 기재"
-                      value={state.note || ''}
-                      disabled={isReadOnly}
-                      onChange={(e) => !isReadOnly && onSaveNote(item.id, e.target.value)}
-                    />
-                  </div>
-                </div>
-              );
-            }
-
-            // Standard Item (Tabs 1-3 & Tab 4 General)
             const statusClass = state.status === 'normal' 
               ? 'status-normal' 
               : state.status === 'issue' 
@@ -363,7 +400,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
       <div className="summary-box">
         <label htmlFor="summaryText">
-          📝 <span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}
+          <span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}
         </label>
         <textarea
           id="summaryText"
