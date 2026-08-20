@@ -415,7 +415,6 @@ export default function App() {
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         progressPct={progressPct}
-        onOpenShortcutModal={() => setIsShortcutModalOpen(true)}
       />
 
       <MetaStrip

@@ -6,26 +6,21 @@ interface HeaderProps {
   currentTab: TabId;
   onSelectTab: (tabId: TabId) => void;
   progressPct: number;
-  onOpenShortcutModal: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentTab,
   onSelectTab,
-  progressPct,
-  onOpenShortcutModal
+  progressPct
 }) => {
-  const titleText = TAB_INFO[currentTab].title;
-
   return (
     <header className="app-header">
       <div className="header-row">
         <div className="app-title">
           <img src="/logo.png" alt="Blue Ocean Wellness Spa Logo" className="header-logo-img" />
-          <span dangerouslySetInnerHTML={{ __html: titleText }} />
+          <span>시설관리 점검일지</span>
         </div>
         <div className="header-btns">
-          <button className="btn-shortcut" onClick={onOpenShortcutModal}>📲 바로가기</button>
           <span className="save-badge">저장됨</span>
         </div>
       </div>

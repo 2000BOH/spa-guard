@@ -69,10 +69,10 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
           {/* Sticky Excel Table Container */}
           <div style={{ overflow: 'auto', maxHeight: 'calc(100vh - 250px)', border: '1px solid #cbd5e1' }}>
-            <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
+            <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr>
-                  {/* Column A: Tight width fit for 기기명 */}
+                  {/* Column 1: 기기명 */}
                   <th style={{
                     position: 'sticky',
                     top: 0,
@@ -89,19 +89,24 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                   }}>
                     기기명
                   </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '100px' }}>
+                  {/* Column 2: 압력 */}
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
                     압력 (bar)
                   </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '115px' }}>
+                  {/* Column 3: 상태 */}
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
                     상태 (소리/누수/진동)
                   </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '115px' }}>
+                  {/* Column 4: 역세척 */}
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
                     역세척 (주 2회)
                   </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', minWidth: '130px' }}>
+                  {/* Column 5: 헤어캐처 */}
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
                     헤어캐처 (2주 1회)
                   </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8', minWidth: '150px' }}>
+                  {/* Column 6: 비고 */}
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8' }}>
                     비고 및 특이사항
                   </th>
                 </tr>
@@ -157,7 +162,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
                       return (
                         <tr key={item.id} style={{ background: rowBg }}>
-                          {/* Sticky Left Column: 기기 명칭 (글자폭 딱맞춤) */}
+                          {/* Column 1: 기기명 */}
                           <td style={{
                             position: 'sticky',
                             left: 0,
@@ -174,14 +179,14 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             {item.text}
                           </td>
 
-                          {/* 압력 (bar) */}
-                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          {/* Column 2: 압력 (bar) */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
                             {isFilter ? (
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                                 <select 
                                   value={currentP ?? ''} 
                                   disabled={isReadOnly}
-                                  style={{ fontSize: '11px', padding: '2px 4px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                                  style={{ fontSize: '11px', padding: '2px 3px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                                   onChange={(e) => onUpdateTab4Item(item.id, 'pressure', e.target.value ? parseFloat(e.target.value) : null)}
                                 >
                                   <option value="">미선택</option>
@@ -200,9 +205,9 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             )}
                           </td>
 
-                          {/* 상태 (소리/누수/진동) */}
-                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>
-                            <div style={{ display: 'inline-flex', gap: '4px' }}>
+                          {/* Column 3: 상태 (소리/누수/진동) */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
+                            <div style={{ display: 'inline-flex', gap: '3px' }}>
                               <button 
                                 className={`btn-toggle ${isNormal ? 'btn-normal' : ''}`}
                                 disabled={isReadOnly}
@@ -231,8 +236,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             </div>
                           </td>
 
-                          {/* 역세척 (주 2회) */}
-                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          {/* Column 4: 역세척 (주 2회) */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
                             {isFilter ? (
                               <button 
                                 disabled={isReadOnly}
@@ -260,8 +265,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             )}
                           </td>
 
-                          {/* 헤어캐처 (2주 1회) */}
-                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          {/* Column 5: 헤어캐처 (2주 1회) */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
                             {isFilter || isPump ? (
                               <button 
                                 disabled={isReadOnly}
@@ -289,7 +294,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             )}
                           </td>
 
-                          {/* 비고 및 특이사항 */}
+                          {/* Column 6: 비고 및 특이사항 */}
                           <td style={{ padding: '4px 6px', borderBottom: '1px solid #e2e8f0' }}>
                             <input 
                               type="text"
