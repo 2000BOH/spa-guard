@@ -45,12 +45,12 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
                   dangerouslySetInnerHTML={{ __html: tabInfo.htmlName.replace('\n', '<br>') }}
                 />
               )}
-              <td className="a4-item-title">• {item.text}</td>
+              <td className="a4-item-title" style={{ whiteSpace: 'nowrap' }}>• {item.text}</td>
               <td className="center">
                 <span className={isIssue ? 'a4-res-issue' : 'a4-res-ok'}>
                   {isIssue ? '이상 발생' : '정상'}
                 </span>
-                <div style={{ fontSize: '11px', color: '#4b5563', marginTop: '2px' }}>
+                <div style={{ fontSize: '11px', color: '#4b5563', marginTop: '2px', whiteSpace: 'nowrap' }}>
                   압력:{p} | 역세척:{bw}
                 </div>
               </td>
@@ -78,7 +78,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
                   dangerouslySetInnerHTML={{ __html: tabInfo.htmlName.replace('\n', '<br>') }}
                 />
               )}
-              <td className="a4-item-title">• {item.text}</td>
+              <td className="a4-item-title" style={{ whiteSpace: 'nowrap' }}>• {item.text}</td>
               <td className="center">
                 <span className={isIssue ? 'a4-res-issue' : 'a4-res-ok'}>
                   {isIssue ? '이상 발생' : '양호'}
@@ -104,7 +104,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
                 dangerouslySetInnerHTML={{ __html: tabInfo.htmlName.replace('\n', '<br>') }}
               />
             )}
-            <td className="a4-item-title">• {item.text}</td>
+            <td className="a4-item-title" style={{ whiteSpace: 'nowrap' }}>• {item.text}</td>
             <td className="center">
               {itemState.status === 'normal' && <span className="a4-res-ok">이상무 (O)</span>}
               {itemState.status === 'issue' && <span className="a4-res-issue">이상 (X)</span>}
@@ -140,20 +140,21 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             <h1 className="a4-title">목욕장업 영업주 자율점검표 (앞면)</h1>
           </div>
 
-          <div className="a4-subhead">1. 업 소 현 황</div>
-          <table className="a4-table">
+          {/* 제목 바로 밑 업소현황 & 점검자 라인 */}
+          <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 업 소 현 황 및 점 검 자</div>
+          <table className="a4-table" style={{ marginBottom: '14px' }}>
             <tbody>
               <tr>
                 <th style={{ width: '15%' }}>업 소 명</th>
                 <td style={{ width: '35%' }}>블루오션 웰니스 스파</td>
-                <th style={{ width: '20%' }}>신 고 번 호</th>
-                <td style={{ width: '30%' }}>제 2026-0815 호</td>
+                <th style={{ width: '18%' }}>신 고 번 호</th>
+                <td style={{ width: '32%' }}>제 2026-0815 호</td>
               </tr>
               <tr>
                 <th>점검일시</th>
                 <td>{checkDateDot}</td>
                 <th>점 검 자</th>
-                <td>{state.inspector || '점검자'}</td>
+                <td style={{ fontWeight: 700, color: '#1d4ed8' }}>{state.inspector || '점검자'}</td>
               </tr>
             </tbody>
           </table>
@@ -162,10 +163,10 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
           <table className="a4-table">
             <thead>
               <tr>
-                <th style={{ width: '12%' }}>점검분야</th>
-                <th style={{ width: '38%' }}>점 검 항 목</th>
-                <th style={{ width: '22%' }}>점검결과</th>
-                <th style={{ width: '28%' }}>비고 및 조치</th>
+                <th style={{ width: '13%', whiteSpace: 'nowrap' }}>점검분야</th>
+                <th style={{ width: '47%', whiteSpace: 'nowrap' }}>점 검 항 목 (1행 고정)</th>
+                <th style={{ width: '18%', whiteSpace: 'nowrap' }}>점검결과</th>
+                <th style={{ width: '22%', whiteSpace: 'nowrap' }}>비고 및 조치</th>
               </tr>
             </thead>
             <tbody>
@@ -188,14 +189,33 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             <h1 className="a4-title">목욕장업 영업주 자율점검표 (뒷면)</h1>
           </div>
 
+          {/* 2페이지 제목 바로 밑 업소현황 & 점검자 라인 */}
+          <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 업 소 현 황 및 점 검 자</div>
+          <table className="a4-table" style={{ marginBottom: '14px' }}>
+            <tbody>
+              <tr>
+                <th style={{ width: '15%' }}>업 소 명</th>
+                <td style={{ width: '35%' }}>블루오션 웰니스 스파</td>
+                <th style={{ width: '18%' }}>신 고 번 호</th>
+                <td style={{ width: '32%' }}>제 2026-0815 호</td>
+              </tr>
+              <tr>
+                <th>점검일시</th>
+                <td>{checkDateDot}</td>
+                <th>점 검 자</th>
+                <td style={{ fontWeight: 700, color: '#1d4ed8' }}>{state.inspector || '점검자'}</td>
+              </tr>
+            </tbody>
+          </table>
+
           <div className="a4-subhead">2. 시설별 점검사항 및 결과 (시설 Ⅲ, Ⅳ)</div>
           <table className="a4-table">
             <thead>
               <tr>
-                <th style={{ width: '12%' }}>점검분야</th>
-                <th style={{ width: '38%' }}>점 검 항 목</th>
-                <th style={{ width: '22%' }}>점검결과</th>
-                <th style={{ width: '28%' }}>비고 및 조치</th>
+                <th style={{ width: '13%', whiteSpace: 'nowrap' }}>점검분야</th>
+                <th style={{ width: '47%', whiteSpace: 'nowrap' }}>점 검 항 목 (1행 고정)</th>
+                <th style={{ width: '18%', whiteSpace: 'nowrap' }}>점검결과</th>
+                <th style={{ width: '22%', whiteSpace: 'nowrap' }}>비고 및 조치</th>
               </tr>
             </thead>
             <tbody>
@@ -217,7 +237,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
 
           <div className="a4-sign-row">
             <div>위와 같이 목욕장업 시설 일일 안전점검을 성실히 실시하였음을 확인합니다.</div>
-            <div>점검자: <span style={{ textDecoration: 'underline' }}>{state.inspector || '점검자'}</span> (서명/인)</div>
+            <div>점검자: <span style={{ textDecoration: 'underline', color: '#1d4ed8' }}>{state.inspector || '점검자'}</span> (서명/인)</div>
           </div>
         </div>
 
