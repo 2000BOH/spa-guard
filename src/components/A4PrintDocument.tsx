@@ -217,7 +217,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
           boxSizing: 'border-box'
         }}
       >
-        {/* 상단 1행: 좌측 로고&업소명 / 우측 인증코드 */}
+        {/* 상단 1행: 좌측 로고&업소명 / 우측 인증코드 (이모티콘 전면 제거) */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid #0f172a', paddingBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img src="/logo.png" alt="SPA GUARD LOGO" style={{ height: '46px', width: 'auto', borderRadius: '6px' }} />
@@ -226,34 +226,34 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             </span>
           </div>
           <span style={{ fontSize: '15px', fontWeight: 800, color: '#2563eb', background: '#eff6ff', padding: '6px 14px', borderRadius: '8px', border: '1.5px solid #bfdbfe' }}>
-            🔒 {state.securityCode}
+            인증코드: {state.securityCode}
           </span>
         </div>
 
-        {/* 메인 2행: 대형 서식 제목 (밑줄 선 지움!) */}
+        {/* 메인 2행: 대형 서식 제목 */}
         <div style={{ textAlign: 'center', margin: '14px 0' }}>
           <h1 style={{ fontSize: '54px', fontWeight: 900, color: '#0f172a', letterSpacing: '4px', textAlign: 'center' }}>
             시설관리 점검일지
           </h1>
         </div>
 
-        {/* 메인 3행: 핵심 정보 카드 (점검일 & 점검자 초대형 글씨) */}
+        {/* 메인 3행: 핵심 정보 카드 (이모티콘 전면 제거) */}
         <div style={{ background: '#f8fafc', border: '3px solid #cbd5e1', borderRadius: '16px', padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '32px', fontWeight: 800, color: '#475569' }}>📅 점 검 일 :</span>
+            <span style={{ fontSize: '32px', fontWeight: 800, color: '#475569' }}>점 검 일 :</span>
             <span style={{ fontSize: '44px', fontWeight: 900, color: '#1d4ed8' }}>{state.date}</span>
           </div>
           <div style={{ height: '1px', background: '#cbd5e1' }}></div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '32px', fontWeight: 800, color: '#475569' }}>👤 점 검 자 :</span>
+            <span style={{ fontSize: '32px', fontWeight: 800, color: '#475569' }}>점 검 자 :</span>
             <span style={{ fontSize: '44px', fontWeight: 900, color: '#0f172a' }}>{state.inspector || '점검자'}</span>
           </div>
         </div>
 
-        {/* 하단 4행: 점검 결과 상태 바 */}
+        {/* 하단 4행: 점검 결과 상태 바 (이모티콘 전면 제거) */}
         <div style={{ background: cntI > 0 ? '#fef2f2' : '#f0fdf4', border: `3px solid ${cntI > 0 ? '#fca5a5' : '#86efac'}`, borderRadius: '12px', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '24px', fontWeight: 900, color: cntI > 0 ? '#dc2626' : '#15803d' }}>
-            {cntI > 0 ? `⚠️ 이상 발생 (${cntI}건)` : `✅ 전 항목 이상무 (정상 적합 완료)`}
+            {cntI > 0 ? `이상 발생 (${cntI}건)` : `전 항목 이상무 (정상 적합 완료)`}
           </span>
           <span style={{ fontSize: '18px', fontWeight: 700, color: '#64748b' }}>
             정상 {cntN}건 / 미점검 {cntP}건
