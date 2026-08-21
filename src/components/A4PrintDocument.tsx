@@ -33,7 +33,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
 
         // Custom Tab 5 Temperature check rendering in A4 table
         if (item.type === 'temp') {
-          const target = itemState.targetTemp ?? null;
+          const target = itemState.targetTemp !== undefined && itemState.targetTemp !== null ? itemState.targetTemp : 10.0;
           const d = itemState.tempDawn ?? null;
           const m = itemState.tempMorning ?? null;
           const a = itemState.tempAfternoon ?? null;
@@ -62,7 +62,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
                 새벽:{formatTemp(d)} | 오전:{formatTemp(m)} | 오후:{formatTemp(a)}
               </td>
               <td style={{ fontSize: '11.5px' }}>
-                기준:{target !== null ? `${target}℃` : '미설정'}
+                기준:{target !== null ? `${target}℃` : '10.0℃'}
                 {itemState.note ? ` (${itemState.note})` : ''}
               </td>
             </tr>
@@ -174,20 +174,22 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
         <div>
           <div className="a4-header">
             <div className="a4-prefix">
-              <span>〔공식 서식 앞면〕</span>
+              <span></span>
               <span>페이지: 1 / 2</span>
             </div>
-            <h1 className="a4-title">목욕장업 영업주 자율점검표 (앞면)</h1>
+            <h1 className="a4-title">시설관리일지 (앞면)</h1>
           </div>
 
-          <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 업 소 현 황 및 점 검 자</div>
+          <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 시 설 현 황 및 점 검 자</div>
           <table className="a4-table" style={{ marginBottom: '14px' }}>
             <tbody>
               <tr>
                 <th style={{ width: '15%' }}>업 소 명</th>
                 <td style={{ width: '35%' }}>블루오션 웰니스 스파</td>
-                <th style={{ width: '18%' }}>신 고 번 호</th>
-                <td style={{ width: '32%' }}>제 2026-0815 호</td>
+                <th style={{ width: '18%' }}>인 증 코 드</th>
+                <td style={{ width: '32%', fontFamily: 'monospace', fontWeight: 700, color: '#1d4ed8', fontSize: '11px' }}>
+                  {state.securityCode}
+                </td>
               </tr>
               <tr>
                 <th>점검일시</th>
@@ -198,7 +200,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             </tbody>
           </table>
 
-          <div className="a4-subhead">2. 시설별 점검사항 및 결과 (시설 Ⅰ, Ⅱ)</div>
+          <div className="a4-subhead">2. 구역별 점검사항 및 결과 (2층, 지하)</div>
           <table className="a4-table">
             <thead>
               <tr>
@@ -222,20 +224,22 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
         <div>
           <div className="a4-header">
             <div className="a4-prefix">
-              <span>〔공식 서식 뒷면〕</span>
+              <span></span>
               <span>페이지: 2 / 2</span>
             </div>
-            <h1 className="a4-title">목욕장업 영업주 자율점검표 (뒷면)</h1>
+            <h1 className="a4-title">시설관리일지 (뒷면)</h1>
           </div>
 
-          <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 업 소 현 황 및 점 검 자</div>
+          <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 시 설 현 황 및 점 검 자</div>
           <table className="a4-table" style={{ marginBottom: '14px' }}>
             <tbody>
               <tr>
                 <th style={{ width: '15%' }}>업 소 명</th>
                 <td style={{ width: '35%' }}>블루오션 웰니스 스파</td>
-                <th style={{ width: '18%' }}>신 고 번 호</th>
-                <td style={{ width: '32%' }}>제 2026-0815 호</td>
+                <th style={{ width: '18%' }}>인 증 코 드</th>
+                <td style={{ width: '32%', fontFamily: 'monospace', fontWeight: 700, color: '#1d4ed8', fontSize: '11px' }}>
+                  {state.securityCode}
+                </td>
               </tr>
               <tr>
                 <th>점검일시</th>
@@ -246,7 +250,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             </tbody>
           </table>
 
-          <div className="a4-subhead">2. 시설별 점검사항 및 결과 (시설 Ⅲ, Ⅳ, Ⅴ)</div>
+          <div className="a4-subhead">2. 구역별 점검사항 및 결과 (3층 찜질, 여과/기타, 온도체크)</div>
           <table className="a4-table">
             <thead>
               <tr>
@@ -268,14 +272,14 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             </div>
             
             <div style={{ marginTop: '6px', fontSize: '11px', color: '#6b7280', borderTop: '1px dashed #d1d5db', paddingTop: '4px' }}>
-              🔒 <b>위변조 방지 인증코드:</b> <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1d4ed8' }}>{state.securityCode}</span>
-              &nbsp;|&nbsp; ⏰ <b>기록일시:</b> <span>{state.lastModified || '-'} (KST)</span>
+              ⏰ <b>기록일시:</b> <span>{state.lastModified || '-'} (KST)</span>
             </div>
           </div>
 
-          <div className="a4-sign-row">
-            <div>위와 같이 목욕장업 시설 일일 안전점검을 성실히 실시하였음을 확인합니다.</div>
-            <div>점검자: <span style={{ textDecoration: 'underline', color: '#1d4ed8' }}>{state.inspector || '점검자'}</span> (서명/인)</div>
+          <div className="a4-sign-row" style={{ justifyContent: 'flex-end' }}>
+            <div style={{ fontFamily: 'Cinzel, sans-serif', fontWeight: 800, letterSpacing: '1.5px', color: '#1e3a8a', fontSize: '14px' }}>
+              BLUE OCEAN WELLNESS SPA
+            </div>
           </div>
         </div>
 
