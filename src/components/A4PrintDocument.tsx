@@ -217,24 +217,22 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
           boxSizing: 'border-box'
         }}
       >
-        {/* 상단 1행: 좌측 업소명&인증코드 / 우측 스파 로고 */}
+        {/* 상단 1행: 좌측 로고&업소명 / 우측 인증코드 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid #0f172a', paddingBottom: '14px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img src="/logo.png" alt="SPA GUARD LOGO" style={{ height: '46px', width: 'auto', borderRadius: '6px' }} />
             <span style={{ fontSize: '28px', fontWeight: 900, color: '#1e3a8a', letterSpacing: '0.5px' }}>
               블루오션 웰니스 스파
             </span>
-            <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#2563eb', background: '#eff6ff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #bfdbfe', width: 'fit-content' }}>
-              🔒 {state.securityCode}
-            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="/logo.png" alt="SPA GUARD LOGO" style={{ height: '54px', width: 'auto', borderRadius: '6px' }} />
-          </div>
+          <span style={{ fontSize: '15px', fontWeight: 800, color: '#2563eb', background: '#eff6ff', padding: '6px 14px', borderRadius: '8px', border: '1.5px solid #bfdbfe' }}>
+            🔒 {state.securityCode}
+          </span>
         </div>
 
-        {/* 메인 2행: 대형 서식 제목 (화면에 꽉 차는 메가 폰트) */}
+        {/* 메인 2행: 대형 서식 제목 (밑줄 선 지움!) */}
         <div style={{ textAlign: 'center', margin: '14px 0' }}>
-          <h1 style={{ fontSize: '54px', fontWeight: 900, color: '#0f172a', letterSpacing: '4px', textAlign: 'center', textDecoration: 'underline', textUnderlineOffset: '10px' }}>
+          <h1 style={{ fontSize: '54px', fontWeight: 900, color: '#0f172a', letterSpacing: '4px', textAlign: 'center' }}>
             시설관리 점검일지
           </h1>
         </div>
