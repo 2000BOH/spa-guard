@@ -12,10 +12,12 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
   // Counts Calculation for Cover Page
   let cntN = 0;
   let cntI = 0;
+  let totalItems = 0;
 
   (['tab1', 'tab2', 'tab3', 'tab4', 'tab5'] as TabId[]).forEach(tid => {
     const sections = CHECKLIST_DATA[tid] || [];
     const items = sections.flatMap(s => s.items);
+    totalItems += items.length;
 
     items.forEach((item: CheckItem) => {
       const itemState = state.items[item.id] || {};
@@ -33,6 +35,8 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
       }
     });
   });
+
+  const cntP = totalItems - (cntN + cntI);
 
   let summaryArr: string[] = [];
   (['tab1', 'tab2', 'tab3', 'tab4', 'tab5'] as TabId[]).forEach(tid => {
@@ -194,91 +198,66 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
 
   return (
     <div id="printDocumentHiddenContainer">
-      {/* 0페이지 (카톡전송 전용 표지 - 미리보기 썸네일 시 한눈에 파악 가능) */}
-      <div className="a4-page-box" id="a4PageCover" style={{
-        background: 'linear-gradient(145deg, #0f172a 0%, #1e293b 100%)',
-        color: '#ffffff',
-        border: 'none',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '50px 40px',
-        textAlign: 'center'
-      }}>
-        <div style={{ width: '100%' }}>
-          {/* 로고 & 상호 */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '24px' }}>
-            <img src="/logo.png" alt="SPA GUARD LOGO" style={{ height: '48px', width: 'auto', borderRadius: '8px', background: '#ffffff', padding: '4px' }} />
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '1.5px', color: '#60a5fa', fontFamily: 'Cinzel, sans-serif' }}>
-                BLUE OCEAN WELLNESS SPA
-              </div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', letterSpacing: '1px' }}>
-                목욕장업·스파 시설 통합 안전위생 관리시스템
-              </div>
-            </div>
+      {/* 0페이지 (카톡전송 전용 흰색 바탕 초대형 텍스트 표지 - 썸네일 클릭 없이 100% 즉시 읽힘) */}
+      <div 
+        className="a4-page-box" 
+        id="a4PageCover" 
+        style={{
+          width: '800px',
+          height: '600px',
+          minHeight: 0,
+          background: '#ffffff',
+          color: '#0f172a',
+          border: '4px solid #1e293b',
+          borderRadius: '0px',
+          padding: '36px 36px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          boxSizing: 'border-box'
+        }}
+      >
+        {/* 상단 1행: 업소명 & 인증코드 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid #0f172a', paddingBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="/logo.png" alt="Logo" style={{ height: '42px', width: 'auto' }} />
+            <span style={{ fontSize: '26px', fontWeight: 900, color: '#1e3a8a', letterSpacing: '0.5px' }}>
+              블루오션 웰니스 스파
+            </span>
           </div>
+          <span style={{ fontSize: '15px', fontWeight: 800, color: '#2563eb', background: '#eff6ff', padding: '6px 14px', borderRadius: '8px', border: '1.5px solid #bfdbfe' }}>
+            🔒 {state.securityCode}
+          </span>
+        </div>
 
-          <div style={{ width: '100%', height: '1px', background: 'linear-gradient(90deg, transparent, #3b82f6, transparent)', marginBottom: '35px' }}></div>
-
-          {/* 대형 서식 제목 */}
-          <div style={{ fontSize: '14px', fontWeight: 700, color: '#38bdf8', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '8px' }}>
-            DAILY FACILITY INSPECTION REPORT
-          </div>
-          <h1 style={{ fontSize: '38px', fontWeight: 900, color: '#ffffff', letterSpacing: '4px', marginBottom: '14px' }}>
+        {/* 메인 2행: 대형 서식 제목 (화면에 꽉 차는 메가 폰트) */}
+        <div style={{ textAlign: 'center', margin: '14px 0' }}>
+          <h1 style={{ fontSize: '54px', fontWeight: 900, color: '#0f172a', letterSpacing: '4px', textAlign: 'center', textDecoration: 'underline', textUnderlineOffset: '10px' }}>
             시설관리 점검일지
           </h1>
-          <div style={{ display: 'inline-block', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid #3b82f6', color: '#93c5fd', padding: '5px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, marginBottom: '40px' }}>
-            📋 카카오톡 단체방 점검 보고서 표지
+        </div>
+
+        {/* 메인 3행: 핵심 정보 카드 (점검일 & 점검자 초대형 글씨) */}
+        <div style={{ background: '#f8fafc', border: '3px solid #cbd5e1', borderRadius: '16px', padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '32px', fontWeight: 800, color: '#475569' }}>📅 점 검 일 :</span>
+            <span style={{ fontSize: '44px', fontWeight: 900, color: '#1d4ed8' }}>{state.date}</span>
           </div>
-
-          {/* 한눈에 보이는 요약 정보 카드 (흰색 바탕 대형 글씨) */}
-          <div style={{ background: '#ffffff', borderRadius: '16px', padding: '28px 24px', color: '#0f172a', textAlign: 'left', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', marginBottom: '30px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 800, color: '#2563eb', borderBottom: '2px solid #eff6ff', paddingBottom: '8px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>📌 점검 요약 정보 (SUMMARY)</span>
-              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>{state.lastModified} KST</span>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', fontSize: '15px' }}>
-              <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>📅 점검 일자</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b' }}>{state.date}</div>
-              </div>
-
-              <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>👤 점 검 자</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#1d4ed8' }}>{state.inspector || '점검자'}</div>
-              </div>
-
-              <div style={{ background: '#f0fdf4', padding: '12px 16px', borderRadius: '10px', border: '1px solid #bbf7d0', gridColumn: 'span 2' }}>
-                <div style={{ fontSize: '12px', color: '#166534', marginBottom: '4px' }}>✅ 전체 시설 점검 결과</div>
-                <div style={{ fontSize: '18px', fontWeight: 900, color: '#15803d', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span>정상 적합 {cntN}건</span>
-                  {cntI > 0 ? (
-                    <span style={{ color: '#dc2626', background: '#fef2f2', padding: '2px 8px', borderRadius: '6px', fontSize: '14px' }}>
-                      ⚠️ 이상 {cntI}건
-                    </span>
-                  ) : (
-                    <span style={{ color: '#059669', fontSize: '13px', fontWeight: 700 }}>
-                      (전 항목 이상무 완료)
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 위변조 방지 코드 */}
-            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px', color: '#475569' }}>
-              <span>🔒 <b>보안 인증코드:</b> <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#2563eb' }}>{state.securityCode}</span></span>
-              <span>블루오션 웰니스 스파</span>
-            </div>
+          <div style={{ height: '1px', background: '#cbd5e1' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '32px', fontWeight: 800, color: '#475569' }}>👤 점 검 자 :</span>
+            <span style={{ fontSize: '44px', fontWeight: 900, color: '#0f172a' }}>{state.inspector || '점검자'}</span>
           </div>
         </div>
 
-        {/* 표지 하단 안내 */}
-        <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-          💡 <b>안내:</b> 본 표지는 카카오톡 요약 확인용이며, 상세 점검 내역은 뒤의 <b>1페이지(앞면)</b> 및 <b>2페이지(뒷면)</b>를 참조해 주세요.
+        {/* 하단 4행: 점검 결과 상태 바 */}
+        <div style={{ background: cntI > 0 ? '#fef2f2' : '#f0fdf4', border: `3px solid ${cntI > 0 ? '#fca5a5' : '#86efac'}`, borderRadius: '12px', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '24px', fontWeight: 900, color: cntI > 0 ? '#dc2626' : '#15803d' }}>
+            {cntI > 0 ? `⚠️ 이상 발생 (${cntI}건)` : `✅ 전 항목 이상무 (정상 적합 완료)`}
+          </span>
+          <span style={{ fontSize: '18px', fontWeight: 700, color: '#64748b' }}>
+            정상 {cntN}건 / 미점검 {cntP}건
+          </span>
         </div>
       </div>
 
