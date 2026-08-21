@@ -239,7 +239,7 @@ export default function App() {
   // Image & PDF Export Logic
   const downloadA4SplitImages = async () => {
     setIsSaveModalOpen(false);
-    showToast("⏳ A4 규격 2장 이미지 생성 중...");
+    showToast("⏳ A4 규격 표지 포함 이미지 생성 중...");
 
     const container = document.getElementById('printDocumentHiddenContainer');
     if (!container) return;
@@ -247,26 +247,35 @@ export default function App() {
     container.style.left = '0';
 
     try {
+      const coverEl = document.getElementById('a4PageCover')!;
       const page1El = document.getElementById('a4Page1')!;
       const page2El = document.getElementById('a4Page2')!;
 
-      const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
-      const link1 = document.createElement('a');
-      link1.download = `시설관리일지_블루오션웰니스스파_${state.date}_1페이지(앞면).jpg`;
-      link1.href = canvas1.toDataURL('image/jpeg', 0.95);
-      link1.click();
+      const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#0f172a' });
+      const linkCover = document.createElement('a');
+      linkCover.download = `시설관리일지_블루오션웰니스스파_${state.date}_0표지.jpg`;
+      linkCover.href = canvasCover.toDataURL('image/jpeg', 0.95);
+      linkCover.click();
 
       setTimeout(async () => {
-        const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
-        const link2 = document.createElement('a');
-        link2.download = `시설관리일지_블루오션웰니스스파_${state.date}_2페이지(뒷면).jpg`;
-        link2.href = canvas2.toDataURL('image/jpeg', 0.95);
-        link2.click();
+        const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
+        const link1 = document.createElement('a');
+        link1.download = `시설관리일지_블루오션웰니스스파_${state.date}_1페이지(앞면).jpg`;
+        link1.href = canvas1.toDataURL('image/jpeg', 0.95);
+        link1.click();
 
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        showToast("✅ 앞면 / 뒷면 JPG 2장이 다운로드되었습니다.");
-      }, 350);
+        setTimeout(async () => {
+          const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
+          const link2 = document.createElement('a');
+          link2.download = `시설관리일지_블루오션웰니스스파_${state.date}_2페이지(뒷면).jpg`;
+          link2.href = canvas2.toDataURL('image/jpeg', 0.95);
+          link2.click();
+
+          container.style.position = 'absolute';
+          container.style.left = '-9999px';
+          showToast("✅ 표지 포함 JPG 3장이 다운로드되었습니다.");
+        }, 300);
+      }, 300);
     } catch (err) {
       container.style.position = 'absolute';
       container.style.left = '-9999px';
@@ -314,9 +323,9 @@ export default function App() {
     }
   };
 
-  // Kakao & Supabase Submit Logic
+  // Kakao Submit Logic with COVER IMAGE as Image 1
   const handleSubmitToKakao = async () => {
-    showToast("⏳ 데이터 DB 보관 및 카톡 전송 준비 중...");
+    showToast("⏳ 표지 포함 카톡 전송 데이터 준비 중...");
 
     saveInspectionToSupabase(state).then((res) => {
       if (res.success) {
@@ -326,8 +335,10 @@ export default function App() {
 
     let msg = `{시설 점검 보고}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `🏢 업소명: 블루오션 웰니스 스파\n`;
     msg += `📅 점검일자: ${state.date}\n`;
     msg += `👤 점검자: ${state.inspector || '점검자'}\n`;
+    msg += `🔒 인증코드: ${state.securityCode}\n`;
     msg += `⏰ 기록시간: ${state.lastModified}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
@@ -380,22 +391,27 @@ export default function App() {
     container.style.left = '0';
 
     try {
+      const coverEl = document.getElementById('a4PageCover')!;
       const page1El = document.getElementById('a4Page1')!;
       const page2El = document.getElementById('a4Page2')!;
 
+      const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#0f172a' });
       const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
       const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
 
       container.style.position = 'absolute';
       container.style.left = '-9999px';
 
+      const blobCover = await new Promise<Blob>((resolve) => canvasCover.toBlob((b) => resolve(b!), 'image/jpeg', 0.95));
       const blob1 = await new Promise<Blob>((resolve) => canvas1.toBlob((b) => resolve(b!), 'image/jpeg', 0.95));
       const blob2 = await new Promise<Blob>((resolve) => canvas2.toBlob((b) => resolve(b!), 'image/jpeg', 0.95));
 
+      const fileCover = new File([blobCover], `시설관리일지_${state.date}_0표지.jpg`, { type: 'image/jpeg' });
       const file1 = new File([blob1], `시설관리일지_${state.date}_1페이지(앞면).jpg`, { type: 'image/jpeg' });
       const file2 = new File([blob2], `시설관리일지_${state.date}_2페이지(뒷면).jpg`, { type: 'image/jpeg' });
 
-      const filesArray = [file1, file2];
+      // First file in array is the COVER PAGE image!
+      const filesArray = [fileCover, file1, file2];
 
       if (navigator.canShare && navigator.canShare({ files: filesArray })) {
         await navigator.share({
@@ -417,7 +433,7 @@ export default function App() {
 
       downloadA4SplitImages();
       navigator.clipboard.writeText(msg).then(() => {
-        alert("📋 요약 보고서가 복사되었고 점검표 이미지 2장이 다운로드되었습니다!\n\n카카오톡 단체방에 [붙여넣기]하고 다운로드된 사진 2장을 함께 올려주세요.");
+        alert("📋 요약 보고서가 복사되었고 점검표 표지 포함 이미지 3장이 다운로드되었습니다!\n\n카카오톡 단체방에 [붙여넣기]하고 다운로드된 표지 및 사진 3장을 함께 올려주세요.");
       });
     } catch (e) {
       container.style.position = 'absolute';
@@ -456,18 +472,19 @@ export default function App() {
         onUpdateTab4ItemBatch={handleUpdateTab4ItemBatch}
       />
 
+      {/* 3개 버튼 하단 액션바: 저장 (좌) - 카톡제출 (중앙) - 출력 (우) */}
       <footer className="bottom-bar">
         <button className="btn-action-save" onClick={() => setIsSaveModalOpen(true)}>
           <span>💾</span>
           <span>저장</span>
         </button>
-        <button className="btn-action-print" onClick={handlePrintPrinter}>
-          <span>🖨️</span>
-          <span>출력</span>
-        </button>
         <button className="btn-submit-kakao" onClick={handleSubmitToKakao}>
           <span>💬</span>
           <span>카톡제출</span>
+        </button>
+        <button className="btn-action-print" onClick={handlePrintPrinter}>
+          <span>🖨️</span>
+          <span>출력</span>
         </button>
       </footer>
 

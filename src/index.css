@@ -391,12 +391,12 @@ body {
 .btn-action-print {
   flex: 1;
   height: 44px;
-  background: #1e293b;
-  border: 1px solid #0f172a;
+  background: #ffffff;
+  border: 1.5px solid var(--gray-300);
   border-radius: var(--radius-md);
   font-size: 13.5px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--gray-800);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -404,7 +404,7 @@ body {
   gap: 4px;
 }
 
-.btn-action-print:active { background: #0f172a; }
+.btn-action-print:active { background: var(--gray-100); }
 
 .btn-submit-kakao {
   flex: 1.3;
