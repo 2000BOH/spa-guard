@@ -135,16 +135,18 @@ export default function App() {
   };
 
   const handleDateChange = (newDate: string) => {
+    const raw = localStorage.getItem(getStorageKey(newDate));
     const loaded = loadDateData(newDate);
     const sec = generateSecurityLog(loaded.items, loaded.inspector);
     setState({
       ...loaded,
       ...sec
     });
-    if (newDate < yesterdayStr) {
-      showToast("🔒 과거 기록 조회 모드 (수정 불가)");
+    
+    if (raw) {
+      showToast(`📅 ${newDate} 작성된 점검일지 불러옴`);
     } else {
-      showToast(`📅 ${newDate} 점검표 불러옴`);
+      showToast(`📅 ${newDate} 점검일지 불러옴 (새 일지)`);
     }
   };
 
@@ -197,6 +199,14 @@ export default function App() {
     }));
   };
 
+  // Direct Printer Trigger
+  const handlePrintPrinter = () => {
+    showToast("🖨️ 프린터 출력 창을 여는 중...");
+    setTimeout(() => {
+      window.print();
+    }, 200);
+  };
+
   // Counts Calculation
   const activeSections = CHECKLIST_DATA[currentTab] || [];
   const activeItems = activeSections.flatMap((s) => s.items);
@@ -242,14 +252,14 @@ export default function App() {
 
       const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
       const link1 = document.createElement('a');
-      link1.download = `자율점검표_블루오션웰니스스파_${state.date}_1페이지(앞면).jpg`;
+      link1.download = `시설관리일지_블루오션웰니스스파_${state.date}_1페이지(앞면).jpg`;
       link1.href = canvas1.toDataURL('image/jpeg', 0.95);
       link1.click();
 
       setTimeout(async () => {
         const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
         const link2 = document.createElement('a');
-        link2.download = `자율점검표_블루오션웰니스스파_${state.date}_2페이지(뒷면).jpg`;
+        link2.download = `시설관리일지_블루오션웰니스스파_${state.date}_2페이지(뒷면).jpg`;
         link2.href = canvas2.toDataURL('image/jpeg', 0.95);
         link2.click();
 
@@ -295,7 +305,7 @@ export default function App() {
       container.style.position = 'absolute';
       container.style.left = '-9999px';
 
-      pdf.save(`자율점검표_블루오션웰니스스파_${state.date}_A4.pdf`);
+      pdf.save(`시설관리일지_블루오션웰니스스파_${state.date}_A4.pdf`);
       showToast("✅ A4 2페이지 PDF 문서가 다운로드되었습니다.");
     } catch (err) {
       container.style.position = 'absolute';
@@ -382,8 +392,8 @@ export default function App() {
       const blob1 = await new Promise<Blob>((resolve) => canvas1.toBlob((b) => resolve(b!), 'image/jpeg', 0.95));
       const blob2 = await new Promise<Blob>((resolve) => canvas2.toBlob((b) => resolve(b!), 'image/jpeg', 0.95));
 
-      const file1 = new File([blob1], `자율점검표_${state.date}_1페이지(앞면).jpg`, { type: 'image/jpeg' });
-      const file2 = new File([blob2], `자율점검표_${state.date}_2페이지(뒷면).jpg`, { type: 'image/jpeg' });
+      const file1 = new File([blob1], `시설관리일지_${state.date}_1페이지(앞면).jpg`, { type: 'image/jpeg' });
+      const file2 = new File([blob2], `시설관리일지_${state.date}_2페이지(뒷면).jpg`, { type: 'image/jpeg' });
 
       const filesArray = [file1, file2];
 
@@ -447,13 +457,17 @@ export default function App() {
       />
 
       <footer className="bottom-bar">
-        <button className="btn-save-action" onClick={() => setIsSaveModalOpen(true)}>
+        <button className="btn-action-save" onClick={() => setIsSaveModalOpen(true)}>
           <span>💾</span>
-          <span>A4 분할 저장</span>
+          <span>저장</span>
+        </button>
+        <button className="btn-action-print" onClick={handlePrintPrinter}>
+          <span>🖨️</span>
+          <span>출력</span>
         </button>
         <button className="btn-submit-kakao" onClick={handleSubmitToKakao}>
           <span>💬</span>
-          <span>카톡방 자동 제출</span>
+          <span>카톡제출</span>
         </button>
       </footer>
 

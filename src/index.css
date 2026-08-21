@@ -52,7 +52,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 콤팩트 상단 헤더 (웹 UI 복원) */
+/* 콤팩트 상단 헤더 */
 .app-header {
   position: sticky;
   top: 0;
@@ -104,7 +104,7 @@ body {
   font-weight: 600;
 }
 
-/* 4개 탭 메뉴 */
+/* 탭 메뉴 */
 .tab-nav {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -179,7 +179,7 @@ body {
   outline: none;
 }
 
-.meta-inputs input[type="date"] { width: 116px; }
+.meta-inputs input[type="date"] { width: 122px; cursor: pointer; }
 .meta-inputs input[type="text"] { width: 62px; }
 
 .meta-counts {
@@ -353,7 +353,7 @@ body {
   background: var(--gray-50);
 }
 
-/* 하단 고정 액션바 */
+/* 하단 고정 액션바 (3개 버튼: 저장, 출력, 카톡제출) */
 .bottom-bar {
   position: fixed;
   bottom: 0;
@@ -364,19 +364,19 @@ body {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid var(--gray-200);
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
   display: flex;
-  gap: 8px;
+  gap: 6px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
 }
 
-.btn-save-action {
+.btn-action-save {
   flex: 1;
   height: 44px;
   background: #ffffff;
   border: 1.5px solid var(--gray-300);
   border-radius: var(--radius-md);
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--gray-800);
   cursor: pointer;
@@ -386,10 +386,28 @@ body {
   gap: 4px;
 }
 
-.btn-save-action:active { background: var(--gray-100); }
+.btn-action-save:active { background: var(--gray-100); }
+
+.btn-action-print {
+  flex: 1;
+  height: 44px;
+  background: #1e293b;
+  border: 1px solid #0f172a;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.btn-action-print:active { background: #0f172a; }
 
 .btn-submit-kakao {
-  flex: 1.6;
+  flex: 1.3;
   height: 44px;
   background: var(--kakao-yellow);
   border: 1px solid #e6cf00;
@@ -401,7 +419,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
@@ -649,4 +667,33 @@ body {
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
+}
+
+/* 🖨️ 프린터 직접 출력 전용 CSS 미디어 쿼리 */
+@media print {
+  body {
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+  .app-header,
+  .main-container,
+  .bottom-bar,
+  .modal-overlay,
+  .toast {
+    display: none !important;
+  }
+  #printDocumentHiddenContainer {
+    position: static !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    display: block !important;
+  }
+  .a4-page-box {
+    margin: 0 !important;
+    padding: 20px !important;
+    box-shadow: none !important;
+    page-break-after: always;
+    break-after: page;
+  }
 }
