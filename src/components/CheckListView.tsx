@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { TabId, ItemState, StatusType, CheckItem } from '../types';
 import { CHECKLIST_DATA, TAB_INFO } from '../data/checklistData';
 import { loadAdminSettings } from './AdminModal';
+import { ImageAnalysisModal } from './ImageAnalysisModal';
 
 interface CheckListViewProps {
   currentTab: TabId;
@@ -61,6 +62,12 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   const sections = CHECKLIST_DATA[currentTab] || [];
   const tabNameClean = TAB_INFO[currentTab]?.name || '';
   const adminSettings = loadAdminSettings();
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
+  const handleApplyImageResult = (resultText: string) => {
+    const newSummary = summaryText ? `${summaryText}\n${resultText}` : resultText;
+    onChangeSummary(newSummary);
+  };
 
   // Pressure options 1.0 to 2.4 (step 0.1)
   const pressureOptions: number[] = [];
@@ -613,8 +620,29 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 
         {/* 종합 의견 */}
         <div className="summary-box">
-          <label htmlFor="summaryText">
-            <span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}
+          <label htmlFor="summaryText" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span><span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}</span>
+            {!isReadOnly && (
+              <button 
+                type="button" 
+                onClick={() => setIsImageModalOpen(true)}
+                style={{
+                  background: '#e0e7ff',
+                  color: '#4338ca',
+                  border: 'none',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>📷</span> AI 사진 분석
+              </button>
+            )}
           </label>
           <textarea
             id="summaryText"
@@ -624,6 +652,12 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
             onChange={(e) => !isReadOnly && onChangeSummary(e.target.value)}
           />
         </div>
+
+        <ImageAnalysisModal 
+          isOpen={isImageModalOpen}
+          onClose={() => setIsImageModalOpen(false)}
+          onApplyResult={handleApplyImageResult}
+        />
       </main>
     );
   }
@@ -695,8 +729,29 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
       ))}
 
       <div className="summary-box">
-        <label htmlFor="summaryText">
-          <span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}
+        <label htmlFor="summaryText" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span><span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}</span>
+          {!isReadOnly && (
+            <button 
+              type="button" 
+              onClick={() => setIsImageModalOpen(true)}
+              style={{
+                background: '#e0e7ff',
+                color: '#4338ca',
+                border: 'none',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <span>📷</span> AI 사진 분석
+            </button>
+          )}
         </label>
         <textarea
           id="summaryText"
@@ -706,6 +761,12 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
           onChange={(e) => !isReadOnly && onChangeSummary(e.target.value)}
         />
       </div>
+
+      <ImageAnalysisModal 
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        onApplyResult={handleApplyImageResult}
+      />
     </main>
   );
 };
