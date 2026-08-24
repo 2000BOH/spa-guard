@@ -26,6 +26,11 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
   const renderCard = (deptId: DepartmentId) => {
     const dept = DEPTS[deptId];
     const config = settings.deptConfigs[deptId];
+    
+    // 그룹 구분 없이 모든 역할을 평면화하여 한 줄로 나열
+    const allRoles = config.groups.flatMap(g => 
+      g.roles.map(r => ({ ...r, label: g.label }))
+    );
 
     return (
       <div style={{
@@ -45,51 +50,45 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
           <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{dept.name}</span>
         </div>
 
-        {/* 인원 버튼 */}
-        {config.groups.map((group, gi) => (
-          <div key={gi} style={gi > 0 ? { marginTop: '4px' } : undefined}>
-            {group.label && (
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '2px' }}>
-                {group.label}
-              </span>
-            )}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: (deptId === 'facilities' || deptId === 'food') ? 'repeat(2, 1fr)' : `repeat(${Math.min(group.roles.length, 3)}, 1fr)`,
-              gap: '6px'
-            }}>
-              {group.roles.map((r, ri) => (
-                <button
-                  key={ri}
-                  onClick={() => onSelectDepartment(deptId, r.name || r.role)}
-                  style={{
-                    height: '42px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: '#f1f5f9',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '8px',
-                    color: '#334155',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    padding: '2px 4px'
-                  }}
-                >
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
-                    {r.role}
-                  </span>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginTop: '1px' }}>
-                    {r.name || '미지정'}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+        {/* 인원 버튼 (한 줄로 모두 표시) */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${allRoles.length}, 1fr)`,
+          gap: '6px'
+        }}>
+          {allRoles.map((r, ri) => {
+            const roleName = r.label ? `${r.label} ${r.role}` : r.role;
+            return (
+              <button
+                key={ri}
+                onClick={() => onSelectDepartment(deptId, r.name || roleName)}
+                style={{
+                  height: '46px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  color: '#334155',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  padding: '2px 4px'
+                }}
+              >
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
+                  {roleName}
+                </span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginTop: '1px' }}>
+                  {r.name || '미지정'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     );
   };
@@ -117,7 +116,7 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
       {/* ── 파트 카드 그리드 ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minHeight: 0 }}>
 
-        {/* 행 1: 시설 + 푸드 — 작은 파트끼리 나란히 */}
+        {/* 행 1: 시설 + 푸드 — 반반 */}
         <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
           <div style={{ flex: 1 }}>{renderCard('facilities')}</div>
           <div style={{ flex: 1 }}>{renderCard('food')}</div>
@@ -128,25 +127,40 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
           {renderCard('reception')}
         </div>
 
-        {/* 행 3: 미화(남+여) — 전체 너비 */}
+        {/* 행 3: 미화(남+여 모두 한 줄) — 전체 너비 */}
         <div style={{ flex: 1 }}>
           {renderCard('cleaning')}
         </div>
 
-        {/* 행 4: 스낵 — 전체 너비 */}
-        <div style={{ flex: 1 }}>
-          {renderCard('snack')}
+        {/* 행 4: 스낵(반) + 관리자 버튼(반) */}
+        <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
+          <div style={{ flex: 1 }}>{renderCard('snack')}</div>
+          <div style={{ flex: 1 }}>
+            <button
+              onClick={() => setIsAdminOpen(true)}
+              style={{
+                width: '100%',
+                height: '100%',
+                background: '#1e293b',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              <span style={{ fontSize: '24px' }}>🔒</span>
+              관리자 모드
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* ── 하단 관리자 ── */}
-      <div style={{ textAlign: 'right', flexShrink: 0, paddingTop: '4px' }}>
-        <button onClick={() => setIsAdminOpen(true)} style={{
-          background: 'none', border: 'none', color: '#94a3b8',
-          fontSize: '11px', fontWeight: 600, cursor: 'pointer', padding: '4px 8px'
-        }}>
-          🔒 관리자
-        </button>
       </div>
 
       <AdminModal isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
