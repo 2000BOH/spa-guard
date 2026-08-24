@@ -102,13 +102,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                     기준 온도 (℃)
                   </th>
                   <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
-                    새벽 (04~06시)
-                  </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
-                    오전 (10~12시)
-                  </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
-                    오후 (16~18시)
+                    측정 온도 (자동분류)
                   </th>
                   <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8' }}>
                     비고 및 특이사항
@@ -141,8 +135,19 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                       const target = state.targetTemp !== undefined && state.targetTemp !== null ? state.targetTemp : 10.0;
                       const rowBg = iIdx % 2 === 1 ? '#f8fafc' : '#ffffff';
 
-                      const renderTempCell = (field: 'tempDawn' | 'tempMorning' | 'tempAfternoon') => {
-                        const val = state[field] ?? null;
+                      const currentHour = new Date().getHours();
+                      let currentField: 'tempDawn' | 'tempMorning' | 'tempAfternoon' = 'tempDawn';
+                      let currentLabel = '야간';
+                      if (currentHour >= 6 && currentHour < 12) {
+                        currentField = 'tempMorning';
+                        currentLabel = '오전';
+                      } else if (currentHour >= 12 && currentHour < 18) {
+                        currentField = 'tempAfternoon';
+                        currentLabel = '오후';
+                      }
+
+                      const renderSingleTempCell = () => {
+                        const val = state[currentField] ?? null;
                         let diffText = '';
                         let diffColor = '#6b7280';
 
@@ -159,24 +164,38 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                           }
                         }
 
+                        // 이전에 저장된 다른 시간대 값들도 보여주기 위함
+                        const history = [];
+                        if (currentField !== 'tempDawn' && state.tempDawn) history.push(`야간: ${state.tempDawn}℃`);
+                        if (currentField !== 'tempMorning' && state.tempMorning) history.push(`오전: ${state.tempMorning}℃`);
+                        if (currentField !== 'tempAfternoon' && state.tempAfternoon) history.push(`오후: ${state.tempAfternoon}℃`);
+
                         return (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            <input 
-                              type="number"
-                              step="0.1"
-                              placeholder="℃"
-                              style={{ width: '52px', height: '23px', fontSize: '11px', textAlign: 'center', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                              value={val ?? ''}
-                              disabled={isReadOnly}
-                              onChange={(e) => {
-                                const num = e.target.value !== '' ? parseFloat(e.target.value) : null;
-                                onUpdateTab4ItemBatch(item.id, { [field]: num });
-                              }}
-                            />
-                            {diffText && (
-                              <span style={{ fontSize: '10px', fontWeight: 700, color: diffColor }}>
-                                ({diffText})
-                              </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#3b82f6' }}>[{currentLabel}]</span>
+                              <input 
+                                type="number"
+                                step="0.1"
+                                placeholder="℃"
+                                style={{ width: '56px', height: '24px', fontSize: '12px', textAlign: 'center', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                                value={val ?? ''}
+                                disabled={isReadOnly}
+                                onChange={(e) => {
+                                  const num = e.target.value !== '' ? parseFloat(e.target.value) : null;
+                                  onUpdateTab4ItemBatch(item.id, { [currentField]: num });
+                                }}
+                              />
+                              {diffText && (
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: diffColor }}>
+                                  ({diffText})
+                                </span>
+                              )}
+                            </div>
+                            {history.length > 0 && (
+                              <div style={{ fontSize: '10px', color: '#64748b' }}>
+                                {history.join(', ')}
+                              </div>
                             )}
                           </div>
                         );
@@ -217,22 +236,12 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                             />
                           </td>
 
-                          {/* Column 3: 새벽 */}
-                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
-                            {renderTempCell('tempDawn')}
+                          {/* Column 3: 측정 온도 (자동분류) */}
+                          <td style={{ padding: '6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            {renderSingleTempCell()}
                           </td>
 
-                          {/* Column 4: 오전 */}
-                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
-                            {renderTempCell('tempMorning')}
-                          </td>
-
-                          {/* Column 5: 오후 */}
-                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
-                            {renderTempCell('tempAfternoon')}
-                          </td>
-
-                          {/* Column 6: 비고 및 특이사항 */}
+                          {/* Column 4: 비고 및 특이사항 */}
                           <td style={{ padding: '4px 6px', borderBottom: '1px solid #e2e8f0' }}>
                             <input 
                               type="text"

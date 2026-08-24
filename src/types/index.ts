@@ -15,9 +15,9 @@ export interface ItemState {
   
   // Tab 5 Temperature Check special fields
   targetTemp?: number | null; // 기준온도 (℃)
-  tempDawn?: number | null; // 새벽 온도
-  tempMorning?: number | null; // 오전 온도
-  tempAfternoon?: number | null; // 오후 온도
+  tempDawn?: number | null; // 새벽/야간 온도 (18:00 ~ 05:59)
+  tempMorning?: number | null; // 오전 온도 (06:00 ~ 11:59)
+  tempAfternoon?: number | null; // 오후 온도 (12:00 ~ 17:59)
 }
 
 export interface TabSummaryState {
@@ -47,4 +47,11 @@ export interface CheckItem {
 export interface SectionData {
   category: string;
   items: CheckItem[];
+}
+
+export type DepartmentId = 'facilities' | 'reception' | 'cleaning' | 'food' | 'snack';
+
+export interface AdminSettings {
+  defaultTargetTemp: number; // 기본 기준온도 (예: 10.0)
+  defaultBackwashCount: number; // 여과 횟수 등의 기타 기준
 }

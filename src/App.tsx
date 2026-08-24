@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
-import type { AppState, TabId, StatusType, ItemState, CheckItem } from './types';
+import type { AppState, TabId, StatusType, ItemState, CheckItem, DepartmentId } from './types';
 import { TAB_INFO, CHECKLIST_DATA } from './data/checklistData';
 import { Header } from './components/Header';
 import { MetaStrip } from './components/MetaStrip';
@@ -10,6 +10,8 @@ import { CheckListView } from './components/CheckListView';
 import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { saveInspectionToSupabase } from './lib/supabase';
+import { MainIndex } from './components/MainIndex';
+import { ComingSoon } from './components/ComingSoon';
 
 const getStorageKey = (date: string) => `spa_date_data_${date}`;
 
@@ -31,6 +33,9 @@ function getYesterdayStr(): string {
 }
 
 export default function App() {
+  const [currentView, setCurrentView] = useState<'main' | 'checklist' | 'comingSoon'>('main');
+  const [selectedDept, setSelectedDept] = useState<DepartmentId | null>(null);
+
   const [currentTab, setCurrentTab] = useState<TabId>('tab2');
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
@@ -110,6 +115,22 @@ export default function App() {
       ...initialData,
       ...sec
     });
+
+    // Parse URL params for QR scanning direct access
+    const params = new URLSearchParams(window.location.search);
+    const deptParam = params.get('dept') as DepartmentId;
+    const inspectorParam = params.get('inspector');
+    
+    if (deptParam && inspectorParam) {
+      setSelectedDept(deptParam);
+      setCurrentView(deptParam === 'facilities' ? 'checklist' : 'comingSoon');
+      
+      setState(prev => {
+        const next = { ...prev, inspector: inspectorParam };
+        const updatedSec = generateSecurityLog(next.items, next.inspector);
+        return { ...next, ...updatedSec };
+      });
+    }
   }, []);
 
   const updateStateAndSave = (updater: (prev: AppState) => AppState) => {
@@ -148,6 +169,12 @@ export default function App() {
     } else {
       showToast(`📅 ${newDate} 점검일지 불러옴 (새 일지)`);
     }
+  };
+
+  const handleSelectDepartment = (dept: DepartmentId, inspector: string) => {
+    setSelectedDept(dept);
+    setCurrentView(dept === 'facilities' ? 'checklist' : 'comingSoon');
+    updateStateAndSave((prev) => ({ ...prev, inspector }));
   };
 
   const handleSetStatus = (id: string, status: StatusType) => {
@@ -442,12 +469,42 @@ export default function App() {
     }
   };
 
+  if (currentView === 'main') {
+    return (
+      <>
+        <MainIndex onSelectDepartment={handleSelectDepartment} />
+        <Toast message={toastMsg} />
+      </>
+    );
+  }
+
+  if (currentView === 'comingSoon' && selectedDept) {
+    return (
+      <>
+        <ComingSoon 
+          department={selectedDept} 
+          inspector={state.inspector} 
+          onBack={() => {
+            window.history.replaceState({}, '', window.location.pathname);
+            setCurrentView('main');
+          }} 
+        />
+        <Toast message={toastMsg} />
+      </>
+    );
+  }
+
   return (
     <div>
       <Header
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         progressPct={progressPct}
+        departmentName={selectedDept === 'facilities' ? '시설' : '점검'}
+        onBack={() => {
+          window.history.replaceState({}, '', window.location.pathname);
+          setCurrentView('main');
+        }}
       >
         <MetaStrip
           checkDate={state.date}

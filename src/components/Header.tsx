@@ -6,6 +6,8 @@ interface HeaderProps {
   currentTab: TabId;
   onSelectTab: (tabId: TabId) => void;
   progressPct: number;
+  onBack: () => void;
+  departmentName: string;
   children?: React.ReactNode;
 }
 
@@ -13,15 +15,20 @@ export const Header: React.FC<HeaderProps> = ({
   currentTab,
   onSelectTab,
   progressPct,
+  onBack,
+  departmentName,
   children
 }) => {
   return (
     <header className="app-header">
       {/* 1. 최상단 타이틀 행 */}
       <div className="header-row">
-        <div className="app-title">
+        <div className="app-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', padding: '0 4px', marginRight: '4px' }}>
+            ←
+          </button>
           <img src="/logo.png" alt="Blue Ocean Wellness Spa Logo" className="header-logo-img" />
-          <span>시설관리 점검일지</span>
+          <span>{departmentName} 점검일지</span>
         </div>
         <div className="header-btns">
           <span className="save-badge">저장됨</span>
