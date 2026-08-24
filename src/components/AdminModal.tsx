@@ -15,16 +15,16 @@ const DEPT_LABELS: Record<DepartmentId, string> = {
 };
 
 const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
-  facilities: { groups: [{ names: ['담당 1', '담당 2'] }] },
-  reception: { groups: [{ names: ['담당 1', '담당 2', '담당 3', '담당 4', '담당 5', '담당 6'] }] },
+  facilities: { groups: [{ roles: [{ role: '주간', name: '' }, { role: '야간', name: '' }] }] },
+  reception: { groups: [{ roles: [{ role: '오전', name: '' }, { role: '오후', name: '' }, { role: '야간', name: '' }] }] },
   cleaning: {
     groups: [
-      { label: '남자', names: ['담당 1', '담당 2', '담당 3'] },
-      { label: '여자', names: ['담당 1', '담당 2'] }
+      { label: '남자', roles: [{ role: '주간', name: '' }, { role: '야간', name: '' }] },
+      { label: '여자', roles: [{ role: '주간', name: '' }] }
     ]
   },
-  food: { groups: [{ names: ['담당 1', '담당 2'] }] },
-  snack: { groups: [{ names: ['담당 1', '담당 2', '담당 3', '담당 4', '담당 5', '담당 6'] }] }
+  food: { groups: [{ roles: [{ role: '오픈', name: '' }, { role: '마감', name: '' }] }] },
+  snack: { groups: [{ roles: [{ role: '오픈', name: '' }, { role: '마감', name: '' }] }] }
 };
 
 const DEFAULT_SETTINGS: AdminSettings = {
@@ -40,16 +40,17 @@ export function loadAdminSettings(): AdminSettings {
     const saved = localStorage.getItem('spa_admin_settings');
     if (saved) {
       const parsed = JSON.parse(saved);
-      // deptConfigs 병합: 저장된 값이 없는 파트는 기본값으로 채움
       const mergedConfigs: DeptConfigMap = { ...DEFAULT_DEPT_CONFIGS };
+      
+      // 하위 호환 처리 및 병합 (새로운 roles 구조가 없으면 기본값 유지)
       if (parsed.deptConfigs) {
         for (const key of Object.keys(DEFAULT_DEPT_CONFIGS) as DepartmentId[]) {
-          if (parsed.deptConfigs[key]) {
-            mergedConfigs[key] = parsed.deptConfigs[key];
+          const pConfig = parsed.deptConfigs[key];
+          if (pConfig && pConfig.groups && pConfig.groups[0] && Array.isArray(pConfig.groups[0].roles)) {
+            mergedConfigs[key] = pConfig;
           }
         }
       }
-      // 하위 호환: 이전 personnel 구조가 남아있을 경우 무시하고 새 구조 사용
       return {
         defaultTargetTemp: parsed.defaultTargetTemp ?? DEFAULT_SETTINGS.defaultTargetTemp,
         defaultBackwashCount: parsed.defaultBackwashCount ?? DEFAULT_SETTINGS.defaultBackwashCount,
@@ -96,31 +97,14 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  // 그룹 내 특정 인원의 이름 변경
-  const updateName = (dept: DepartmentId, groupIdx: number, nameIdx: number, name: string) => {
+  // 그룹 내 특정 역할의 담당자 이름 변경
+  const updateRoleName = (dept: DepartmentId, groupIdx: number, roleIdx: number, name: string) => {
     const newConfigs = { ...settings.deptConfigs };
     const newGroups = newConfigs[dept].groups.map((g, gi) => {
       if (gi !== groupIdx) return g;
-      const newNames = [...g.names];
-      newNames[nameIdx] = name;
-      return { ...g, names: newNames };
-    });
-    newConfigs[dept] = { groups: newGroups };
-    setSettings({ ...settings, deptConfigs: newConfigs });
-  };
-
-  // 그룹 인원 수 변경 (+/-)
-  const changeGroupCount = (dept: DepartmentId, groupIdx: number, delta: number) => {
-    const newConfigs = { ...settings.deptConfigs };
-    const newGroups = newConfigs[dept].groups.map((g, gi) => {
-      if (gi !== groupIdx) return g;
-      const newNames = [...g.names];
-      if (delta > 0 && newNames.length < 10) {
-        newNames.push(`담당 ${newNames.length + 1}`);
-      } else if (delta < 0 && newNames.length > 1) {
-        newNames.pop();
-      }
-      return { ...g, names: newNames };
+      const newRoles = [...g.roles];
+      newRoles[roleIdx] = { ...newRoles[roleIdx], name };
+      return { ...g, roles: newRoles };
     });
     newConfigs[dept] = { groups: newGroups };
     setSettings({ ...settings, deptConfigs: newConfigs });
@@ -129,30 +113,30 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const inputStyle: React.CSSProperties = { width: '100%', height: '32px', padding: '0 8px', fontSize: '12px', borderRadius: '5px', border: '1px solid #cbd5e1' };
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: '11px', fontWeight: 700, color: '#334155', marginBottom: '3px' };
   const sectionStyle: React.CSSProperties = { marginBottom: '10px' };
-  const countBtnStyle: React.CSSProperties = { width: '24px', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', background: '#f8fafc', color: '#334155', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' };
 
   const renderGroupEditor = (dept: DepartmentId, group: PersonnelGroup, groupIdx: number) => {
     const groupLabel = group.label ? ` (${group.label})` : '';
     return (
       <div key={groupIdx} style={{ marginBottom: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
           <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>
-            {DEPT_LABELS[dept]}{groupLabel} — {group.names.length}명
+            {DEPT_LABELS[dept]}{groupLabel}
           </span>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <button style={countBtnStyle} onClick={() => changeGroupCount(dept, groupIdx, -1)}>−</button>
-            <button style={countBtnStyle} onClick={() => changeGroupCount(dept, groupIdx, +1)}>+</button>
-          </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
-          {group.names.map((name, ni) => (
-            <input
-              key={ni}
-              type="text"
-              value={name}
-              onChange={(e) => updateName(dept, groupIdx, ni, e.target.value)}
-              style={{ ...inputStyle, height: '28px', fontSize: '11px', textAlign: 'center' }}
-            />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '4px' }}>
+          {group.roles.map((r, ri) => (
+            <div key={ri} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '60px', fontSize: '11px', color: '#64748b', fontWeight: 600, textAlign: 'right' }}>
+                {r.role}
+              </div>
+              <input
+                type="text"
+                placeholder="담당자 이름"
+                value={r.name}
+                onChange={(e) => updateRoleName(dept, groupIdx, ri, e.target.value)}
+                style={{ ...inputStyle, flex: 1, height: '28px', fontSize: '11px' }}
+              />
+            </div>
           ))}
         </div>
       </div>
@@ -235,9 +219,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* ── 파트별 인원 ── */}
+            {/* ── 파트별 담당자 ── */}
             <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
-              👥 파트별 점검자 (인원 수 ± 조절 가능)
+              👥 파트별 지정 담당자 입력
             </h4>
 
             {(Object.keys(DEPT_LABELS) as DepartmentId[]).map((dept) => (

@@ -55,17 +55,19 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
             )}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: (deptId === 'facilities' || deptId === 'food') ? 'repeat(2, 1fr)' : `repeat(${Math.min(group.names.length, 3)}, 1fr)`,
+              gridTemplateColumns: (deptId === 'facilities' || deptId === 'food') ? 'repeat(2, 1fr)' : `repeat(${Math.min(group.roles.length, 3)}, 1fr)`,
               gap: '6px'
             }}>
-              {group.names.map((name, ni) => (
+              {group.roles.map((r, ri) => (
                 <button
-                  key={ni}
-                  onClick={() => onSelectDepartment(deptId, name)}
+                  key={ri}
+                  onClick={() => onSelectDepartment(deptId, r.name || r.role)}
                   style={{
-                    height: '36px',
-                    fontSize: '14px',
-                    fontWeight: 600,
+                    height: '42px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     background: '#f1f5f9',
                     border: '1px solid #cbd5e1',
                     borderRadius: '8px',
@@ -73,10 +75,16 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    textOverflow: 'ellipsis',
+                    padding: '2px 4px'
                   }}
                 >
-                  {name}
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
+                    {r.role}
+                  </span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginTop: '1px' }}>
+                    {r.name || '미지정'}
+                  </span>
                 </button>
               ))}
             </div>
@@ -109,23 +117,23 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
       {/* ── 파트 카드 그리드 ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minHeight: 0 }}>
 
-        {/* 행 1: 시설(2명) + 푸드(2명) — 작은 파트끼리 나란히 */}
+        {/* 행 1: 시설 + 푸드 — 작은 파트끼리 나란히 */}
         <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
           <div style={{ flex: 1 }}>{renderCard('facilities')}</div>
           <div style={{ flex: 1 }}>{renderCard('food')}</div>
         </div>
 
-        {/* 행 2: 리셉션(6명) — 전체 너비 */}
+        {/* 행 2: 리셉션 — 전체 너비 */}
         <div style={{ flex: 1 }}>
           {renderCard('reception')}
         </div>
 
-        {/* 행 3: 미화(남3+여2) — 전체 너비 */}
+        {/* 행 3: 미화(남+여) — 전체 너비 */}
         <div style={{ flex: 1 }}>
           {renderCard('cleaning')}
         </div>
 
-        {/* 행 4: 스낵(6명) — 전체 너비 */}
+        {/* 행 4: 스낵 — 전체 너비 */}
         <div style={{ flex: 1 }}>
           {renderCard('snack')}
         </div>

@@ -51,10 +51,16 @@ export interface SectionData {
 
 export type DepartmentId = 'facilities' | 'reception' | 'cleaning' | 'food' | 'snack';
 
+/** 개별 담당자 역할 및 이름 */
+export interface RoleDef {
+  role: string; // 예: '주간', '야간', '오픈', '마감'
+  name: string; // 예: '홍길동' (비워둘 수 있음)
+}
+
 /** 하위 그룹 (예: 미화 남자/여자) */
 export interface PersonnelGroup {
-  label?: string;   // 하위 그룹 라벨 (예: '남자', '여자')
-  names: string[];
+  label?: string;
+  roles: RoleDef[];
 }
 
 /** 파트별 인원 설정 */
