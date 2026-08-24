@@ -15,16 +15,16 @@ const DEPT_LABELS: Record<DepartmentId, string> = {
 };
 
 const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
-  facilities: { groups: [{ names: ['담당자 1', '담당자 2'] }] },
-  reception: { groups: [{ names: ['담당자 1', '담당자 2', '담당자 3', '담당자 4', '담당자 5', '담당자 6'] }] },
+  facilities: { groups: [{ names: ['담당 1', '담당 2'] }] },
+  reception: { groups: [{ names: ['담당 1', '담당 2', '담당 3', '담당 4', '담당 5', '담당 6'] }] },
   cleaning: {
     groups: [
-      { label: '남자', names: ['담당자 1', '담당자 2', '담당자 3'] },
-      { label: '여자', names: ['담당자 1', '담당자 2'] }
+      { label: '남자', names: ['담당 1', '담당 2', '담당 3'] },
+      { label: '여자', names: ['담당 1', '담당 2'] }
     ]
   },
-  food: { groups: [{ names: ['담당자 1', '담당자 2'] }] },
-  snack: { groups: [{ names: ['담당자 1', '담당자 2', '담당자 3', '담당자 4', '담당자 5', '담당자 6'] }] }
+  food: { groups: [{ names: ['담당 1', '담당 2'] }] },
+  snack: { groups: [{ names: ['담당 1', '담당 2', '담당 3', '담당 4', '담당 5', '담당 6'] }] }
 };
 
 const DEFAULT_SETTINGS: AdminSettings = {
@@ -116,7 +116,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       if (gi !== groupIdx) return g;
       const newNames = [...g.names];
       if (delta > 0 && newNames.length < 10) {
-        newNames.push(`담당자 ${newNames.length + 1}`);
+        newNames.push(`담당 ${newNames.length + 1}`);
       } else if (delta < 0 && newNames.length > 1) {
         newNames.pop();
       }

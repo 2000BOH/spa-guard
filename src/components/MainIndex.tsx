@@ -55,7 +55,7 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
             )}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: `repeat(${Math.min(group.names.length, 3)}, 1fr)`,
+              gridTemplateColumns: (deptId === 'facilities' || deptId === 'food') ? 'repeat(2, 1fr)' : `repeat(${Math.min(group.names.length, 3)}, 1fr)`,
               gap: '6px'
             }}>
               {group.names.map((name, ni) => (
