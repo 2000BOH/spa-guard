@@ -51,7 +51,12 @@ export interface SectionData {
 
 export type DepartmentId = 'facilities' | 'reception' | 'cleaning' | 'food' | 'snack';
 
+// 파트별 인원 이름 (각 파트당 최대 3명)
+export type DeptPersonnel = Record<DepartmentId, [string, string, string]>;
+
 export interface AdminSettings {
-  defaultTargetTemp: number; // 기본 기준온도 (예: 10.0)
-  defaultBackwashCount: number; // 여과 횟수 등의 기타 기준
+  defaultTargetTemp: number;       // 기본 기준온도 (예: 10.0)
+  defaultBackwashCount: number;    // 역세척 주간 횟수 기준
+  hairCatcherMonthlyCount: number; // 헤어캐처 월간 점검 횟수 (기본 2)
+  personnel: DeptPersonnel;        // 파트별 인원 이름
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { TabId, ItemState, StatusType, CheckItem } from '../types';
 import { CHECKLIST_DATA, TAB_INFO } from '../data/checklistData';
+import { loadAdminSettings } from './AdminModal';
 
 interface CheckListViewProps {
   currentTab: TabId;
@@ -59,6 +60,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
 }) => {
   const sections = CHECKLIST_DATA[currentTab] || [];
   const tabNameClean = TAB_INFO[currentTab]?.name || '';
+  const adminSettings = loadAdminSettings();
 
   // Pressure options 1.0 to 2.4 (step 0.1)
   const pressureOptions: number[] = [];
@@ -324,10 +326,10 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                     상태 (소리/누수/진동)
                   </th>
                   <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
-                    역세척 (주 2회)
+                    역세척 (주 {adminSettings.defaultBackwashCount}회)
                   </th>
                   <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
-                    헤어캐처 (2주 1회)
+                    헤어캐처 (월 {adminSettings.hairCatcherMonthlyCount}회)
                   </th>
                   <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8' }}>
                     비고 및 특이사항
