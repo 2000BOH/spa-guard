@@ -28,6 +28,7 @@ export interface AppState {
   storeName: string;
   date: string;
   inspector: string;
+  roleName?: string;
   items: Record<string, ItemState>;
   summaries: TabSummaryState;
   securityCode: string;

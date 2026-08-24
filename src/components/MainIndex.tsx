@@ -3,7 +3,7 @@ import type { DepartmentId, AdminSettings } from '../types';
 import { AdminModal, loadAdminSettings } from './AdminModal';
 
 interface MainIndexProps {
-  onSelectDepartment: (dept: DepartmentId, inspector: string) => void;
+  onSelectDepartment: (dept: DepartmentId, inspector: string, roleName?: string) => void;
 }
 
 const DEPTS: Record<DepartmentId, { name: string; icon: string }> = {
@@ -61,7 +61,7 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
             return (
               <button
                 key={ri}
-                onClick={() => onSelectDepartment(deptId, r.name || roleName)}
+                onClick={() => onSelectDepartment(deptId, r.name || roleName, roleName)}
                 style={{
                   height: '46px',
                   display: 'flex',

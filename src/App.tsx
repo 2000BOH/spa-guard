@@ -121,9 +121,19 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const deptParam = params.get('dept') as DepartmentId;
     const inspectorParam = params.get('inspector');
+    const roleNameParam = params.get('roleName') || undefined;
     
     if (deptParam && inspectorParam) {
-      const tabs = DEPT_TABS_MAP[deptParam] || [];
+      let tabs = DEPT_TABS_MAP[deptParam] || [];
+      if (deptParam === 'cleaning' && roleNameParam) {
+        if (roleNameParam.includes('여자')) {
+          tabs = ['cWTab1', 'cWTab2', 'cWTab3', 'cWTab4'];
+        } else if (roleNameParam.includes('남자') && roleNameParam.includes('야간')) {
+          tabs = ['cNTab1', 'cNTab2', 'cNTab3'];
+        } else if (roleNameParam.includes('남자')) {
+          tabs = ['cMTab1', 'cMTab2', 'cMTab3', 'cMTab4'];
+        }
+      }
       setSelectedDept(deptParam);
       if (tabs.length > 0) {
         setAvailableTabs(tabs);
@@ -134,7 +144,7 @@ export default function App() {
       }
       
       setState(prev => {
-        const next = { ...prev, inspector: inspectorParam };
+        const next = { ...prev, inspector: inspectorParam, roleName: roleNameParam };
         const updatedSec = generateSecurityLog(next.items, next.inspector);
         return { ...next, ...updatedSec };
       });
@@ -179,8 +189,17 @@ export default function App() {
     }
   };
 
-  const handleSelectDepartment = (dept: DepartmentId, inspector: string) => {
-      const tabs = DEPT_TABS_MAP[dept] || [];
+  const handleSelectDepartment = (dept: DepartmentId, inspector: string, roleName?: string) => {
+      let tabs = DEPT_TABS_MAP[dept] || [];
+      if (dept === 'cleaning' && roleName) {
+        if (roleName.includes('여자')) {
+          tabs = ['cWTab1', 'cWTab2', 'cWTab3', 'cWTab4'];
+        } else if (roleName.includes('남자') && roleName.includes('야간')) {
+          tabs = ['cNTab1', 'cNTab2', 'cNTab3'];
+        } else if (roleName.includes('남자')) {
+          tabs = ['cMTab1', 'cMTab2', 'cMTab3', 'cMTab4'];
+        }
+      }
       setSelectedDept(dept);
       if (tabs.length > 0) {
         setAvailableTabs(tabs);
@@ -189,7 +208,7 @@ export default function App() {
       } else {
         setCurrentView('comingSoon');
       }
-      updateStateAndSave((prev) => ({ ...prev, inspector }));
+      updateStateAndSave((prev) => ({ ...prev, inspector, roleName }));
   };
 
   const handleSetStatus = (id: string, status: StatusType) => {
