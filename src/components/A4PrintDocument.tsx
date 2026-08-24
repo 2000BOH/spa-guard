@@ -4,9 +4,11 @@ import { CHECKLIST_DATA, TAB_INFO } from '../data/checklistData';
 
 interface A4PrintDocumentProps {
   state: AppState;
+  departmentName: string;
+  availableTabs: TabId[];
 }
 
-export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
+export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state, departmentName, availableTabs }) => {
   const checkDateDot = state.date.replace(/-/g, '.');
 
   // Counts Calculation for Cover Page
@@ -14,7 +16,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
   let cntI = 0;
   let totalItems = 0;
 
-  (['tab1', 'tab2', 'tab3', 'tab4', 'tab5'] as TabId[]).forEach(tid => {
+  availableTabs.forEach(tid => {
     const sections = CHECKLIST_DATA[tid] || [];
     const items = sections.flatMap(s => s.items);
     totalItems += items.length;
@@ -39,7 +41,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
   const cntP = totalItems - (cntN + cntI);
 
   let summaryArr: string[] = [];
-  (['tab1', 'tab2', 'tab3', 'tab4', 'tab5'] as TabId[]).forEach(tid => {
+  availableTabs.forEach(tid => {
     const txt = state.summaries[tid];
     if (txt && TAB_INFO[tid]) summaryArr.push(`• [${TAB_INFO[tid].name}] ${txt}`);
   });
@@ -233,7 +235,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
         {/* 메인 2행: 대형 서식 제목 */}
         <div style={{ textAlign: 'center', margin: '14px 0' }}>
           <h1 style={{ fontSize: '54px', fontWeight: 900, color: '#0f172a', letterSpacing: '4px', textAlign: 'center' }}>
-            시설관리 점검일지
+            {departmentName} 점검일지
           </h1>
         </div>
 
@@ -269,7 +271,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
               <span></span>
               <span>페이지: 1 / 2</span>
             </div>
-            <h1 className="a4-title">시설관리일지 (앞면)</h1>
+            <h1 className="a4-title">{departmentName} 점검일지 (앞면)</h1>
           </div>
 
           <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 시 설 현 황 및 점 검 자</div>
@@ -292,7 +294,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             </tbody>
           </table>
 
-          <div className="a4-subhead">2. 구역별 점검사항 및 결과 (2층, 지하)</div>
+          <div className="a4-subhead">2. 구역별 점검사항 및 결과 (전반부)</div>
           <table className="a4-table">
             <thead>
               <tr>
@@ -303,7 +305,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
               </tr>
             </thead>
             <tbody>
-              {renderTableRows(['tab1', 'tab2'])}
+              {renderTableRows(availableTabs.slice(0, Math.ceil(availableTabs.length / 2)))}
             </tbody>
           </table>
         </div>
@@ -319,7 +321,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
               <span></span>
               <span>페이지: 2 / 2</span>
             </div>
-            <h1 className="a4-title">시설관리일지 (뒷면)</h1>
+            <h1 className="a4-title">{departmentName} 점검일지 (뒷면)</h1>
           </div>
 
           <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 시 설 현 황 및 점 검 자</div>
@@ -342,7 +344,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
             </tbody>
           </table>
 
-          <div className="a4-subhead">2. 구역별 점검사항 및 결과 (3층 찜질, 여과/기타, 온도체크)</div>
+          <div className="a4-subhead">2. 구역별 점검사항 및 결과 (후반부)</div>
           <table className="a4-table">
             <thead>
               <tr>
@@ -353,7 +355,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state }) => {
               </tr>
             </thead>
             <tbody>
-              {renderTableRows(['tab3', 'tab4', 'tab5'])}
+              {renderTableRows(availableTabs.slice(Math.ceil(availableTabs.length / 2)))}
             </tbody>
           </table>
 

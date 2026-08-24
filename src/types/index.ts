@@ -1,4 +1,4 @@
-export type TabId = 'tab1' | 'tab2' | 'tab3' | 'tab4' | 'tab5';
+export type TabId = 'tab1' | 'tab2' | 'tab3' | 'tab4' | 'tab5' | string;
 
 export type StatusType = 'normal' | 'issue' | null;
 
@@ -21,11 +21,7 @@ export interface ItemState {
 }
 
 export interface TabSummaryState {
-  tab1: string;
-  tab2: string;
-  tab3: string;
-  tab4: string;
-  tab5: string;
+  [key: string]: string;
 }
 
 export interface AppState {

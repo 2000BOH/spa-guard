@@ -8,6 +8,7 @@ interface HeaderProps {
   progressPct: number;
   onBack: () => void;
   departmentName: string;
+  availableTabs: TabId[];
   children?: React.ReactNode;
 }
 
@@ -17,6 +18,7 @@ export const Header: React.FC<HeaderProps> = ({
   progressPct,
   onBack,
   departmentName,
+  availableTabs,
   children
 }) => {
   return (
@@ -40,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
       
       {/* 3. 시설 Ⅰ ~ Ⅳ 탭 선택 행 (날짜 라인 아래) */}
       <nav className="tab-nav">
-        {(Object.keys(TAB_INFO) as TabId[]).map((tabId) => (
+        {availableTabs.map((tabId) => (
           <button
             key={tabId}
             className={`tab-btn ${currentTab === tabId ? 'active' : ''}`}

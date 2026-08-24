@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 import type { AppState, TabId, StatusType, ItemState, CheckItem, DepartmentId } from './types';
-import { TAB_INFO, CHECKLIST_DATA } from './data/checklistData';
+import { TAB_INFO, CHECKLIST_DATA, DEPT_TABS_MAP } from './data/checklistData';
 import { Header } from './components/Header';
 import { MetaStrip } from './components/MetaStrip';
 import { CheckListView } from './components/CheckListView';
@@ -37,6 +37,7 @@ export default function App() {
   const [selectedDept, setSelectedDept] = useState<DepartmentId | null>(null);
 
   const [currentTab, setCurrentTab] = useState<TabId>('tab2');
+  const [availableTabs, setAvailableTabs] = useState<TabId[]>([]);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -122,8 +123,15 @@ export default function App() {
     const inspectorParam = params.get('inspector');
     
     if (deptParam && inspectorParam) {
+      const tabs = DEPT_TABS_MAP[deptParam] || [];
       setSelectedDept(deptParam);
-      setCurrentView(deptParam === 'facilities' ? 'checklist' : 'comingSoon');
+      if (tabs.length > 0) {
+        setAvailableTabs(tabs);
+        setCurrentTab(tabs[0]);
+        setCurrentView('checklist');
+      } else {
+        setCurrentView('comingSoon');
+      }
       
       setState(prev => {
         const next = { ...prev, inspector: inspectorParam };
@@ -172,9 +180,16 @@ export default function App() {
   };
 
   const handleSelectDepartment = (dept: DepartmentId, inspector: string) => {
-    setSelectedDept(dept);
-    setCurrentView(dept === 'facilities' ? 'checklist' : 'comingSoon');
-    updateStateAndSave((prev) => ({ ...prev, inspector }));
+      const tabs = DEPT_TABS_MAP[dept] || [];
+      setSelectedDept(dept);
+      if (tabs.length > 0) {
+        setAvailableTabs(tabs);
+        setCurrentTab(tabs[0]);
+        setCurrentView('checklist');
+      } else {
+        setCurrentView('comingSoon');
+      }
+      updateStateAndSave((prev) => ({ ...prev, inspector }));
   };
 
   const handleSetStatus = (id: string, status: StatusType) => {
@@ -369,7 +384,7 @@ export default function App() {
     msg += `⏰ 기록시간: ${state.lastModified}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    (['tab1', 'tab2', 'tab3', 'tab4', 'tab5'] as TabId[]).forEach((tid) => {
+    availableTabs.forEach((tid) => {
       const tabInfo = TAB_INFO[tid];
       if (!tabInfo) return;
       const sections = CHECKLIST_DATA[tid] || [];
@@ -500,7 +515,8 @@ export default function App() {
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         progressPct={progressPct}
-        departmentName={selectedDept === 'facilities' ? '시설' : '점검'}
+        departmentName={selectedDept === 'facilities' ? '시설' : selectedDept === 'cleaning' ? '미화' : '점검'}
+        availableTabs={availableTabs}
         onBack={() => {
           window.history.replaceState({}, '', window.location.pathname);
           setCurrentView('main');
@@ -545,7 +561,7 @@ export default function App() {
         </button>
       </footer>
 
-      <A4PrintDocument state={state} />
+      <A4PrintDocument state={state} departmentName={selectedDept === 'facilities' ? '시설' : selectedDept === 'cleaning' ? '미화' : '점검'} availableTabs={availableTabs} />
 
       <SaveModal
         isOpen={isSaveModalOpen}
