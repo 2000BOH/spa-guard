@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { AdminSettings, DepartmentId, DeptPersonnel } from '../types';
+import type { AdminSettings, DepartmentId, DeptConfigMap, PersonnelGroup } from '../types';
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -14,27 +14,48 @@ const DEPT_LABELS: Record<DepartmentId, string> = {
   snack: '스낵'
 };
 
-const DEFAULT_PERSONNEL: DeptPersonnel = {
-  facilities: ['담당자 1', '담당자 2', '담당자 3'],
-  reception: ['담당자 1', '담당자 2', '담당자 3'],
-  cleaning: ['담당자 1', '담당자 2', '담당자 3'],
-  food: ['담당자 1', '담당자 2', '담당자 3'],
-  snack: ['담당자 1', '담당자 2', '담당자 3']
+const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
+  facilities: { groups: [{ names: ['담당자 1', '담당자 2'] }] },
+  reception: { groups: [{ names: ['담당자 1', '담당자 2', '담당자 3', '담당자 4', '담당자 5', '담당자 6'] }] },
+  cleaning: {
+    groups: [
+      { label: '남자', names: ['담당자 1', '담당자 2', '담당자 3'] },
+      { label: '여자', names: ['담당자 1', '담당자 2'] }
+    ]
+  },
+  food: { groups: [{ names: ['담당자 1', '담당자 2'] }] },
+  snack: { groups: [{ names: ['담당자 1', '담당자 2', '담당자 3', '담당자 4', '담당자 5', '담당자 6'] }] }
 };
 
 const DEFAULT_SETTINGS: AdminSettings = {
   defaultTargetTemp: 10.0,
   defaultBackwashCount: 2,
   hairCatcherMonthlyCount: 2,
-  personnel: DEFAULT_PERSONNEL
+  deptConfigs: DEFAULT_DEPT_CONFIGS
 };
 
-/** 로컬스토리지에서 관리자 설정 로드하는 유틸리티 함수 (외부에서도 사용 가능) */
+/** 로컬스토리지에서 관리자 설정 로드 (외부에서도 사용 가능) */
 export function loadAdminSettings(): AdminSettings {
   try {
     const saved = localStorage.getItem('spa_admin_settings');
     if (saved) {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(saved), personnel: { ...DEFAULT_PERSONNEL, ...(JSON.parse(saved).personnel || {}) } };
+      const parsed = JSON.parse(saved);
+      // deptConfigs 병합: 저장된 값이 없는 파트는 기본값으로 채움
+      const mergedConfigs: DeptConfigMap = { ...DEFAULT_DEPT_CONFIGS };
+      if (parsed.deptConfigs) {
+        for (const key of Object.keys(DEFAULT_DEPT_CONFIGS) as DepartmentId[]) {
+          if (parsed.deptConfigs[key]) {
+            mergedConfigs[key] = parsed.deptConfigs[key];
+          }
+        }
+      }
+      // 하위 호환: 이전 personnel 구조가 남아있을 경우 무시하고 새 구조 사용
+      return {
+        defaultTargetTemp: parsed.defaultTargetTemp ?? DEFAULT_SETTINGS.defaultTargetTemp,
+        defaultBackwashCount: parsed.defaultBackwashCount ?? DEFAULT_SETTINGS.defaultBackwashCount,
+        hairCatcherMonthlyCount: parsed.hairCatcherMonthlyCount ?? DEFAULT_SETTINGS.hairCatcherMonthlyCount,
+        deptConfigs: mergedConfigs
+      };
     }
   } catch (e) {
     console.error(e);
@@ -75,21 +96,72 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  const updatePersonnelName = (dept: DepartmentId, idx: number, name: string) => {
-    const newPersonnel = { ...settings.personnel };
-    const arr: [string, string, string] = [...newPersonnel[dept]];
-    arr[idx] = name;
-    newPersonnel[dept] = arr;
-    setSettings({ ...settings, personnel: newPersonnel });
+  // 그룹 내 특정 인원의 이름 변경
+  const updateName = (dept: DepartmentId, groupIdx: number, nameIdx: number, name: string) => {
+    const newConfigs = { ...settings.deptConfigs };
+    const newGroups = newConfigs[dept].groups.map((g, gi) => {
+      if (gi !== groupIdx) return g;
+      const newNames = [...g.names];
+      newNames[nameIdx] = name;
+      return { ...g, names: newNames };
+    });
+    newConfigs[dept] = { groups: newGroups };
+    setSettings({ ...settings, deptConfigs: newConfigs });
   };
 
-  const inputStyle = { width: '100%', height: '36px', padding: '0 10px', fontSize: '13px', borderRadius: '6px', border: '1px solid #cbd5e1' };
-  const labelStyle: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' };
-  const sectionStyle: React.CSSProperties = { marginBottom: '14px' };
+  // 그룹 인원 수 변경 (+/-)
+  const changeGroupCount = (dept: DepartmentId, groupIdx: number, delta: number) => {
+    const newConfigs = { ...settings.deptConfigs };
+    const newGroups = newConfigs[dept].groups.map((g, gi) => {
+      if (gi !== groupIdx) return g;
+      const newNames = [...g.names];
+      if (delta > 0 && newNames.length < 10) {
+        newNames.push(`담당자 ${newNames.length + 1}`);
+      } else if (delta < 0 && newNames.length > 1) {
+        newNames.pop();
+      }
+      return { ...g, names: newNames };
+    });
+    newConfigs[dept] = { groups: newGroups };
+    setSettings({ ...settings, deptConfigs: newConfigs });
+  };
+
+  const inputStyle: React.CSSProperties = { width: '100%', height: '32px', padding: '0 8px', fontSize: '12px', borderRadius: '5px', border: '1px solid #cbd5e1' };
+  const labelStyle: React.CSSProperties = { display: 'block', fontSize: '11px', fontWeight: 700, color: '#334155', marginBottom: '3px' };
+  const sectionStyle: React.CSSProperties = { marginBottom: '10px' };
+  const countBtnStyle: React.CSSProperties = { width: '24px', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', background: '#f8fafc', color: '#334155', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' };
+
+  const renderGroupEditor = (dept: DepartmentId, group: PersonnelGroup, groupIdx: number) => {
+    const groupLabel = group.label ? ` (${group.label})` : '';
+    return (
+      <div key={groupIdx} style={{ marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>
+            {DEPT_LABELS[dept]}{groupLabel} — {group.names.length}명
+          </span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button style={countBtnStyle} onClick={() => changeGroupCount(dept, groupIdx, -1)}>−</button>
+            <button style={countBtnStyle} onClick={() => changeGroupCount(dept, groupIdx, +1)}>+</button>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
+          {group.names.map((name, ni) => (
+            <input
+              key={ni}
+              type="text"
+              value={name}
+              onChange={(e) => updateName(dept, groupIdx, ni, e.target.value)}
+              style={{ ...inputStyle, height: '28px', fontSize: '11px', textAlign: 'center' }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="modal-overlay open" onClick={onClose} style={{ zIndex: 9999 }}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '85vh', overflowY: 'auto' }}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '88vh', overflowY: 'auto' }}>
         <div className="modal-header">
           <h3>⚙️ 관리자 설정</h3>
           <button className="modal-close" onClick={onClose}>&times;</button>
@@ -124,9 +196,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             </button>
           </div>
         ) : (
-          <div style={{ padding: '10px 0' }}>
-            {/* ── 점검 기준값 설정 ── */}
-            <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginBottom: '10px', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px' }}>
+          <div style={{ padding: '6px 0' }}>
+            {/* ── 점검 기준값 ── */}
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
               📏 점검 기준값
             </h4>
 
@@ -140,7 +212,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', ...sectionStyle }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', ...sectionStyle }}>
               <div>
                 <label style={labelStyle}>역세척 (주간 횟수)</label>
                 <select
@@ -163,34 +235,24 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* ── 파트별 인원 설정 ── */}
-            <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginBottom: '10px', marginTop: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px' }}>
-              👥 파트별 점검자 이름
+            {/* ── 파트별 인원 ── */}
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
+              👥 파트별 점검자 (인원 수 ± 조절 가능)
             </h4>
 
             {(Object.keys(DEPT_LABELS) as DepartmentId[]).map((dept) => (
               <div key={dept} style={sectionStyle}>
-                <label style={{ ...labelStyle, color: '#475569' }}>{DEPT_LABELS[dept]}</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
-                  {[0, 1, 2].map((idx) => (
-                    <input
-                      key={idx}
-                      type="text"
-                      placeholder={`${idx + 1}번`}
-                      value={settings.personnel[dept][idx]}
-                      onChange={(e) => updatePersonnelName(dept, idx, e.target.value)}
-                      style={{ ...inputStyle, height: '32px', fontSize: '12px', textAlign: 'center' }}
-                    />
-                  ))}
-                </div>
+                {settings.deptConfigs[dept].groups.map((group, gi) =>
+                  renderGroupEditor(dept, group, gi)
+                )}
               </div>
             ))}
 
             <button
               onClick={handleSave}
               style={{
-                width: '100%', height: '44px', background: '#2563eb', color: '#fff',
-                fontSize: '15px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '8px'
+                width: '100%', height: '40px', background: '#2563eb', color: '#fff',
+                fontSize: '14px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '4px'
               }}
             >
               설정 저장
