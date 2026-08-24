@@ -9,7 +9,6 @@ interface ComingSoonProps {
 
 const DEPT_NAMES: Record<DepartmentId, string> = {
   facilities: '시설',
-  mechanical: '기계실',
   reception: '리셉션',
   cleaning: '미화',
   food: '푸드',

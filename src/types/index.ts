@@ -46,7 +46,7 @@ export interface SectionData {
   items: CheckItem[];
 }
 
-export type DepartmentId = 'facilities' | 'mechanical' | 'reception' | 'cleaning' | 'food' | 'snack';
+export type DepartmentId = 'facilities' | 'reception' | 'cleaning' | 'food' | 'snack';
 
 /** 개별 담당자 역할 및 이름 */
 export interface RoleDef {
@@ -72,4 +72,5 @@ export interface AdminSettings {
   defaultBackwashCount: number;    // 역세척 주간 횟수 기준
   hairCatcherMonthlyCount: number; // 헤어캐처 월간 점검 횟수
   deptConfigs: DeptConfigMap;      // 파트별 인원 설정
+  enableMachineRoomPanel?: boolean; // 기계실 00/03/06시 패널 기능 활성화 여부
 }

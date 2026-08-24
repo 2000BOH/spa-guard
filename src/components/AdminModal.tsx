@@ -8,7 +8,6 @@ interface AdminModalProps {
 
 const DEPT_LABELS: Record<DepartmentId, string> = {
   facilities: '시설',
-  mechanical: '기계실',
   reception: '리셉션',
   cleaning: '미화',
   food: '푸드',
@@ -17,7 +16,6 @@ const DEPT_LABELS: Record<DepartmentId, string> = {
 
 const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
   facilities: { groups: [{ roles: [{ role: '주간', name: '' }, { role: '야간', name: '' }] }] },
-  mechanical: { groups: [{ roles: [{ role: '00시', name: '' }, { role: '03시', name: '' }, { role: '06시', name: '' }] }] },
   reception: { groups: [{ roles: [{ role: '오전', name: '' }, { role: '오후', name: '' }, { role: '야간', name: '' }] }] },
   cleaning: {
     groups: [
@@ -33,7 +31,8 @@ const DEFAULT_SETTINGS: AdminSettings = {
   defaultTargetTemp: 10.0,
   defaultBackwashCount: 2,
   hairCatcherMonthlyCount: 2,
-  deptConfigs: DEFAULT_DEPT_CONFIGS
+  deptConfigs: DEFAULT_DEPT_CONFIGS,
+  enableMachineRoomPanel: false
 };
 
 /** 로컬스토리지에서 관리자 설정 로드 (외부에서도 사용 가능) */
@@ -57,7 +56,8 @@ export function loadAdminSettings(): AdminSettings {
         defaultTargetTemp: parsed.defaultTargetTemp ?? DEFAULT_SETTINGS.defaultTargetTemp,
         defaultBackwashCount: parsed.defaultBackwashCount ?? DEFAULT_SETTINGS.defaultBackwashCount,
         hairCatcherMonthlyCount: parsed.hairCatcherMonthlyCount ?? DEFAULT_SETTINGS.hairCatcherMonthlyCount,
-        deptConfigs: mergedConfigs
+        deptConfigs: mergedConfigs,
+        enableMachineRoomPanel: parsed.enableMachineRoomPanel ?? DEFAULT_SETTINGS.enableMachineRoomPanel
       };
     }
   } catch (e) {
@@ -183,6 +183,36 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
           </div>
         ) : (
           <div style={{ padding: '6px 0' }}>
+            {/* ── 기능 설정 ── */}
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
+              ⚙️ 기능 활성화 설정
+            </h4>
+            
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', ...sectionStyle, marginBottom: '16px' }}>
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>기계실 작업모드 (00/03/06시 패널)</div>
+                <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>지하 기계실 탭 상단에 pannel.html 연동 버튼을 표시합니다.</div>
+              </div>
+              <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '22px' }}>
+                <input
+                  type="checkbox"
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                  checked={!!settings.enableMachineRoomPanel}
+                  onChange={(e) => setSettings({ ...settings, enableMachineRoomPanel: e.target.checked })}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                  backgroundColor: settings.enableMachineRoomPanel ? '#2563eb' : '#cbd5e1', transition: '.4s', borderRadius: '22px'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '""', height: '16px', width: '16px', left: '3px', bottom: '3px',
+                    backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
+                    transform: settings.enableMachineRoomPanel ? 'translateX(18px)' : 'translateX(0)'
+                  }} />
+                </span>
+              </label>
+            </div>
+
             {/* ── 점검 기준값 ── */}
             <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
               📏 점검 기준값

@@ -12,7 +12,6 @@ export const ImageAnalysisModal: React.FC<ImageAnalysisModalProps> = ({
   onApplyResult
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string>('');
   const [step, setStep] = useState<'upload' | 'analyzing' | 'result'>('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,10 +32,8 @@ export const ImageAnalysisModal: React.FC<ImageAnalysisModalProps> = ({
 
   const handleStartAnalysis = () => {
     setStep('analyzing');
-    setIsAnalyzing(true);
     // Mock AI Analysis delay
     setTimeout(() => {
-      setIsAnalyzing(false);
       setAnalysisResult('분석 결과: \n- 특정 장비 이상 감지됨\n- 조치 요망');
       setStep('result');
     }, 2000);
