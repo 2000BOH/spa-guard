@@ -8,6 +8,7 @@ interface AdminModalProps {
 
 const DEPT_LABELS: Record<DepartmentId, string> = {
   facilities: '시설',
+  mechanical: '기계실',
   reception: '리셉션',
   cleaning: '미화',
   food: '푸드',
@@ -16,6 +17,7 @@ const DEPT_LABELS: Record<DepartmentId, string> = {
 
 const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
   facilities: { groups: [{ roles: [{ role: '주간', name: '' }, { role: '야간', name: '' }] }] },
+  mechanical: { groups: [{ roles: [{ role: '00시', name: '' }, { role: '03시', name: '' }, { role: '06시', name: '' }] }] },
   reception: { groups: [{ roles: [{ role: '오전', name: '' }, { role: '오후', name: '' }, { role: '야간', name: '' }] }] },
   cleaning: {
     groups: [

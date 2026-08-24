@@ -46,7 +46,7 @@ export interface SectionData {
   items: CheckItem[];
 }
 
-export type DepartmentId = 'facilities' | 'reception' | 'cleaning' | 'food' | 'snack';
+export type DepartmentId = 'facilities' | 'mechanical' | 'reception' | 'cleaning' | 'food' | 'snack';
 
 /** 개별 담당자 역할 및 이름 */
 export interface RoleDef {

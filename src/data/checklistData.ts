@@ -26,6 +26,7 @@ export const TAB_INFO: Record<string, { id: string; name: string; htmlName: stri
 
 export const DEPT_TABS_MAP: Record<DepartmentId, string[]> = {
   facilities: ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'],
+  mechanical: [], // To be added later
   reception: [], // 추가 필요
   cleaning: ['cWTab1', 'cWTab2', 'cWTab3', 'cWTab4'], // Default fallback
   food: [],      // 추가 필요
