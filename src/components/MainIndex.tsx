@@ -7,9 +7,9 @@ interface MainIndexProps {
 }
 
 const DEPTS: Record<DepartmentId, { name: string; icon: string }> = {
-  facilities: { name: '시설', icon: '🏢' },
+  facilities: { name: '시설', icon: '🛠️' },
   reception: { name: '리셉션', icon: '🛎️' },
-  cleaning: { name: '미화', icon: '✨' },
+  cleaning: { name: '미화', icon: '🧹' },
   food: { name: '푸드', icon: '🍽️' },
   snack: { name: '스낵', icon: '☕' }
 };
