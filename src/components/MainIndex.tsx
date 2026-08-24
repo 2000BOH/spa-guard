@@ -6,25 +6,13 @@ interface MainIndexProps {
   onSelectDepartment: (dept: DepartmentId, inspector: string) => void;
 }
 
-const DEPT_LIST: { id: DepartmentId; name: string; icon: string }[] = [
-  { id: 'facilities', name: '시설', icon: '♨️' },
-  { id: 'reception', name: '리셉션', icon: '💁‍♀️' },
-  { id: 'cleaning', name: '미화', icon: '🧹' },
-  { id: 'food', name: '푸드', icon: '🍱' },
-  { id: 'snack', name: '스낵', icon: '🍿' }
-];
-
-// 좌우 교대 배치: 작은 파트와 큰 파트를 교대 배치하여 시각적 균형
-const TREE_LAYOUT: { deptIdx: number; side: 'left' | 'right' }[] = [
-  { deptIdx: 0, side: 'left' },   // 시설 (2명)
-  { deptIdx: 1, side: 'right' },  // 리셉션 (6명)
-  { deptIdx: 2, side: 'left' },   // 미화 (남3+여2)
-  { deptIdx: 4, side: 'right' },  // 스낵 (6명)
-  { deptIdx: 3, side: 'left' },   // 푸드 (2명)
-];
-
-const CONNECTOR_W = 14;
-const CARD_M = 4;
+const DEPTS: Record<DepartmentId, { name: string; icon: string }> = {
+  facilities: { name: '시설', icon: '♨️' },
+  reception: { name: '리셉션', icon: '💁‍♀️' },
+  cleaning: { name: '미화', icon: '🧹' },
+  food: { name: '푸드', icon: '🍱' },
+  snack: { name: '스낵', icon: '🍿' }
+};
 
 export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -34,6 +22,70 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
     if (!isAdminOpen) setSettings(loadAdminSettings());
   }, [isAdminOpen]);
 
+  /** 파트별 카드 렌더링 */
+  const renderCard = (deptId: DepartmentId) => {
+    const dept = DEPTS[deptId];
+    const config = settings.deptConfigs[deptId];
+
+    return (
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '12px',
+        padding: '8px 12px',
+        border: '1px solid #e2e8f0',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        height: '100%',
+        boxSizing: 'border-box'
+      }}>
+        {/* 파트명 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+          <span style={{ fontSize: '20px' }}>{dept.icon}</span>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{dept.name}</span>
+        </div>
+
+        {/* 인원 버튼 */}
+        {config.groups.map((group, gi) => (
+          <div key={gi} style={gi > 0 ? { marginTop: '4px' } : undefined}>
+            {group.label && (
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '2px' }}>
+                {group.label}
+              </span>
+            )}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${Math.min(group.names.length, 3)}, 1fr)`,
+              gap: '6px'
+            }}>
+              {group.names.map((name, ni) => (
+                <button
+                  key={ni}
+                  onClick={() => onSelectDepartment(deptId, name)}
+                  style={{
+                    height: '36px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    color: '#334155',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div style={{
       height: '100dvh',
@@ -41,174 +93,49 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
       flexDirection: 'column',
       background: '#f1f5f9',
       overflow: 'hidden',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      padding: '10px 10px 6px'
     }}>
-      {/* ── Root Node (타이틀) ── */}
-      <div style={{
-        textAlign: 'center',
-        padding: '12px 0 0',
-        flexShrink: 0,
-        position: 'relative',
-        zIndex: 2
-      }}>
-        <div style={{
-          display: 'inline-block',
-          background: '#0f172a',
-          color: '#f1f5f9',
-          padding: '8px 22px',
-          borderRadius: '22px',
-          fontSize: '14px',
-          fontWeight: 700,
-          letterSpacing: '0.5px',
-          boxShadow: '0 3px 12px rgba(15,23,42,0.18)'
-        }}>
+      {/* ── 타이틀 ── */}
+      <header style={{ textAlign: 'center', marginBottom: '8px', flexShrink: 0 }}>
+        <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 2px' }}>
           Blue Ocean Wellness Spa
+        </h1>
+        <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>
+          점검할 부서와 담당자를 선택하세요
+        </p>
+      </header>
+
+      {/* ── 파트 카드 그리드 ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minHeight: 0 }}>
+
+        {/* 행 1: 시설(2명) + 푸드(2명) — 작은 파트끼리 나란히 */}
+        <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
+          <div style={{ flex: 1 }}>{renderCard('facilities')}</div>
+          <div style={{ flex: 1 }}>{renderCard('food')}</div>
+        </div>
+
+        {/* 행 2: 리셉션(6명) — 전체 너비 */}
+        <div style={{ flex: 1 }}>
+          {renderCard('reception')}
+        </div>
+
+        {/* 행 3: 미화(남3+여2) — 전체 너비 */}
+        <div style={{ flex: 1 }}>
+          {renderCard('cleaning')}
+        </div>
+
+        {/* 행 4: 스낵(6명) — 전체 너비 */}
+        <div style={{ flex: 1 }}>
+          {renderCard('snack')}
         </div>
       </div>
 
-      {/* ── Tree Body (마인드맵) ── */}
-      <div style={{
-        flex: 1,
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: 0,
-        padding: '0 4px'
-      }}>
-        {/* 중앙 수직 연결선 (Spine) */}
-        <div style={{
-          position: 'absolute',
-          left: '50%',
-          top: 0,
-          bottom: 0,
-          width: '2px',
-          background: 'linear-gradient(180deg, #64748b 0%, #cbd5e1 100%)',
-          transform: 'translateX(-50%)',
-          zIndex: 0
-        }} />
-
-        {TREE_LAYOUT.map(({ deptIdx, side }) => {
-          const dept = DEPT_LIST[deptIdx];
-          const config = settings.deptConfigs[dept.id];
-
-          return (
-            <div key={dept.id} style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: side === 'left' ? 'flex-start' : 'flex-end',
-              position: 'relative',
-              zIndex: 1
-            }}>
-              {/* 분기점 원형 노드 */}
-              <div style={{
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: '#64748b',
-                border: '2px solid #f1f5f9',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 3
-              }} />
-
-              {/* 수평 연결선 (카드 → 중앙 스파인) */}
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                height: '2px',
-                background: '#94a3b8',
-                zIndex: 1,
-                ...(side === 'left'
-                  ? { left: `calc(50% - ${CONNECTOR_W}px)`, width: `${CONNECTOR_W}px` }
-                  : { left: '50%', width: `${CONNECTOR_W}px` }
-                )
-              }} />
-
-              {/* ── Department Card ── */}
-              <div style={{
-                width: `calc(50% - ${CONNECTOR_W + CARD_M}px)`,
-                background: '#ffffff',
-                borderRadius: '10px',
-                padding: '6px 10px',
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-                ...(side === 'left'
-                  ? { marginLeft: `${CARD_M}px` }
-                  : { marginRight: `${CARD_M}px` }
-                )
-              }}>
-                {/* 파트명 헤더 */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  marginBottom: '4px',
-                  borderBottom: '1px solid #f1f5f9',
-                  paddingBottom: '3px'
-                }}>
-                  <span style={{ fontSize: '14px', lineHeight: 1 }}>{dept.icon}</span>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>{dept.name}</span>
-                </div>
-
-                {/* 인원 버튼 그룹 */}
-                {config.groups.map((group, gi) => (
-                  <div key={gi} style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '3px',
-                    alignItems: 'center',
-                    ...(gi > 0 ? { marginTop: '3px' } : {})
-                  }}>
-                    {group.label && (
-                      <span style={{
-                        fontSize: '9px',
-                        fontWeight: 700,
-                        color: '#94a3b8',
-                        minWidth: '18px'
-                      }}>
-                        {group.label}
-                      </span>
-                    )}
-                    {group.names.map((name, ni) => (
-                      <button
-                        key={ni}
-                        onClick={() => onSelectDepartment(dept.id, name)}
-                        style={{
-                          height: '24px',
-                          padding: '0 6px',
-                          fontSize: '10px',
-                          fontWeight: 600,
-                          background: '#f1f5f9',
-                          border: '1px solid #cbd5e1',
-                          borderRadius: '5px',
-                          color: '#334155',
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          maxWidth: '64px',
-                          transition: 'background 0.15s'
-                        }}
-                      >
-                        {name}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Footer ── */}
-      <div style={{ textAlign: 'right', flexShrink: 0, padding: '2px 8px 6px' }}>
+      {/* ── 하단 관리자 ── */}
+      <div style={{ textAlign: 'right', flexShrink: 0, paddingTop: '4px' }}>
         <button onClick={() => setIsAdminOpen(true)} style={{
           background: 'none', border: 'none', color: '#94a3b8',
-          fontSize: '10px', fontWeight: 600, cursor: 'pointer', padding: '4px 8px'
+          fontSize: '11px', fontWeight: 600, cursor: 'pointer', padding: '4px 8px'
         }}>
           🔒 관리자
         </button>
