@@ -105,46 +105,54 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
       padding: '10px 10px 6px'
     }}>
       {/* ── 타이틀 ── */}
-      <header style={{ textAlign: 'center', marginBottom: '8px', flexShrink: 0 }}>
-        <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 2px' }}>
-          Blue Ocean Wellness Spa
-        </h1>
-        <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>
-          점검할 부서와 담당자를 선택하세요
-        </p>
+      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px', flexShrink: 0, padding: '0 4px' }}>
+        <div style={{ flex: 1 }} />
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 2px' }}>
+            Blue Ocean Wellness Spa
+          </h1>
+          <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>
+            점검할 부서와 담당자를 선택하세요
+          </p>
+        </div>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={() => setIsAdminOpen(true)}
+            style={{
+              background: '#1e293b', color: '#fff', border: 'none', borderRadius: '6px',
+              padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '4px', height: 'fit-content'
+            }}
+          >
+            <span style={{ fontSize: '12px' }}>🔒</span> 관리자
+          </button>
+        </div>
       </header>
 
       {/* ── 파트 카드 그리드 ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minHeight: 0 }}>
 
-        {/* 행 1: 시설 + 푸드 — 반반 */}
+        {/* 행 1: 시설 + 기계실 패널 (00시 / 03시 / 06시) */}
         <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
           <div style={{ flex: 1 }}>{renderCard('facilities')}</div>
-          <div style={{ flex: 1 }}>{renderCard('food')}</div>
-        </div>
-
-        {/* 행 1.5: 기계실 패널 (00시 / 03시 / 06시) */}
-        <div style={{ flex: 0.7, display: 'flex', gap: '6px' }}>
-          <div style={{
-            flex: 1, background: '#1e293b', borderRadius: '12px', padding: '6px 12px',
-            display: 'flex', alignItems: 'center', gap: '10px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <div style={{ flex: 1, background: '#1e293b', borderRadius: '12px', padding: '6px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
               <span style={{ fontSize: '18px' }}>⚙️</span>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>기계실</span>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>기계실 (패널)</span>
             </div>
-            <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '4px' }}>
               {['00시', '03시', '06시'].map((t) => (
                 <button
                   key={t}
                   onClick={() => onOpenPanel(t)}
                   style={{
-                    flex: 1, height: '38px', background: '#334155', color: '#94a3b8',
-                    border: '1px solid #475569', borderRadius: '8px', fontSize: '14px',
+                    flex: 1, height: '40px', background: '#334155', color: '#94a3b8',
+                    border: '1px solid #475569', borderRadius: '8px', fontSize: '13px',
                     fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s'
                   }}
-                  onMouseDown={(e) => { (e.target as HTMLButtonElement).style.background = '#3b82f6'; (e.target as HTMLButtonElement).style.color = '#fff'; }}
-                  onMouseUp={(e) => { (e.target as HTMLButtonElement).style.background = '#334155'; (e.target as HTMLButtonElement).style.color = '#94a3b8'; }}
+                  onPointerDown={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#3b82f6'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; }}
+                  onPointerUp={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#334155'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; }}
+                  onPointerLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#334155'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; }}
                 >
                   {t}
                 </button>
@@ -163,34 +171,10 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
           {renderCard('cleaning')}
         </div>
 
-        {/* 행 4: 스낵(반) + 관리자 버튼(반) */}
+        {/* 행 4: 스낵(반) + 푸드(반) */}
         <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
           <div style={{ flex: 1 }}>{renderCard('snack')}</div>
-          <div style={{ flex: 1 }}>
-            <button
-              onClick={() => setIsAdminOpen(true)}
-              style={{
-                width: '100%',
-                height: '100%',
-                background: '#1e293b',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '12px',
-                fontSize: '15px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-              }}
-            >
-              <span style={{ fontSize: '24px' }}>🔒</span>
-              관리자 모드
-            </button>
-          </div>
+          <div style={{ flex: 1 }}>{renderCard('food')}</div>
         </div>
       </div>
 
