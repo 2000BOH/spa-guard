@@ -4,6 +4,7 @@ import { AdminModal, loadAdminSettings } from './AdminModal';
 
 interface MainIndexProps {
   onSelectDepartment: (dept: DepartmentId, inspector: string, roleName?: string) => void;
+  onOpenPanel: (timeLabel: string) => void;
 }
 
 const DEPTS: Record<DepartmentId, { name: string; icon: string }> = {
@@ -14,7 +15,7 @@ const DEPTS: Record<DepartmentId, { name: string; icon: string }> = {
   snack: { name: '스낵', icon: '☕' }
 };
 
-export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
+export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpenPanel }) => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [settings, setSettings] = useState<AdminSettings>(loadAdminSettings());
 
@@ -120,6 +121,36 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment }) => {
         <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
           <div style={{ flex: 1 }}>{renderCard('facilities')}</div>
           <div style={{ flex: 1 }}>{renderCard('food')}</div>
+        </div>
+
+        {/* 행 1.5: 기계실 패널 (00시 / 03시 / 06시) */}
+        <div style={{ flex: 0.7, display: 'flex', gap: '6px' }}>
+          <div style={{
+            flex: 1, background: '#1e293b', borderRadius: '12px', padding: '6px 12px',
+            display: 'flex', alignItems: 'center', gap: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+              <span style={{ fontSize: '18px' }}>⚙️</span>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>기계실</span>
+            </div>
+            <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
+              {['00시', '03시', '06시'].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => onOpenPanel(t)}
+                  style={{
+                    flex: 1, height: '38px', background: '#334155', color: '#94a3b8',
+                    border: '1px solid #475569', borderRadius: '8px', fontSize: '14px',
+                    fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s'
+                  }}
+                  onMouseDown={(e) => { (e.target as HTMLButtonElement).style.background = '#3b82f6'; (e.target as HTMLButtonElement).style.color = '#fff'; }}
+                  onMouseUp={(e) => { (e.target as HTMLButtonElement).style.background = '#334155'; (e.target as HTMLButtonElement).style.color = '#94a3b8'; }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* 행 2: 리셉션 — 전체 너비 */}

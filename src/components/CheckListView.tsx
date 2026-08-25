@@ -63,7 +63,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   const tabNameClean = TAB_INFO[currentTab]?.name || '';
   const adminSettings = loadAdminSettings();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [panelModalOpen, setPanelModalOpen] = useState<{ open: boolean; title: string }>({ open: false, title: '' });
 
   const handleApplyImageResult = (resultText: string) => {
     const newSummary = summaryText ? `${summaryText}\n${resultText}` : resultText;
@@ -666,29 +665,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   // Standard View for Tabs 1, 2, 3
   return (
     <main className="main-container">
-      {currentTab === 'tab2' && adminSettings.enableMachineRoomPanel && (
-        <div className="section-card" style={{ marginBottom: '16px' }}>
-          <div className="section-title">
-            <span>기계실 작업모드 패널</span>
-          </div>
-          <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-            {['00시', '03시', '06시'].map((time) => (
-              <button
-                key={time}
-                onClick={() => setPanelModalOpen({ open: true, title: `${time} 기계실 점검 패널` })}
-                style={{
-                  flex: 1, padding: '12px 0', background: '#3b82f6', color: '#fff',
-                  border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }}
-              >
-                {time} 패널 보기
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {sections.map((section, sIdx) => (
         <div key={sIdx} className="section-card">
           <div className="section-title">
@@ -791,25 +767,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
         onClose={() => setIsImageModalOpen(false)}
         onApplyResult={handleApplyImageResult}
       />
-
-      {/* 기계실 패널 모달 */}
-      {panelModalOpen.open && (
-        <div className="modal-overlay open" onClick={() => setPanelModalOpen({ open: false, title: '' })} style={{ zIndex: 10000 }}>
-          <div className="modal-card" style={{ width: '90%', maxWidth: '800px', height: '85vh', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{panelModalOpen.title}</h3>
-              <button className="modal-close" onClick={() => setPanelModalOpen({ open: false, title: '' })}>&times;</button>
-            </div>
-            <div style={{ flex: 1, padding: '0', background: '#000' }}>
-              <iframe 
-                src="/pannel.html" 
-                style={{ width: '100%', height: '100%', border: 'none' }}
-                title="Machine Room Panel"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 };

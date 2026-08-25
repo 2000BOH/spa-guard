@@ -33,8 +33,9 @@ function getYesterdayStr(): string {
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'main' | 'checklist' | 'comingSoon'>('main');
+  const [currentView, setCurrentView] = useState<'main' | 'checklist' | 'comingSoon' | 'panel'>('main');
   const [selectedDept, setSelectedDept] = useState<DepartmentId | null>(null);
+  const [panelTimeLabel, setPanelTimeLabel] = useState('');
 
   const [currentTab, setCurrentTab] = useState<TabId>('tab2');
   const [availableTabs, setAvailableTabs] = useState<TabId[]>([]);
@@ -209,6 +210,12 @@ export default function App() {
         setCurrentView('comingSoon');
       }
       updateStateAndSave((prev) => ({ ...prev, inspector, roleName }));
+  };
+
+  /** 기계실 패널 열기 (00시 / 03시 / 06시) */
+  const handleOpenPanel = (timeLabel: string) => {
+    setPanelTimeLabel(timeLabel);
+    setCurrentView('panel');
   };
 
   const handleSetStatus = (id: string, status: StatusType) => {
@@ -506,9 +513,46 @@ export default function App() {
   if (currentView === 'main') {
     return (
       <>
-        <MainIndex onSelectDepartment={handleSelectDepartment} />
+        <MainIndex onSelectDepartment={handleSelectDepartment} onOpenPanel={handleOpenPanel} />
         <Toast message={toastMsg} />
       </>
+    );
+  }
+
+  if (currentView === 'panel') {
+    return (
+      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0f172a' }}>
+        {/* 상단 바 */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 16px', background: '#1e293b', flexShrink: 0
+        }}>
+          <button
+            onClick={() => {
+              window.history.replaceState({}, '', window.location.pathname);
+              setCurrentView('main');
+            }}
+            style={{
+              background: 'none', border: 'none', color: '#94a3b8', fontSize: '14px',
+              fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
+            }}
+          >
+            ← 돌아가기
+          </button>
+          <span style={{ color: '#fff', fontSize: '16px', fontWeight: 700 }}>
+            ⚙️ 기계실 패널 — {panelTimeLabel}
+          </span>
+          <div style={{ width: '60px' }} />
+        </div>
+        {/* pannel.html iframe */}
+        <div style={{ flex: 1 }}>
+          <iframe
+            src="/pannel.html"
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            title="기계실 패널"
+          />
+        </div>
+      </div>
     );
   }
 

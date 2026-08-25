@@ -183,34 +183,25 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
           </div>
         ) : (
           <div style={{ padding: '6px 0' }}>
-            {/* ── 기능 설정 ── */}
+            {/* ── 기계실 패널 설정 ── */}
             <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
-              ⚙️ 기능 활성화 설정
+              ⚙️ 관리자 · 설정 편집
             </h4>
             
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', ...sectionStyle, marginBottom: '16px' }}>
-              <div>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>기계실 작업모드 (00/03/06시 패널)</div>
-                <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>지하 기계실 탭 상단에 pannel.html 연동 버튼을 표시합니다.</div>
+            <div style={{ ...sectionStyle, marginBottom: '16px' }}>
+              <button
+                onClick={() => window.open('/pannel.html', '_blank')}
+                style={{
+                  width: '100%', height: '42px', background: '#334155', color: '#fff',
+                  border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                }}
+              >
+                <span>⚙️</span> 기계실 패널 설정 편집 (pannel.html)
+              </button>
+              <div style={{ fontSize: '10px', color: '#64748b', marginTop: '4px' }}>
+                버튼 위치 등 기준값을 설정합니다. 점검자는 메인화면에서 시간을 선택하여 확인합니다.
               </div>
-              <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '22px' }}>
-                <input
-                  type="checkbox"
-                  style={{ opacity: 0, width: 0, height: 0 }}
-                  checked={!!settings.enableMachineRoomPanel}
-                  onChange={(e) => setSettings({ ...settings, enableMachineRoomPanel: e.target.checked })}
-                />
-                <span style={{
-                  position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                  backgroundColor: settings.enableMachineRoomPanel ? '#2563eb' : '#cbd5e1', transition: '.4s', borderRadius: '22px'
-                }}>
-                  <span style={{
-                    position: 'absolute', content: '""', height: '16px', width: '16px', left: '3px', bottom: '3px',
-                    backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
-                    transform: settings.enableMachineRoomPanel ? 'translateX(18px)' : 'translateX(0)'
-                  }} />
-                </span>
-              </label>
             </div>
 
             {/* ── 점검 기준값 ── */}
