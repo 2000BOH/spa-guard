@@ -71,17 +71,35 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const [isAuth, setIsAuth] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS);
+  const [showPannelEditor, setShowPannelEditor] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setPin('');
       setIsAuth(false);
       setErrorMsg('');
+      setShowPannelEditor(false);
       setSettings(loadAdminSettings());
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  if (showPannelEditor) {
+    return (
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10000, background: '#0f172a', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '10px 16px', background: '#1e293b', display: 'flex', alignItems: 'center' }}>
+          <button 
+            onClick={() => setShowPannelEditor(false)} 
+            style={{ color: '#fff', background: 'none', border: 'none', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+          >
+            ← 관리자 설정으로 돌아가기
+          </button>
+        </div>
+        <iframe src="/pannel.html?mode=admin" style={{ flex: 1, border: 'none', background: '#fff' }} />
+      </div>
+    );
+  }
 
   const handleAuth = () => {
     if (pin === '0000') {
@@ -183,7 +201,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             
             <div style={{ ...sectionStyle, marginBottom: '16px' }}>
               <button
-                onClick={() => { window.location.href = '/pannel.html'; }}
+                onClick={() => setShowPannelEditor(true)}
                 style={{
                   width: '100%', height: '42px', background: '#334155', color: '#fff',
                   border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700,
