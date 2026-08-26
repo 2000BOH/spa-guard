@@ -190,7 +190,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             
             <div style={{ ...sectionStyle, marginBottom: '16px' }}>
               <button
-                onClick={() => window.open('/pannel.html', '_blank')}
+                onClick={() => { window.location.href = '/pannel.html'; }}
                 style={{
                   width: '100%', height: '42px', background: '#334155', color: '#fff',
                   border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700,
