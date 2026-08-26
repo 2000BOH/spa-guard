@@ -403,5 +403,16 @@ div[style*="border-radius: 20px"] { display: none !important; }
 
 </style>
 
+
+<style>
+/* Hide the big timebox (Row 2) completely and safely */
+div[data-print-hide="1"] > div > div[style*="font-size:52px"],
+div[data-print-hide="1"] > div > div[style*="font-size: 52px"],
+div[data-print-hide="1"][style*="border-radius: 20px"],
+div[data-print-hide="1"][style*="border-radius:20px"] {
+  display: none !important;
+}
+</style>
+
 </body>
 </html>
