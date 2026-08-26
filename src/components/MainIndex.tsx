@@ -56,8 +56,8 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
           <button
             onClick={() => setWorkRulesDept(deptId)}
             style={{
-              background: '#e0e7ff', color: '#4f46e5', border: 'none', borderRadius: '4px',
-              padding: '3px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+              background: '#ffffff', color: '#4f46e5', border: '1px solid #4f46e5', borderRadius: '4px',
+              padding: '2px 7px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: '3px'
             }}
           >
