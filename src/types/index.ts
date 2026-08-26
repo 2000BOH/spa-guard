@@ -63,6 +63,7 @@ export interface PersonnelGroup {
 /** 파트별 인원 설정 */
 export interface DeptConfig {
   groups: PersonnelGroup[];
+  inspectorPool?: string[];
 }
 
 export type DeptConfigMap = Record<DepartmentId, DeptConfig>;

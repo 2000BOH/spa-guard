@@ -10,6 +10,7 @@ import { CheckListView } from './components/CheckListView';
 import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { saveInspectionToSupabase } from './lib/supabase';
+import { loadAdminSettings } from './components/AdminModal';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
 
@@ -594,6 +595,7 @@ export default function App() {
           isReadOnly={isReadOnly}
           onChangeCheckDate={handleDateChange}
           onChangeInspector={(val) => updateStateAndSave((p) => ({ ...p, inspector: val }))}
+          inspectorOptions={selectedDept ? (loadAdminSettings().deptConfigs[selectedDept]?.inspectorPool || []) : []}
         />
       </Header>
 

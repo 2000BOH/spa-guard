@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { AdminSettings, DepartmentId, DeptConfigMap, PersonnelGroup } from '../types';
+import type { AdminSettings, DepartmentId, DeptConfigMap } from '../types';
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -99,16 +99,11 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  // 그룹 내 특정 역할의 담당자 이름 변경
-  const updateRoleName = (dept: DepartmentId, groupIdx: number, roleIdx: number, name: string) => {
+  // 부서별 점검자 풀(목록) 업데이트
+  const updateInspectorPool = (dept: DepartmentId, value: string) => {
     const newConfigs = { ...settings.deptConfigs };
-    const newGroups = newConfigs[dept].groups.map((g, gi) => {
-      if (gi !== groupIdx) return g;
-      const newRoles = [...g.roles];
-      newRoles[roleIdx] = { ...newRoles[roleIdx], name };
-      return { ...g, roles: newRoles };
-    });
-    newConfigs[dept] = { groups: newGroups };
+    const pool = value.split(',').map(s => s.trim()).filter(Boolean);
+    newConfigs[dept] = { ...newConfigs[dept], inspectorPool: pool };
     setSettings({ ...settings, deptConfigs: newConfigs });
   };
 
@@ -116,30 +111,28 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: '11px', fontWeight: 700, color: '#334155', marginBottom: '3px' };
   const sectionStyle: React.CSSProperties = { marginBottom: '10px' };
 
-  const renderGroupEditor = (dept: DepartmentId, group: PersonnelGroup, groupIdx: number) => {
-    const groupLabel = group.label ? ` (${group.label})` : '';
+  const renderDeptEditor = (dept: DepartmentId) => {
+    const config = settings.deptConfigs[dept];
+    const poolString = (config.inspectorPool || []).join(', ');
+    
     return (
-      <div key={groupIdx} style={{ marginBottom: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>
-            {DEPT_LABELS[dept]}{groupLabel}
+      <div key={dept} style={{ marginBottom: '14px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>
+            {DEPT_LABELS[dept]} 파트 점검자 풀
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '4px' }}>
-          {group.roles.map((r, ri) => (
-            <div key={ri} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '60px', fontSize: '11px', color: '#64748b', fontWeight: 600, textAlign: 'right' }}>
-                {r.role}
-              </div>
-              <input
-                type="text"
-                placeholder="담당자 이름"
-                value={r.name}
-                onChange={(e) => updateRoleName(dept, groupIdx, ri, e.target.value)}
-                style={{ ...inputStyle, flex: 1, height: '28px', fontSize: '11px' }}
-              />
-            </div>
-          ))}
+        <div>
+          <input
+            type="text"
+            placeholder="점검자 이름 (쉼표로 구분하여 입력, 예: 홍길동, 김철수)"
+            value={poolString}
+            onChange={(e) => updateInspectorPool(dept, e.target.value)}
+            style={{ ...inputStyle, flex: 1, fontSize: '12px' }}
+          />
+          <div style={{ fontSize: '10px', color: '#64748b', marginTop: '4px' }}>
+            입력된 이름들은 점검 화면에서 선택 목록으로 제공됩니다.
+          </div>
         </div>
       </div>
     );
@@ -248,11 +241,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             </h4>
 
             {(Object.keys(DEPT_LABELS) as DepartmentId[]).map((dept) => (
-              <div key={dept} style={sectionStyle}>
-                {settings.deptConfigs[dept].groups.map((group, gi) =>
-                  renderGroupEditor(dept, group, gi)
-                )}
-              </div>
+              renderDeptEditor(dept)
             ))}
 
             <button

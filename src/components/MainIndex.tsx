@@ -80,12 +80,14 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
                   padding: '2px 4px'
                 }}
               >
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
+                <span style={{ fontSize: r.name ? '11px' : '13px', fontWeight: r.name ? 600 : 700, color: r.name ? '#64748b' : '#0f172a' }}>
                   {roleName}
                 </span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginTop: '1px' }}>
-                  {r.name || '미지정'}
-                </span>
+                {r.name && (
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginTop: '1px' }}>
+                    {r.name}
+                  </span>
+                )}
               </button>
             );
           })}
