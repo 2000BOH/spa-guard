@@ -73,13 +73,22 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS);
   const [showPannelEditor, setShowPannelEditor] = useState(false);
 
+  const [poolInputs, setPoolInputs] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (isOpen) {
       setPin('');
       setIsAuth(false);
       setErrorMsg('');
       setShowPannelEditor(false);
-      setSettings(loadAdminSettings());
+      const loadedSettings = loadAdminSettings();
+      setSettings(loadedSettings);
+      
+      const initialPools: Record<string, string> = {};
+      (Object.keys(DEPT_LABELS) as DepartmentId[]).forEach(dept => {
+        initialPools[dept] = (loadedSettings.deptConfigs[dept as DepartmentId]?.inspectorPool || []).join(', ');
+      });
+      setPoolInputs(initialPools);
     }
   }, [isOpen]);
 
@@ -119,6 +128,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
   // 부서별 점검자 풀(목록) 업데이트
   const updateInspectorPool = (dept: DepartmentId, value: string) => {
+    setPoolInputs(prev => ({ ...prev, [dept]: value }));
     const newConfigs = { ...settings.deptConfigs };
     const pool = value.split(',').map(s => s.trim()).filter(Boolean);
     newConfigs[dept] = { ...newConfigs[dept], inspectorPool: pool };
@@ -130,8 +140,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const sectionStyle: React.CSSProperties = { marginBottom: '10px' };
 
   const renderDeptEditor = (dept: DepartmentId) => {
-    const config = settings.deptConfigs[dept];
-    const poolString = (config.inspectorPool || []).join(', ');
+    const poolString = poolInputs[dept] || '';
     
     return (
       <div key={dept} style={{ marginBottom: '14px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
