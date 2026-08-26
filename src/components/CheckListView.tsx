@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { TabId, ItemState, StatusType, CheckItem } from '../types';
 import { CHECKLIST_DATA, TAB_INFO } from '../data/checklistData';
 import { loadAdminSettings } from './AdminModal';
