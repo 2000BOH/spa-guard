@@ -14,6 +14,14 @@ import { loadAdminSettings } from './components/AdminModal';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
 
+const DEPT_NAMES: Record<string, string> = {
+  facilities: '시설',
+  reception: '리셉션',
+  cleaning: '미화',
+  food: '푸드',
+  snack: '스낵'
+};
+
 const getStorageKey = (date: string) => `spa_date_data_${date}`;
 
 function getTodayStr(): string {
@@ -579,7 +587,7 @@ export default function App() {
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         progressPct={progressPct}
-        departmentName={selectedDept === 'facilities' ? '시설' : selectedDept === 'cleaning' ? '미화' : '점검'}
+        departmentName={(selectedDept && DEPT_NAMES[selectedDept]) || '점검'}
         availableTabs={availableTabs}
         onBack={() => {
           window.history.replaceState({}, '', window.location.pathname);
@@ -626,7 +634,7 @@ export default function App() {
         </button>
       </footer>
 
-      <A4PrintDocument state={state} departmentName={selectedDept === 'facilities' ? '시설' : selectedDept === 'cleaning' ? '미화' : '점검'} availableTabs={availableTabs} />
+      <A4PrintDocument state={state} departmentName={(selectedDept && DEPT_NAMES[selectedDept]) || '점검'} availableTabs={availableTabs} />
 
       <SaveModal
         isOpen={isSaveModalOpen}
