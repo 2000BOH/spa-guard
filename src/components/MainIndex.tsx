@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { DepartmentId, AdminSettings } from '../types';
 import { AdminModal, loadAdminSettings } from './AdminModal';
+import { WORK_RULES } from '../data/workRulesData';
 
 interface MainIndexProps {
   onSelectDepartment: (dept: DepartmentId, inspector: string, roleName?: string) => void;
@@ -52,18 +53,16 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
             <span style={{ fontSize: '20px' }}>{dept.icon}</span>
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{dept.name}</span>
           </div>
-          {deptId !== 'facilities' && (
-            <button
-              onClick={() => setWorkRulesDept(deptId)}
-              style={{
-                background: '#e0e7ff', color: '#4f46e5', border: 'none', borderRadius: '4px',
-                padding: '3px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '3px'
-              }}
-            >
-              <span>📋</span> 근무수칙
-            </button>
-          )}
+          <button
+            onClick={() => setWorkRulesDept(deptId)}
+            style={{
+              background: '#e0e7ff', color: '#4f46e5', border: 'none', borderRadius: '4px',
+              padding: '3px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '3px'
+            }}
+          >
+            <span>📋</span> 근무수칙
+          </button>
         </div>
 
         {/* 인원 버튼 (한 줄로 모두 표시) */}
@@ -206,25 +205,52 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
           padding: '20px'
         }}>
           <div style={{
-            background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '400px',
-            maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden'
+            background: '#f1f5f9', borderRadius: '12px', width: '100%', maxWidth: '400px',
+            maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
           }}>
             <div style={{
-              background: '#1e293b', padding: '12px 16px', display: 'flex',
-              alignItems: 'center', justifyContent: 'space-between', color: '#fff'
+              background: '#2c3574', padding: '16px 20px', display: 'flex', flexDirection: 'column', color: '#fff', position: 'relative'
             }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>
-                {DEPTS[workRulesDept].icon} {DEPTS[workRulesDept].name} 근무수칙
-              </h3>
               <button
                 onClick={() => setWorkRulesDept(null)}
-                style={{ background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}
+                style={{ position: 'absolute', top: '12px', right: '16px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', lineHeight: 1 }}
               >
                 ×
               </button>
+              <div style={{ fontSize: '11px', letterSpacing: '2px', color: '#cbd5e1', marginBottom: '8px' }}>
+                BLUE OCEAN · WELLNESS SPA
+              </div>
+              <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
+                {DEPTS[workRulesDept].name} 근무수칙
+              </h3>
             </div>
-            <div style={{ padding: '20px', overflowY: 'auto', flex: 1, fontSize: '14px', lineHeight: 1.6, color: '#334155' }}>
-              현재 내용 업데이트 중입니다. (추후 반영 예정)
+            <div style={{ padding: '16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {WORK_RULES[workRulesDept] ? (
+                WORK_RULES[workRulesDept].map((section, idx) => (
+                  <div key={idx} style={{ background: '#fff', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                      <div style={{ background: '#fce7e7', color: '#b91c1c', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '15px' }}>
+                        {idx + 1}
+                      </div>
+                      <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#1e293b' }}>{section.title}</h4>
+                    </div>
+                    <div style={{ borderTop: '1px solid #f1f5f9', marginBottom: '16px' }}></div>
+                    <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {section.items.map((item, iIdx) => (
+                        <li key={iIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '14px', lineHeight: 1.6, color: '#475569' }}>
+                          <span style={{ color: '#8b96c8', fontSize: '18px', lineHeight: '20px' }}>•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                  현재 내용 업데이트 중입니다. (추후 반영 예정)
+                </div>
+              )}
             </div>
           </div>
         </div>
