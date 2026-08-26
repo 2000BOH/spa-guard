@@ -624,12 +624,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
             onChange={(e) => !isReadOnly && onChangeSummary(e.target.value)}
           />
         </div>
-
-        <ImageAnalysisModal 
-          isOpen={isImageModalOpen}
-          onClose={() => setIsImageModalOpen(false)}
-          onApplyResult={handleApplyImageResult}
-        />
       </main>
     );
   }
