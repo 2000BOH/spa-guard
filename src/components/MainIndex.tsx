@@ -17,6 +17,7 @@ const DEPTS: Record<DepartmentId, { name: string; icon: string }> = {
 
 export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpenPanel }) => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [workRulesDept, setWorkRulesDept] = useState<DepartmentId | null>(null);
   const [settings, setSettings] = useState<AdminSettings>(loadAdminSettings());
 
   useEffect(() => {
@@ -46,9 +47,23 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
         boxSizing: 'border-box'
       }}>
         {/* 파트명 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-          <span style={{ fontSize: '20px' }}>{dept.icon}</span>
-          <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{dept.name}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '20px' }}>{dept.icon}</span>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{dept.name}</span>
+          </div>
+          {deptId !== 'facilities' && (
+            <button
+              onClick={() => setWorkRulesDept(deptId)}
+              style={{
+                background: '#e0e7ff', color: '#4f46e5', border: 'none', borderRadius: '4px',
+                padding: '3px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '3px'
+              }}
+            >
+              <span>📋</span> 근무수칙
+            </button>
+          )}
         </div>
 
         {/* 인원 버튼 (한 줄로 모두 표시) */}
@@ -181,6 +196,39 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
       </div>
 
       <AdminModal isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
+
+      {/* ── 근무수칙 모달 ── */}
+      {workRulesDept && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', zIndex: 10000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '400px',
+            maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden'
+          }}>
+            <div style={{
+              background: '#1e293b', padding: '12px 16px', display: 'flex',
+              alignItems: 'center', justifyContent: 'space-between', color: '#fff'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>
+                {DEPTS[workRulesDept].icon} {DEPTS[workRulesDept].name} 근무수칙
+              </h3>
+              <button
+                onClick={() => setWorkRulesDept(null)}
+                style={{ background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1, fontSize: '14px', lineHeight: 1.6, color: '#334155' }}>
+              현재 내용 업데이트 중입니다. (추후 반영 예정)
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
