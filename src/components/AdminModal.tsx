@@ -32,7 +32,8 @@ const DEFAULT_SETTINGS: AdminSettings = {
   defaultBackwashCount: 2,
   hairCatcherMonthlyCount: 2,
   deptConfigs: DEFAULT_DEPT_CONFIGS,
-  enableMachineRoomPanel: false
+  enableMachineRoomPanel: false,
+  nfcMappings: []
 };
 
 /** 로컬스토리지에서 관리자 설정 로드 (외부에서도 사용 가능) */
@@ -57,7 +58,8 @@ export function loadAdminSettings(): AdminSettings {
         defaultBackwashCount: parsed.defaultBackwashCount ?? DEFAULT_SETTINGS.defaultBackwashCount,
         hairCatcherMonthlyCount: parsed.hairCatcherMonthlyCount ?? DEFAULT_SETTINGS.hairCatcherMonthlyCount,
         deptConfigs: mergedConfigs,
-        enableMachineRoomPanel: parsed.enableMachineRoomPanel ?? DEFAULT_SETTINGS.enableMachineRoomPanel
+        enableMachineRoomPanel: parsed.enableMachineRoomPanel ?? DEFAULT_SETTINGS.enableMachineRoomPanel,
+        nfcMappings: parsed.nfcMappings ?? DEFAULT_SETTINGS.nfcMappings
       };
     }
   } catch (e) {
@@ -165,6 +167,23 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     );
   };
 
+  const addNfcMapping = () => {
+    const current = settings.nfcMappings || [];
+    setSettings({ ...settings, nfcMappings: [...current, { id: String(current.length + 1), dept: 'facilities', name: '', roleName: '' }] });
+  };
+
+  const updateNfcMapping = (index: number, field: string, value: string) => {
+    const current = [...(settings.nfcMappings || [])];
+    current[index] = { ...current[index], [field]: value };
+    setSettings({ ...settings, nfcMappings: current });
+  };
+
+  const removeNfcMapping = (index: number) => {
+    const current = [...(settings.nfcMappings || [])];
+    current.splice(index, 1);
+    setSettings({ ...settings, nfcMappings: current });
+  };
+
   return (
     <div className="modal-overlay open" onClick={onClose} style={{ zIndex: 9999 }}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '88vh', overflowY: 'auto' }}>
@@ -270,6 +289,59 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             {(Object.keys(DEPT_LABELS) as DepartmentId[]).map((dept) => (
               renderDeptEditor(dept)
             ))}
+
+            {/* ── NFC 태그 설정 ── */}
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
+              📱 NFC 태그 설정
+            </h4>
+            <div style={{ marginBottom: '16px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              {(settings.nfcMappings || []).map((mapping, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '4px', marginBottom: '8px', alignItems: 'center' }}>
+                  <input
+                    type="text" placeholder="NFC 번호 (예: 1)" value={mapping.id}
+                    onChange={(e) => updateNfcMapping(idx, 'id', e.target.value)}
+                    style={{ ...inputStyle, width: '70px', fontSize: '11px' }}
+                  />
+                  <select
+                    value={mapping.dept}
+                    onChange={(e) => updateNfcMapping(idx, 'dept', e.target.value)}
+                    style={{ ...inputStyle, width: '80px', fontSize: '11px', padding: '0 4px' }}
+                  >
+                    {(Object.keys(DEPT_LABELS) as DepartmentId[]).map(d => (
+                      <option key={d} value={d}>{DEPT_LABELS[d]}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text" placeholder="담당자명" value={mapping.name}
+                    onChange={(e) => updateNfcMapping(idx, 'name', e.target.value)}
+                    style={{ ...inputStyle, flex: 1, fontSize: '11px' }}
+                  />
+                  <input
+                    type="text" placeholder="역할명(선택)" value={mapping.roleName || ''}
+                    onChange={(e) => updateNfcMapping(idx, 'roleName', e.target.value)}
+                    style={{ ...inputStyle, flex: 1, fontSize: '11px' }}
+                  />
+                  <button
+                    onClick={() => removeNfcMapping(idx)}
+                    style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 8px', height: '32px', fontSize: '11px', cursor: 'pointer' }}
+                  >
+                    삭제
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={addNfcMapping}
+                style={{
+                  width: '100%', height: '32px', background: '#e2e8f0', color: '#334155',
+                  border: '1px dashed #cbd5e1', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer'
+                }}
+              >
+                + NFC 태그 추가
+              </button>
+              <div style={{ fontSize: '10px', color: '#64748b', marginTop: '6px' }}>
+                * 휴대폰 NFC 앱으로 [https://(호스팅주소)/?nfc=번호] 를 태그에 기록하세요.
+              </div>
+            </div>
 
             <button
               onClick={handleSave}

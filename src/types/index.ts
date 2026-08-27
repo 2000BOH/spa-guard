@@ -74,4 +74,5 @@ export interface AdminSettings {
   hairCatcherMonthlyCount: number; // 헤어캐처 월간 점검 횟수
   deptConfigs: DeptConfigMap;      // 파트별 인원 설정
   enableMachineRoomPanel?: boolean; // 기계실 00/03/06시 패널 기능 활성화 여부
+  nfcMappings?: { id: string; dept: DepartmentId; name: string; roleName?: string }[]; // NFC 태그 매핑 정보
 }

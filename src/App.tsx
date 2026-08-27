@@ -129,9 +129,31 @@ export default function App() {
 
     // Parse URL params for QR scanning direct access
     const params = new URLSearchParams(window.location.search);
-    const deptParam = params.get('dept') as DepartmentId;
-    const inspectorParam = params.get('inspector');
-    const roleNameParam = params.get('roleName') || undefined;
+    let deptParam = params.get('dept') as DepartmentId | null;
+    let inspectorParam = params.get('inspector');
+    let roleNameParam = params.get('roleName') || undefined;
+    
+    // NFC 태그 파싱
+    const nfcParam = params.get('nfc');
+    if (nfcParam) {
+      const adminSettingsRaw = localStorage.getItem('spa_admin_settings');
+      if (adminSettingsRaw) {
+        try {
+          const adminSettings = JSON.parse(adminSettingsRaw);
+          const mappings = adminSettings.nfcMappings || [];
+          const matched = mappings.find((m: any) => m.id === nfcParam);
+          if (matched) {
+            deptParam = matched.dept;
+            inspectorParam = matched.name;
+            roleNameParam = matched.roleName;
+          } else {
+            setTimeout(() => showToast(`⚠️ 등록되지 않은 NFC 번호입니다 (${nfcParam})`), 500);
+          }
+        } catch (e) {
+          console.error('Failed to parse admin settings for NFC', e);
+        }
+      }
+    }
     
     if (deptParam && inspectorParam) {
       let tabs = DEPT_TABS_MAP[deptParam] || [];
