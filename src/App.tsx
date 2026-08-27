@@ -3,6 +3,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 import type { AppState, TabId, StatusType, ItemState, CheckItem, DepartmentId } from './types';
+import { NFC_BASE_NUMBERS } from './types';
 import { TAB_INFO, CHECKLIST_DATA, DEPT_TABS_MAP } from './data/checklistData';
 import { Header } from './components/Header';
 import { MetaStrip } from './components/MetaStrip';
@@ -133,24 +134,35 @@ export default function App() {
     let inspectorParam = params.get('inspector');
     let roleNameParam = params.get('roleName') || undefined;
     
-    // NFC 태그 파싱
+    // NFC 태그 파싱 (자동 배정 로직)
     const nfcParam = params.get('nfc');
     if (nfcParam) {
-      const adminSettingsRaw = localStorage.getItem('spa_admin_settings');
-      if (adminSettingsRaw) {
-        try {
-          const adminSettings = JSON.parse(adminSettingsRaw);
-          const mappings = adminSettings.nfcMappings || [];
-          const matched = mappings.find((m: any) => m.id === nfcParam);
-          if (matched) {
-            deptParam = matched.dept;
-            inspectorParam = matched.name;
-            roleNameParam = matched.roleName;
-          } else {
-            setTimeout(() => showToast(`⚠️ 등록되지 않은 NFC 번호입니다 (${nfcParam})`), 500);
+      const nfcNum = parseInt(nfcParam, 10);
+      if (!isNaN(nfcNum)) {
+        // 어느 부서인지 파악 (예: 11~19 -> facilities)
+        let foundDept: DepartmentId | null = null;
+        for (const [dept, baseNum] of Object.entries(NFC_BASE_NUMBERS)) {
+          if (nfcNum >= baseNum && nfcNum < baseNum + 10) {
+            foundDept = dept as DepartmentId;
+            break;
           }
-        } catch (e) {
-          console.error('Failed to parse admin settings for NFC', e);
+        }
+
+        if (foundDept) {
+          const adminSettings = loadAdminSettings();
+          const deptConfig = adminSettings.deptConfigs[foundDept];
+          const pool = deptConfig?.inspectorPool || [];
+          const index = nfcNum - NFC_BASE_NUMBERS[foundDept];
+          
+          if (index >= 0 && index < pool.length) {
+            deptParam = foundDept;
+            inspectorParam = pool[index];
+            // roleName은 NFC 자동 배정에서 따로 관리하지 않으므로 (점검자 이름만으로 매핑됨) 생략
+          } else {
+            setTimeout(() => showToast(`⚠️ 해당 번호(${nfcNum}번)에 배정된 점검자가 없습니다. 관리자 설정을 확인하세요.`), 500);
+          }
+        } else {
+          setTimeout(() => showToast(`⚠️ 유효하지 않은 NFC 대역입니다 (${nfcParam})`), 500);
         }
       }
     }
