@@ -718,6 +718,7 @@ body {
     width: 100% !important;
     display: block !important;
     overflow: visible !important;
+    zoom: 0.8 !important;
   }
   .machine-room-content {
     height: auto !important;

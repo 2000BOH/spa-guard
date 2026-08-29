@@ -363,16 +363,10 @@ export default function MachineRoomPanel({ admin = false, initialSlot }: Machine
   return (
     <div className="machine-room-panel-outer" style={{ fontFamily: "'DM Sans', 'Noto Sans KR', sans-serif", color: '#0a0b0d', background: '#ffffff', padding: '20px 16px 48px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* 🖨️ 프린터 전용 헤더 */}
-      <div className="print-only" style={{ display: 'none', borderBottom: '2px solid #0a0b0d', paddingBottom: '12px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#5b616e', marginBottom: '4px' }}>스파 기계실 · MAIN CONTROL PANEL</div>
-            <div style={{ fontSize: '28px', fontWeight: 900, color: '#0a0b0d' }}>{admin ? '기계실 점검 지시서' : '기계실 점검 현황'}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '32px', fontFamily: "'Space Grotesk', 'DM Sans', sans-serif", fontWeight: 700, lineHeight: 1, color: '#0052ff' }}>{slot}</div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#5b616e', marginTop: '4px' }}>{SLOT_NOTE[slot]}</div>
-          </div>
+      <div className="print-only" style={{ display: 'none', border: '2px solid #0a0b0d', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', background: '#f8fafc' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '20px', fontFamily: "'Space Grotesk', 'DM Sans', sans-serif", fontWeight: 800, color: '#0a0b0d' }}>{slot}</span>
+          <span style={{ fontSize: '15px', fontWeight: 800, color: '#0a0b0d' }}>{SLOT_NOTE[slot]} · 패널 제어</span>
         </div>
       </div>
 
