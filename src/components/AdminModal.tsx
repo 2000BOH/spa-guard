@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiCheck, FiSave, FiAlertCircle } from 'react-icons/fi';
 import MachineRoomPanel from './MachineRoomPanel';
 import type { AdminSettings, DepartmentId, DeptConfigMap } from '../types';
 import { NFC_BASE_NUMBERS } from '../types';

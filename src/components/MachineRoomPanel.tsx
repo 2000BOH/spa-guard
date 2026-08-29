@@ -247,7 +247,6 @@ export default function MachineRoomPanel({ admin = false }: MachineRoomPanelProp
         ] : [],
         cells: all.filter((d: any) => d.g === gi).map((d: any) => {
           const target = sched[d.id] || 'OFF';
-          const cur = actual[d.id] || null;
           const ok = true; // Wait! For the view it should just show the target!
           const shown = target; // As requested: Only show what admin set.
           const need = false; // Never need to change in this view
@@ -386,7 +385,7 @@ export default function MachineRoomPanel({ admin = false }: MachineRoomPanelProp
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(520px, 1fr))', gap: '18px' }}>
-        {panels.map((pn, i) => (
+        {panels.map((pn) => (
           <div key={pn.key} style={{ border: '1px solid rgba(91,97,110,0.2)', borderRadius: '20px', overflow: 'hidden', background: '#ffffff' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '14px 16px', background: '#ffffff', borderBottom: '1px solid rgba(91,97,110,0.2)' }}>
               <div style={{ fontSize: '17px', fontWeight: 700 }}>{pn.title}</div>
@@ -407,7 +406,7 @@ export default function MachineRoomPanel({ admin = false }: MachineRoomPanelProp
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', alignItems: 'start' }}>
-                      {b.cells.map((d, di) => (
+                      {b.cells.map((d) => (
                         <div key={d.d.id} style={d.cellStyle}>
                           <div onClick={d.onMark} style={d.plateStyle}>
                             <div style={{ fontSize: '10.5px', fontWeight: 700, lineHeight: 1.2, color: '#141915' }}>{d.name}</div>
