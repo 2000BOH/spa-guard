@@ -361,7 +361,7 @@ export default function MachineRoomPanel({ admin = false, initialSlot }: Machine
   if (!schedule) return null;
 
   return (
-    <div style={{ fontFamily: "'DM Sans', 'Noto Sans KR', sans-serif", color: '#0a0b0d', background: '#ffffff', padding: '20px 16px 48px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="machine-room-panel-outer" style={{ fontFamily: "'DM Sans', 'Noto Sans KR', sans-serif", color: '#0a0b0d', background: '#ffffff', padding: '20px 16px 48px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* 🖨️ 프린터 전용 헤더 */}
       <div className="print-only" style={{ display: 'none', borderBottom: '2px solid #0a0b0d', paddingBottom: '12px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -413,10 +413,10 @@ export default function MachineRoomPanel({ admin = false, initialSlot }: Machine
               <div style={pn.chipStyle}>{pn.chipText}</div>
             </div>
 
-            <div style={{ overflowX: 'auto', background: '#c9cec2', padding: '16px 14px 20px' }}>
+            <div className="panel-body" style={{ overflowX: 'auto', background: '#c9cec2', padding: '16px 14px 20px' }}>
               <div style={{ minWidth: '492px' }}>
                 {pn.blocks.map((b, bi) => (
-                  <div key={bi} style={{ marginBottom: '18px' }}>
+                  <div key={bi} className="panel-block" style={{ marginBottom: '18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '10px' }}>
                       <div style={{ fontSize: '12px', fontWeight: 700, color: '#3d4239', letterSpacing: '0.02em' }}>{b.title}</div>
                       <div style={{ display: 'flex', gap: '6px' }}>

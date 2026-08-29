@@ -673,6 +673,10 @@ body {
 
 /* 🖨️ 프린터 직접 출력 전용 CSS 미디어 쿼리 */
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   body {
     background: #ffffff !important;
     padding: 0 !important;
@@ -706,6 +710,7 @@ body {
   /* 기계실 패널 출력 스타일 (가로 2열 배치) */
   .machine-room-view {
     height: auto !important;
+    min-height: auto !important;
     background: #ffffff !important;
     position: absolute !important;
     left: 0 !important;
@@ -724,9 +729,24 @@ body {
     gap: 12px !important;
     width: 100% !important;
   }
+  .machine-room-print-panels > div {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .machine-room-panel-outer {
+    padding: 0 !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+  }
+  .panel-body {
+    padding: 8px 6px 10px !important;
+  }
+  .panel-block {
+    margin-bottom: 8px !important;
+  }
 
   @page {
     size: A4 landscape;
-    margin: 10mm;
+    margin: 5mm;
   }
 }
