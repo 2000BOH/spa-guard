@@ -105,7 +105,7 @@ interface MachineRoomPanelProps {
   initialSlot?: string;
 }
 
-export default function MachineRoomPanel({ admin = false }: MachineRoomPanelProps) {
+export default function MachineRoomPanel({ admin = false, initialSlot }: MachineRoomPanelProps) {
   const [slot, setSlot] = useState<string>('00:00');
   const [schedule, setSchedule] = useState<any>(null);
   const [actual, setActual] = useState<any>({});
