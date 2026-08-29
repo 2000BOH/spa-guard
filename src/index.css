@@ -707,22 +707,23 @@ body {
     break-after: page;
   }
 
-  /* 기계실 패널 출력 스타일 (가로 2열 배치) */
+  /* 기계실 패널 출력 스타일 (가로 2열 배치 + 수직 중앙 정렬) */
   .machine-room-view {
-    height: auto !important;
-    min-height: auto !important;
+    height: 100vh !important;
     background: #ffffff !important;
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
     overflow: visible !important;
-    zoom: 0.8 !important;
   }
   .machine-room-content {
     height: auto !important;
     overflow: visible !important;
+    width: 100% !important;
   }
   .machine-room-print-panels {
     display: grid !important;
