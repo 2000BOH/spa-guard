@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { FiX, FiCheck, FiSave, FiAlertCircle } from 'react-icons/fi';
+import MachineRoomPanel from './MachineRoomPanel';
 import type { AdminSettings, DepartmentId, DeptConfigMap } from '../types';
 import { NFC_BASE_NUMBERS } from '../types';
 
@@ -106,7 +108,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             ← 관리자 설정으로 돌아가기
           </button>
         </div>
-        <iframe src="/pannel.html?mode=admin" style={{ flex: 1, border: 'none', background: '#fff' }} />
+        <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <MachineRoomPanel admin={true} />
+        </div>
       </div>
     );
   }

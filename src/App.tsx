@@ -14,6 +14,7 @@ import { saveInspectionToSupabase } from './lib/supabase';
 import { loadAdminSettings } from './components/AdminModal';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
+import MachineRoomPanel from './components/MachineRoomPanel';
 
 const DEPT_NAMES: Record<string, string> = {
   facilities: '시설',
@@ -587,13 +588,9 @@ export default function App() {
           </span>
           <div style={{ width: '60px' }} />
         </div>
-        {/* pannel.html iframe */}
-        <div style={{ flex: 1 }}>
-          <iframe
-            src="/pannel.html"
-            style={{ width: '100%', height: '100%', border: 'none' }}
-            title="기계실 패널"
-          />
+        {/* MachineRoomPanel component */}
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <MachineRoomPanel admin={false} />
         </div>
       </div>
     );
