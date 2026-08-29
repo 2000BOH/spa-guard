@@ -102,6 +102,7 @@ const getDevices = (p: string) => DEFS[p].map((d, i) => ({ ...d, id: p + '-' + i
 
 interface MachineRoomPanelProps {
   admin?: boolean;
+  initialSlot?: string;
 }
 
 export default function MachineRoomPanel({ admin = false }: MachineRoomPanelProps) {
@@ -125,11 +126,17 @@ export default function MachineRoomPanel({ admin = false }: MachineRoomPanelProp
     setSchedule(s);
     setActual(a);
     setMarks(m);
-    setSlot(activeSlot(new Date()));
+    setSlot(initialSlot || activeSlot(new Date()));
 
     const timer = setInterval(() => setNow(new Date()), 20000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (initialSlot) {
+      setSlot(initialSlot);
+    }
+  }, [initialSlot]);
 
   const saveSchedule = (s: any) => {
     try {
@@ -355,7 +362,21 @@ export default function MachineRoomPanel({ admin = false }: MachineRoomPanelProp
 
   return (
     <div style={{ fontFamily: "'DM Sans', 'Noto Sans KR', sans-serif", color: '#0a0b0d', background: '#ffffff', padding: '20px 16px 48px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap', marginBottom: '18px' }}>
+      {/* 🖨️ 프린터 전용 헤더 */}
+      <div className="print-only" style={{ display: 'none', borderBottom: '2px solid #0a0b0d', paddingBottom: '12px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: '#5b616e', marginBottom: '4px' }}>스파 기계실 · MAIN CONTROL PANEL</div>
+            <div style={{ fontSize: '28px', fontWeight: 900, color: '#0a0b0d' }}>{admin ? '기계실 점검 지시서' : '기계실 점검 현황'}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '32px', fontFamily: "'Space Grotesk', 'DM Sans', sans-serif", fontWeight: 700, lineHeight: 1, color: '#0052ff' }}>{slot}</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: '#5b616e', marginTop: '4px' }}>{SLOT_NOTE[slot]}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="print-hide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap', marginBottom: '18px' }}>
         <div>
           <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', color: '#5b616e', marginBottom: '6px' }}>스파 기계실 · MAIN CONTROL PANEL</div>
           <div style={{ fontSize: '28px', fontWeight: 900, lineHeight: 1.15 }}>메인 기계실</div>
@@ -366,7 +387,7 @@ export default function MachineRoomPanel({ admin = false }: MachineRoomPanelProp
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
+      <div className="print-hide" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
         {SLOTS.map(s => (
           <button key={s} onClick={() => setSlot(s)} style={bigTabStyle(s === slot, s)}>
             <span style={{ display: 'block', fontFamily: "'Space Grotesk', 'DM Sans', sans-serif", fontSize: '30px', fontWeight: 700, lineHeight: 1 }}>{s}</span>
@@ -384,7 +405,7 @@ export default function MachineRoomPanel({ admin = false }: MachineRoomPanelProp
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(520px, 1fr))', gap: '18px' }}>
+      <div className="machine-room-print-panels" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(520px, 1fr))', gap: '18px' }}>
         {panels.map((pn) => (
           <div key={pn.key} style={{ border: '1px solid rgba(91,97,110,0.2)', borderRadius: '20px', overflow: 'hidden', background: '#ffffff' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '14px 16px', background: '#ffffff', borderBottom: '1px solid rgba(91,97,110,0.2)' }}>
@@ -447,7 +468,7 @@ export default function MachineRoomPanel({ admin = false }: MachineRoomPanelProp
       </div>
 
       {admin && (
-        <div style={{ borderTop: '1px solid rgba(91,97,110,0.2)', marginTop: '22px', paddingTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="print-hide" style={{ borderTop: '1px solid rgba(91,97,110,0.2)', marginTop: '22px', paddingTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           {tools.map((t, i) => (
             <button key={i} onClick={t.onClick} style={t.style}>{t.label}</button>
           ))}

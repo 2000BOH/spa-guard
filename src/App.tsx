@@ -564,10 +564,12 @@ export default function App() {
   }
 
   if (currentView === 'panel') {
+    const mappedSlot = panelTimeLabel === '00시' ? '00:00' : panelTimeLabel === '03시' ? '02:30' : panelTimeLabel === '06시' ? '05:00' : undefined;
+
     return (
-      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0f172a' }}>
+      <div className="machine-room-view" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0f172a' }}>
         {/* 상단 바 */}
-        <div style={{
+        <div className="print-hide" style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '10px 16px', background: '#1e293b', flexShrink: 0
         }}>
@@ -586,11 +588,20 @@ export default function App() {
           <span style={{ color: '#fff', fontSize: '16px', fontWeight: 700 }}>
             ⚙️ 기계실 패널 — {panelTimeLabel}
           </span>
-          <div style={{ width: '60px' }} />
+          <button
+            onClick={() => window.print()}
+            style={{
+              background: '#2563eb', border: 'none', color: '#fff', fontSize: '13px',
+              fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+              padding: '6px 12px', borderRadius: '6px'
+            }}
+          >
+            🖨️ 출력
+          </button>
         </div>
         {/* MachineRoomPanel component */}
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-          <MachineRoomPanel admin={false} />
+        <div className="machine-room-content" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <MachineRoomPanel admin={false} initialSlot={mappedSlot} />
         </div>
       </div>
     );
