@@ -24,6 +24,14 @@ const DEPT_NAMES: Record<string, string> = {
   snack: '스낵'
 };
 
+const NFC_ROLE_MAP: Record<DepartmentId, string[]> = {
+  facilities: ['주간', '야간'],
+  reception: ['오전', '오후', '야간'],
+  cleaning: ['남자 주간', '남자 야간', '여자 주간'],
+  food: ['오픈', '마감'],
+  snack: ['오픈', '마감']
+};
+
 function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
   let tabs = DEPT_TABS_MAP[dept] || [];
   
@@ -193,20 +201,12 @@ export default function App() {
           const deptConfig = adminSettings.deptConfigs[foundDept];
           const pool = deptConfig?.inspectorPool || [];
           const index = nfcNum - NFC_BASE_NUMBERS[foundDept];
-          
-          if (index >= 0 && index < pool.length) {
+          const validRoleNames = NFC_ROLE_MAP[foundDept] || [];
+
+          if (index >= 0 && index < validRoleNames.length) {
             deptParam = foundDept;
-            inspectorParam = pool[index];
-            
-            // roleName 자동 역조회 추가
-            const groups = deptConfig?.groups || [];
-            for (const grp of groups) {
-              const matchedRole = grp.roles.find(r => r.name === inspectorParam);
-              if (matchedRole) {
-                roleNameParam = grp.label ? `${grp.label} ${matchedRole.role}` : matchedRole.role;
-                break;
-              }
-            }
+            roleNameParam = validRoleNames[index];
+            inspectorParam = pool[index] || `${DEPT_NAMES[foundDept]} ${roleNameParam} 점검자`;
           } else {
             setTimeout(() => showToast(`⚠️ 해당 번호(${nfcNum}번)에 배정된 점검자가 없습니다. 관리자 설정을 확인하세요.`), 500);
           }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MachineRoomPanel from './MachineRoomPanel';
-import type { AdminSettings, DepartmentId, DeptConfigMap } from '../types';
+import type { AdminSettings, DepartmentId, DeptConfigMap, DeptConfig } from '../types';
 import { NFC_BASE_NUMBERS } from '../types';
 
 interface AdminModalProps {
@@ -16,18 +16,59 @@ const DEPT_LABELS: Record<DepartmentId, string> = {
   snack: '스낵'
 };
 
-const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
-  facilities: { groups: [{ roles: [{ role: '주간', name: '' }, { role: '야간', name: '' }] }] },
-  reception: { groups: [{ roles: [{ role: '오전', name: '' }, { role: '오후', name: '' }, { role: '야간', name: '' }] }] },
+export const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
+  facilities: {
+    groups: [{ roles: [{ role: '주간', name: '' }, { role: '야간', name: '' }] }]
+  },
+  reception: {
+    groups: [{ roles: [{ role: '오전', name: '' }, { role: '오후', name: '' }, { role: '야간', name: '' }] }]
+  },
   cleaning: {
     groups: [
       { label: '남자', roles: [{ role: '주간', name: '' }, { role: '야간', name: '' }] },
       { label: '여자', roles: [{ role: '주간', name: '' }] }
     ]
   },
-  food: { groups: [{ roles: [{ role: '오픈', name: '' }, { role: '마감', name: '' }] }] },
-  snack: { groups: [{ roles: [{ role: '오픈', name: '' }, { role: '마감', name: '' }] }] }
+  food: {
+    groups: [{ roles: [{ role: '오픈', name: '' }, { role: '마감', name: '' }] }]
+  },
+  snack: {
+    groups: [{ roles: [{ role: '오픈', name: '' }, { role: '마감', name: '' }] }]
+  }
 };
+
+export interface FlatRoleItem {
+  roleLabel: string;
+  groupIndex: number;
+  roleIndex: number;
+  flatIndex: number;
+  nfcNum: number;
+}
+
+export function getDeptFlatRoles(dept: DepartmentId, deptConfig?: DeptConfig): FlatRoleItem[] {
+  const base = NFC_BASE_NUMBERS[dept];
+  const config = deptConfig || DEFAULT_DEPT_CONFIGS[dept];
+  const items: FlatRoleItem[] = [];
+  let idx = 0;
+
+  if (config && config.groups) {
+    config.groups.forEach((grp, gIdx) => {
+      grp.roles.forEach((r, rIdx) => {
+        const label = grp.label ? `${grp.label} ${r.role}` : r.role;
+        items.push({
+          roleLabel: label,
+          groupIndex: gIdx,
+          roleIndex: rIdx,
+          flatIndex: idx,
+          nfcNum: base + idx
+        });
+        idx++;
+      });
+    });
+  }
+
+  return items;
+}
 
 const DEFAULT_SETTINGS: AdminSettings = {
   defaultTargetTemp: 10.0,
@@ -37,7 +78,6 @@ const DEFAULT_SETTINGS: AdminSettings = {
   enableMachineRoomPanel: false
 };
 
-/** 로컬스토리지에서 관리자 설정 로드 (외부에서도 사용 가능) */
 export function loadAdminSettings(): AdminSettings {
   try {
     const saved = localStorage.getItem('spa_admin_settings');
@@ -45,7 +85,6 @@ export function loadAdminSettings(): AdminSettings {
       const parsed = JSON.parse(saved);
       const mergedConfigs: DeptConfigMap = { ...DEFAULT_DEPT_CONFIGS };
       
-      // 하위 호환 처리 및 병합 (새로운 roles 구조가 없으면 기본값 유지)
       if (parsed.deptConfigs) {
         for (const key of Object.keys(DEFAULT_DEPT_CONFIGS) as DepartmentId[]) {
           const pConfig = parsed.deptConfigs[key];
@@ -75,7 +114,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS);
   const [showPannelEditor, setShowPannelEditor] = useState(false);
 
-  const [poolInputs, setPoolInputs] = useState<Record<string, string>>({});
+  // 부서별 flatIndex 키 기준의 이름 맵 state
+  const [roleInputs, setRoleInputs] = useState<Record<string, Record<number, string>>>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -86,11 +126,22 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       const loadedSettings = loadAdminSettings();
       setSettings(loadedSettings);
       
-      const initialPools: Record<string, string> = {};
+      const initialRoleInputs: Record<string, Record<number, string>> = {};
       (Object.keys(DEPT_LABELS) as DepartmentId[]).forEach(dept => {
-        initialPools[dept] = (loadedSettings.deptConfigs[dept as DepartmentId]?.inspectorPool || []).join(', ');
+        initialRoleInputs[dept] = {};
+        const flatRoles = getDeptFlatRoles(dept, loadedSettings.deptConfigs[dept]);
+        const pool = loadedSettings.deptConfigs[dept]?.inspectorPool || [];
+        
+        flatRoles.forEach((item) => {
+          // 1. groups내 roles에서 기존 저장된 이름 탐색
+          const grp = loadedSettings.deptConfigs[dept]?.groups?.[item.groupIndex];
+          const nameInGroup = grp?.roles?.[item.roleIndex]?.name;
+          // 2. 없으면 pool 배열에서 탐색
+          const nameInPool = pool[item.flatIndex] || '';
+          initialRoleInputs[dept][item.flatIndex] = nameInGroup || nameInPool || '';
+        });
       });
-      setPoolInputs(initialPools);
+      setRoleInputs(initialRoleInputs);
     }
   }, [isOpen]);
 
@@ -130,12 +181,45 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  // 부서별 점검자 풀(목록) 업데이트
-  const updateInspectorPool = (dept: DepartmentId, value: string) => {
-    setPoolInputs(prev => ({ ...prev, [dept]: value }));
+  const updateRoleName = (
+    dept: DepartmentId,
+    groupIndex: number,
+    roleIndex: number,
+    flatIndex: number,
+    value: string
+  ) => {
+    setRoleInputs(prev => ({
+      ...prev,
+      [dept]: {
+        ...(prev[dept] || {}),
+        [flatIndex]: value
+      }
+    }));
+
     const newConfigs = { ...settings.deptConfigs };
-    const pool = value.split(',').map(s => s.trim()).filter(Boolean);
-    newConfigs[dept] = { ...newConfigs[dept], inspectorPool: pool };
+    const deptConf = { ...newConfigs[dept] };
+    const groups = JSON.parse(JSON.stringify(deptConf.groups || DEFAULT_DEPT_CONFIGS[dept].groups));
+
+    if (groups[groupIndex] && groups[groupIndex].roles[roleIndex]) {
+      groups[groupIndex].roles[roleIndex].name = value;
+    }
+
+    // inspectorPool 동기화
+    const flatRoles = getDeptFlatRoles(dept, deptConf);
+    const newPool: string[] = [];
+    flatRoles.forEach((item) => {
+      if (item.flatIndex === flatIndex) {
+        newPool.push(value);
+      } else {
+        const val = roleInputs[dept]?.[item.flatIndex] || '';
+        newPool.push(val);
+      }
+    });
+
+    deptConf.groups = groups;
+    deptConf.inspectorPool = newPool;
+    newConfigs[dept] = deptConf;
+
     setSettings({ ...settings, deptConfigs: newConfigs });
   };
 
@@ -144,33 +228,44 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const sectionStyle: React.CSSProperties = { marginBottom: '10px' };
 
   const renderDeptEditor = (dept: DepartmentId) => {
-    const poolString = poolInputs[dept] || '';
-    
+    const flatRoles = getDeptFlatRoles(dept, settings.deptConfigs[dept]);
+
     return (
       <div key={dept} style={{ marginBottom: '14px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>
-            {DEPT_LABELS[dept]} 파트 점검자 풀
+            🏢 {DEPT_LABELS[dept]} 파트 지정 담당자
+          </span>
+          <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>
+            NFC 기준: {NFC_BASE_NUMBERS[dept]}번 대역
           </span>
         </div>
-        <div>
-          <input
-            type="text"
-            placeholder="점검자 이름 (쉼표로 구분하여 입력, 예: 홍길동, 김철수)"
-            value={poolString}
-            onChange={(e) => updateInspectorPool(dept, e.target.value)}
-            style={{ ...inputStyle, flex: 1, fontSize: '12px' }}
-          />
-          <div style={{ fontSize: '11px', color: '#0f172a', marginTop: '6px', background: '#e2e8f0', padding: '6px 8px', borderRadius: '4px' }}>
-            <strong style={{ color: '#334155' }}>배정된 NFC 번호 (예: {NFC_BASE_NUMBERS[dept]}~):</strong> 
-            {poolString.split(',').filter(s => s.trim()).length > 0 ? (
-              <span style={{ marginLeft: '4px', fontWeight: 600 }}>
-                {poolString.split(',').map(s => s.trim()).filter(Boolean).map((name, i) => `${NFC_BASE_NUMBERS[dept] + i}번: ${name}`).join(', ')}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {flatRoles.map((item) => (
+            <div key={item.flatIndex} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                width: '115px',
+                color: '#1e293b',
+                background: '#e2e8f0',
+                padding: '5px 6px',
+                borderRadius: '4px',
+                textAlign: 'center',
+                flexShrink: 0
+              }}>
+                {item.nfcNum}번 [{item.roleLabel}]
               </span>
-            ) : (
-              <span style={{ marginLeft: '4px', color: '#64748b' }}>점검자를 입력하면 자동 배정됩니다.</span>
-            )}
-          </div>
+              <input
+                type="text"
+                placeholder={`${item.roleLabel} 담당자 이름`}
+                value={roleInputs[dept]?.[item.flatIndex] || ''}
+                onChange={(e) => updateRoleName(dept, item.groupIndex, item.roleIndex, item.flatIndex, e.target.value)}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -273,19 +368,48 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* ── 파트별 담당자 ── */}
-            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
-              👥 파트별 지정 담당자 입력
+            {/* ── 파트별 역할 지정 담당자 ── */}
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '14px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
+              👥 파트별 지정 담당자 입력 (역할/시간대별 1대1 매핑)
             </h4>
 
             {(Object.keys(DEPT_LABELS) as DepartmentId[]).map((dept) => (
               renderDeptEditor(dept)
             ))}
 
+            {/* ── Vercel 다이렉트 주소 메모 ── */}
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
+              📌 Vercel 다이렉트 바로가기 주소 메모
+            </h4>
+
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px', fontSize: '11px', color: '#1e3a8a', marginBottom: '14px' }}>
+              <div style={{ fontWeight: 700, fontSize: '12px', marginBottom: '6px', color: '#1e40af' }}>
+                🔗 배포 사이트 (Vercel) 다이렉트 주소 안내
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #dbeafe', fontFamily: 'monospace' }}>
+                <div><strong>기계실 패널 (00시):</strong> https://spa-guard.vercel.app/?view=panel&time=00시</div>
+                <div><strong>기계실 패널 (03시):</strong> https://spa-guard.vercel.app/?view=panel&time=03시</div>
+                <div><strong>기계실 패널 (06시):</strong> https://spa-guard.vercel.app/?view=panel&time=06시</div>
+                <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '4px 0' }} />
+                <div><strong>시설 주간 (11번):</strong> https://spa-guard.vercel.app/?nfc=11</div>
+                <div><strong>시설 야간 (12번):</strong> https://spa-guard.vercel.app/?nfc=12</div>
+                <div><strong>리셉션 오전 (21번):</strong> https://spa-guard.vercel.app/?nfc=21</div>
+                <div><strong>리셉션 오후 (22번):</strong> https://spa-guard.vercel.app/?nfc=22</div>
+                <div><strong>리셉션 야간 (23번):</strong> https://spa-guard.vercel.app/?nfc=23</div>
+                <div><strong>미화 남주 (31번):</strong> https://spa-guard.vercel.app/?nfc=31</div>
+                <div><strong>미화 남야 (32번):</strong> https://spa-guard.vercel.app/?nfc=32</div>
+                <div><strong>미화 여주 (33번):</strong> https://spa-guard.vercel.app/?nfc=33</div>
+                <div><strong>푸드 오픈 (41번):</strong> https://spa-guard.vercel.app/?nfc=41</div>
+                <div><strong>푸드 마감 (42번):</strong> https://spa-guard.vercel.app/?nfc=42</div>
+                <div><strong>스낵 오픈 (51번):</strong> https://spa-guard.vercel.app/?nfc=51</div>
+                <div><strong>스낵 마감 (52번):</strong> https://spa-guard.vercel.app/?nfc=52</div>
+              </div>
+            </div>
+
             <button
               onClick={handleSave}
               style={{
-                width: '100%', height: '40px', background: '#2563eb', color: '#fff',
+                width: '100%', height: '42px', background: '#2563eb', color: '#fff',
                 fontSize: '14px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '4px'
               }}
             >
