@@ -441,7 +441,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                           <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
                             <div style={{ display: 'inline-flex', gap: '3px' }}>
                               <button 
-                                className={`btn-toggle ${isNormal ? 'btn-normal' : ''}`}
+                                className={`btn-toggle btn-normal ${isNormal ? 'active' : ''}`}
                                 disabled={isReadOnly}
                                 style={{ height: '23px', fontSize: '11px', padding: '0 6px' }}
                                 onClick={() => {
@@ -453,7 +453,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                                 이상무
                               </button>
                               <button 
-                                className={`btn-toggle ${isIssue ? 'btn-issue' : ''}`}
+                                className={`btn-toggle btn-issue ${isIssue ? 'active' : ''}`}
                                 disabled={isReadOnly}
                                 style={{ height: '23px', fontSize: '11px', padding: '0 6px' }}
                                 onClick={() => {

@@ -295,11 +295,13 @@ body {
 
 .slim-item.status-normal { background: #fcfefe; }
 .slim-item.status-normal .dot { background: var(--success); box-shadow: 0 0 4px rgba(16, 185, 129, 0.5); }
-.slim-item.status-normal .btn-normal { background: var(--success); border-color: var(--success); color: #fff; }
+.slim-item.status-normal .btn-normal,
+.btn-toggle.btn-normal.active { background: var(--success); border-color: var(--success); color: #fff; }
 
 .slim-item.status-issue { background: #fffafa; }
 .slim-item.status-issue .dot { background: var(--danger); box-shadow: 0 0 4px rgba(239, 68, 68, 0.5); }
-.slim-item.status-issue .btn-issue { background: var(--danger); border-color: var(--danger); color: #fff; }
+.slim-item.status-issue .btn-issue,
+.btn-toggle.btn-issue.active { background: var(--danger); border-color: var(--danger); color: #fff; }
 
 .slim-note-box {
   display: none;

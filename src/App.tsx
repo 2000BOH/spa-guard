@@ -24,6 +24,45 @@ const DEPT_NAMES: Record<string, string> = {
   snack: '스낵'
 };
 
+function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
+  let tabs = DEPT_TABS_MAP[dept] || [];
+  
+  if (dept === 'facilities') {
+    if (roleName && roleName.includes('야간')) {
+      return ['tab1', 'tab3'];
+    }
+    return ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
+  }
+  
+  if (dept === 'reception' && roleName) {
+    if (roleName.includes('오전')) return ['rTab1'];
+    if (roleName.includes('오후')) return ['rTab2'];
+    if (roleName.includes('야간') || roleName.includes('마감')) return ['rTab3'];
+  }
+  
+  if (dept === 'food' && roleName) {
+    if (roleName.includes('오픈')) return ['fTab1'];
+    if (roleName.includes('마감')) return ['fTab2'];
+  }
+  
+  if (dept === 'snack' && roleName) {
+    if (roleName.includes('오픈')) return ['sTab1'];
+    if (roleName.includes('마감')) return ['sTab2'];
+  }
+  
+  if (dept === 'cleaning' && roleName) {
+    if (roleName.includes('여자')) {
+      return ['cWTab1', 'cWTab2', 'cWTab3', 'cWTab4'];
+    } else if (roleName.includes('남자') && roleName.includes('야간')) {
+      return ['cNTab1', 'cNTab2', 'cNTab3'];
+    } else if (roleName.includes('남자')) {
+      return ['cMTab1', 'cMTab2', 'cMTab3', 'cMTab4'];
+    }
+  }
+  
+  return tabs;
+}
+
 const getStorageKey = (date: string) => `spa_date_data_${date}`;
 
 function getTodayStr(): string {
@@ -158,7 +197,16 @@ export default function App() {
           if (index >= 0 && index < pool.length) {
             deptParam = foundDept;
             inspectorParam = pool[index];
-            // roleName은 NFC 자동 배정에서 따로 관리하지 않으므로 (점검자 이름만으로 매핑됨) 생략
+            
+            // roleName 자동 역조회 추가
+            const groups = deptConfig?.groups || [];
+            for (const grp of groups) {
+              const matchedRole = grp.roles.find(r => r.name === inspectorParam);
+              if (matchedRole) {
+                roleNameParam = grp.label ? `${grp.label} ${matchedRole.role}` : matchedRole.role;
+                break;
+              }
+            }
           } else {
             setTimeout(() => showToast(`⚠️ 해당 번호(${nfcNum}번)에 배정된 점검자가 없습니다. 관리자 설정을 확인하세요.`), 500);
           }
@@ -168,17 +216,13 @@ export default function App() {
       }
     }
     
-    if (deptParam && inspectorParam) {
-      let tabs = DEPT_TABS_MAP[deptParam] || [];
-      if (deptParam === 'cleaning' && roleNameParam) {
-        if (roleNameParam.includes('여자')) {
-          tabs = ['cWTab1', 'cWTab2', 'cWTab3', 'cWTab4'];
-        } else if (roleNameParam.includes('남자') && roleNameParam.includes('야간')) {
-          tabs = ['cNTab1', 'cNTab2', 'cNTab3'];
-        } else if (roleNameParam.includes('남자')) {
-          tabs = ['cMTab1', 'cMTab2', 'cMTab3', 'cMTab4'];
-        }
-      }
+    const viewParam = params.get('view');
+    if (viewParam === 'panel') {
+      const timeParam = params.get('time') || '00시';
+      setPanelTimeLabel(timeParam);
+      setCurrentView('panel');
+    } else if (deptParam && inspectorParam) {
+      const tabs = getDeptTabs(deptParam, roleNameParam);
       setSelectedDept(deptParam);
       if (tabs.length > 0) {
         setAvailableTabs(tabs);
@@ -235,16 +279,7 @@ export default function App() {
   };
 
   const handleSelectDepartment = (dept: DepartmentId, inspector: string, roleName?: string) => {
-      let tabs = DEPT_TABS_MAP[dept] || [];
-      if (dept === 'cleaning' && roleName) {
-        if (roleName.includes('여자')) {
-          tabs = ['cWTab1', 'cWTab2', 'cWTab3', 'cWTab4'];
-        } else if (roleName.includes('남자') && roleName.includes('야간')) {
-          tabs = ['cNTab1', 'cNTab2', 'cNTab3'];
-        } else if (roleName.includes('남자')) {
-          tabs = ['cMTab1', 'cMTab2', 'cMTab3', 'cMTab4'];
-        }
-      }
+      const tabs = getDeptTabs(dept, roleName);
       setSelectedDept(dept);
       if (tabs.length > 0) {
         setAvailableTabs(tabs);
