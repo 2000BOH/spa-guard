@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -10,7 +10,7 @@ import { MetaStrip } from './components/MetaStrip';
 import { CheckListView } from './components/CheckListView';
 import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
-import { saveInspectionToSupabase } from './lib/supabase';
+import { saveInspectionToSupabase, fetchInspectionFromSupabase } from './lib/supabase';
 import { loadAdminSettings } from './components/AdminModal';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
@@ -139,6 +139,8 @@ export default function App() {
     return { lastModified: timeStr, securityCode: finalCode };
   };
 
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const loadDateData = (targetDate: string) => {
     try {
       const raw = localStorage.getItem(getStorageKey(targetDate));
@@ -168,6 +170,42 @@ export default function App() {
     };
   };
 
+  // 서버(Supabase)와 데이터 실시간 불러오기 및 병합
+  const syncWithSupabase = async (targetDate: string, showNotification = false) => {
+    const res = await fetchInspectionFromSupabase(targetDate);
+    if (res.success && res.log) {
+      const log = res.log;
+      const remoteState: AppState = {
+        storeName: log.store_name || '블루오션 웰니스 스파',
+        date: log.check_date || targetDate,
+        inspector: log.inspector || '점검자',
+        items: log.items_state || {},
+        summaries: log.summaries || { tab1: '', tab2: '', tab3: '', tab4: '', tab5: '' },
+        securityCode: log.security_code || '',
+        lastModified: log.recorded_at || ''
+      };
+
+      setState(prev => {
+        const mergedItems = { ...prev.items, ...remoteState.items };
+        const mergedSummaries = { ...prev.summaries, ...remoteState.summaries };
+        const finalState = {
+          ...prev,
+          ...remoteState,
+          items: mergedItems,
+          summaries: mergedSummaries
+        };
+        try {
+          localStorage.setItem(getStorageKey(targetDate), JSON.stringify(finalState));
+        } catch (e) {}
+        return finalState;
+      });
+
+      if (showNotification) {
+        showToast(`☁️ ${targetDate} 서버 동기화 완료`);
+      }
+    }
+  };
+
   useEffect(() => {
     const initialData = loadDateData(todayStr);
     const sec = generateSecurityLog(initialData.items, initialData.inspector);
@@ -175,6 +213,9 @@ export default function App() {
       ...initialData,
       ...sec
     });
+
+    // 앱 시작 시 서버 데이터 자동 동기화
+    syncWithSupabase(todayStr);
 
     // Parse URL params for QR scanning direct access
     const params = new URLSearchParams(window.location.search);
@@ -240,6 +281,15 @@ export default function App() {
     }
   }, []);
 
+  // 모바일 <-> PC 실시간 연동 (10초 주기 서버 동기화 폴링)
+  useEffect(() => {
+    if (!state.date) return;
+    const interval = setInterval(() => {
+      syncWithSupabase(state.date);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [state.date]);
+
   const updateStateAndSave = (updater: (prev: AppState) => AppState) => {
     if (isReadOnly) {
       showToast("⚠️ 과거 기록은 수정할 수 없습니다 (조회 전용).");
@@ -258,6 +308,13 @@ export default function App() {
       } catch (e) {
         console.error(e);
       }
+
+      // 모바일 & PC 실시간 Supabase 자동 저장 (1초 디바운스)
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = setTimeout(() => {
+        saveInspectionToSupabase(finalState);
+      }, 1000);
+
       return finalState;
     });
   };
@@ -271,6 +328,9 @@ export default function App() {
       ...sec
     });
     
+    // 선택 날짜 서버 데이터 동기화
+    syncWithSupabase(newDate, true);
+
     if (raw) {
       showToast(`📅 ${newDate} 작성된 점검일지 불러옴`);
     } else {
