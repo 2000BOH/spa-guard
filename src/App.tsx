@@ -11,7 +11,7 @@ import { CheckListView } from './components/CheckListView';
 import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { saveInspectionToSupabase, fetchInspectionFromSupabase } from './lib/supabase';
-import { loadAdminSettings } from './components/AdminModal';
+import { loadAdminSettings, getDeptFlatRoles } from './components/AdminModal';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
 import MachineRoomPanel from './components/MachineRoomPanel';
@@ -22,14 +22,6 @@ const DEPT_NAMES: Record<string, string> = {
   cleaning: '미화',
   food: '푸드',
   snack: '스낵'
-};
-
-const NFC_ROLE_MAP: Record<DepartmentId, string[]> = {
-  facilities: ['주간', '야간'],
-  reception: ['오전', '오후', '야간'],
-  cleaning: ['남자 주간', '남자 야간', '여자 주간'],
-  food: ['오픈', '마감'],
-  snack: ['오픈', '마감']
 };
 
 function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
@@ -240,14 +232,21 @@ export default function App() {
         if (foundDept) {
           const adminSettings = loadAdminSettings();
           const deptConfig = adminSettings.deptConfigs[foundDept];
-          const pool = deptConfig?.inspectorPool || [];
-          const index = nfcNum - NFC_BASE_NUMBERS[foundDept];
-          const validRoleNames = NFC_ROLE_MAP[foundDept] || [];
+          const flatRoles = getDeptFlatRoles(foundDept, deptConfig);
+          const matchedRole = flatRoles.find(r => r.nfcNum === nfcNum);
 
-          if (index >= 0 && index < validRoleNames.length) {
+          if (matchedRole) {
             deptParam = foundDept;
-            roleNameParam = validRoleNames[index];
-            inspectorParam = pool[index] || `${DEPT_NAMES[foundDept]} ${roleNameParam} 점검자`;
+            roleNameParam = matchedRole.roleLabel;
+            
+            // 관리자 설정에서 입력된 이름 탐색
+            const pool = deptConfig?.inspectorPool || [];
+            const grp = deptConfig?.groups?.[matchedRole.groupIndex];
+            const nameInGroup = grp?.roles?.[matchedRole.roleIndex]?.name;
+            const nameInPool = pool[matchedRole.flatIndex] || '';
+
+            const assignedName = nameInGroup || nameInPool;
+            inspectorParam = assignedName || `${DEPT_NAMES[foundDept]} ${matchedRole.roleLabel} 점검자`;
           } else {
             setTimeout(() => showToast(`⚠️ 해당 번호(${nfcNum}번)에 배정된 점검자가 없습니다. 관리자 설정을 확인하세요.`), 500);
           }

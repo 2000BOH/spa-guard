@@ -108,9 +108,6 @@ export function loadAdminSettings(): AdminSettings {
 }
 
 export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
-  const [pin, setPin] = useState('');
-  const [isAuth, setIsAuth] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS);
   const [showPannelEditor, setShowPannelEditor] = useState(false);
 
@@ -119,9 +116,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      setPin('');
-      setIsAuth(false);
-      setErrorMsg('');
       setShowPannelEditor(false);
       const loadedSettings = loadAdminSettings();
       setSettings(loadedSettings);
@@ -164,16 +158,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       </div>
     );
   }
-
-  const handleAuth = () => {
-    if (pin === '0000') {
-      setIsAuth(true);
-      setErrorMsg('');
-    } else {
-      setErrorMsg('비밀번호가 일치하지 않습니다.');
-      setPin('');
-    }
-  };
 
   const handleSave = () => {
     localStorage.setItem('spa_admin_settings', JSON.stringify(settings));
@@ -279,36 +263,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
           <button className="modal-close" onClick={onClose}>&times;</button>
         </div>
 
-        {!isAuth ? (
-          <div style={{ textAlign: 'center', padding: '20px 10px' }}>
-            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
-              관리자 비밀번호를 입력하세요.
-            </p>
-            <input
-              type="password"
-              value={pin}
-              placeholder="4자리 비밀번호"
-              maxLength={4}
-              onChange={(e) => setPin(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
-              style={{
-                width: '180px', height: '44px', fontSize: '18px', textAlign: 'center',
-                letterSpacing: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '8px'
-              }}
-            />
-            {errorMsg && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '8px' }}>{errorMsg}</div>}
-            <button
-              onClick={handleAuth}
-              style={{
-                width: '180px', height: '44px', background: '#1e293b', color: '#fff',
-                fontSize: '14px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer'
-              }}
-            >
-              확인
-            </button>
-          </div>
-        ) : (
-          <div style={{ padding: '6px 0' }}>
+        <div style={{ padding: '6px 0' }}>
             {/* ── 기계실 패널 설정 ── */}
             <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
               ⚙️ 관리자 · 설정 편집
@@ -416,7 +371,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               설정 저장
             </button>
           </div>
-        )}
       </div>
     </div>
   );

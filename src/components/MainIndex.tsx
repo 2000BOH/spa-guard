@@ -76,7 +76,7 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
             return (
               <button
                 key={ri}
-                onClick={() => onSelectDepartment(deptId, r.name || roleName, roleName)}
+                onClick={() => onSelectDepartment(deptId, r.name || `${dept.name} ${roleName} 점검자`, roleName)}
                 style={{
                   height: '46px',
                   display: 'flex',
