@@ -84,7 +84,14 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
           {allRoles.map((r, ri) => {
             const roleName = r.label ? `${r.label} ${r.role}` : r.role;
             const statusInfo = getDeptInspectionStatus(todayStr, deptId, roleName);
-            const assignedName = statusInfo.inspector || r.name || '';
+            
+            // 관리자가 등록한 이름 탐색 (r.names 또는 r.name)
+            const registeredName = (r.names && r.names.length > 0)
+              ? r.names[0]
+              : (r.name ? r.name.split(',')[0].trim() : '');
+
+            // 진행 중인 점검자가 있으면 표출, 없으면 관리자 등록 이름 표출
+            const assignedName = statusInfo.inspector || registeredName;
             const status = statusInfo.status;
 
             let bgColor = '#f1f5f9';

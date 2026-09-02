@@ -260,31 +260,22 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             const nameList = roleInputs[dept]?.[item.flatIndex] || [''];
 
             return (
-              <div key={item.flatIndex} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div key={item.flatIndex} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
                   <span style={{
                     fontSize: '11px',
                     fontWeight: 700,
                     color: '#1e293b',
                     background: '#e2e8f0',
-                    padding: '3px 6px',
+                    padding: '3px 8px',
                     borderRadius: '4px',
                   }}>
                     {item.nfcNum}번 [{item.roleLabel}]
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => addInspectorInput(dept, item.groupIndex, item.roleIndex, item.flatIndex)}
-                    style={{
-                      background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px',
-                      padding: '2px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px'
-                    }}
-                  >
-                    + 담당자 추가
-                  </button>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                {/* 담당자 이름 입력 인풋 목록 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                   {nameList.map((nameVal, nIdx) => (
                     <div key={nIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <input
@@ -309,6 +300,19 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
                     </div>
                   ))}
                 </div>
+
+                {/* 입력창 맨 아래에 + 담당자 추가 버튼 위치 */}
+                <button
+                  type="button"
+                  onClick={() => addInspectorInput(dept, item.groupIndex, item.roleIndex, item.flatIndex)}
+                  style={{
+                    background: '#f1f5f9', color: '#2563eb', border: '1px dashed #93c5fd', borderRadius: '5px',
+                    padding: '6px 0', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '2px', width: '100%'
+                  }}
+                >
+                  + 담당자 추가
+                </button>
               </div>
             );
           })}

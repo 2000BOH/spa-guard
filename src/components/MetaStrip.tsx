@@ -23,9 +23,19 @@ export const MetaStrip: React.FC<MetaStripProps> = ({
   onChangeInspector,
   inspectorOptions = [],
 }) => {
-  // 중복 제거 및 유효한 점검자 후보 리스트 생성
-  const optionsList = Array.from(new Set([...inspectorOptions, inspector].filter(Boolean)));
-  if (optionsList.length === 0) optionsList.push('점검자');
+  // 관리자가 등록한 실제 이름들(inspectorOptions)이 존재할 경우 유효 이름만 칩으로 출력
+  let optionsList: string[] = [];
+  const cleanInspectorOptions = inspectorOptions.map(s => s.trim()).filter(Boolean);
+
+  if (cleanInspectorOptions.length > 0) {
+    optionsList = Array.from(new Set(cleanInspectorOptions));
+    // 현재 inspector가 등록 목록에 없고 시스템 기본 명칭(예: '... 점검자')이 아닌 실제 이름일 경우에만 추가
+    if (inspector && !optionsList.includes(inspector) && !inspector.endsWith('점검자')) {
+      optionsList.push(inspector);
+    }
+  } else {
+    optionsList = inspector ? [inspector] : ['점검자'];
+  }
 
   return (
     <div className="meta-strip" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
