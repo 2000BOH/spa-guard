@@ -111,8 +111,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS);
   const [showPannelEditor, setShowPannelEditor] = useState(false);
 
-  // 부서별 flatIndex 키 기준의 이름 맵 state
-  const [roleInputs, setRoleInputs] = useState<Record<string, Record<number, string>>>({});
+  // 부서별 flatIndex 키 기준의 다중 이름 맵 state (flatIndex -> string[])
+  const [roleInputs, setRoleInputs] = useState<Record<string, Record<number, string[]>>>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -120,19 +120,26 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       const loadedSettings = loadAdminSettings();
       setSettings(loadedSettings);
       
-      const initialRoleInputs: Record<string, Record<number, string>> = {};
+      const initialRoleInputs: Record<string, Record<number, string[]>> = {};
       (Object.keys(DEPT_LABELS) as DepartmentId[]).forEach(dept => {
         initialRoleInputs[dept] = {};
         const flatRoles = getDeptFlatRoles(dept, loadedSettings.deptConfigs[dept]);
         const pool = loadedSettings.deptConfigs[dept]?.inspectorPool || [];
         
         flatRoles.forEach((item) => {
-          // 1. groups내 roles에서 기존 저장된 이름 탐색
           const grp = loadedSettings.deptConfigs[dept]?.groups?.[item.groupIndex];
-          const nameInGroup = grp?.roles?.[item.roleIndex]?.name;
-          // 2. 없으면 pool 배열에서 탐색
-          const nameInPool = pool[item.flatIndex] || '';
-          initialRoleInputs[dept][item.flatIndex] = nameInGroup || nameInPool || '';
+          const roleDef = grp?.roles?.[item.roleIndex];
+          let names: string[] = [];
+
+          if (roleDef?.names && roleDef.names.length > 0) {
+            names = [...roleDef.names];
+          } else if (roleDef?.name) {
+            names = roleDef.name.split(',').map(s => s.trim()).filter(Boolean);
+          } else if (pool[item.flatIndex]) {
+            names = pool[item.flatIndex].split(',').map(s => s.trim()).filter(Boolean);
+          }
+
+          initialRoleInputs[dept][item.flatIndex] = names.length > 0 ? names : [''];
         });
       });
       setRoleInputs(initialRoleInputs);
@@ -165,18 +172,20 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  const updateRoleName = (
+  const updateRoleNames = (
     dept: DepartmentId,
     groupIndex: number,
     roleIndex: number,
     flatIndex: number,
-    value: string
+    newNamesList: string[]
   ) => {
+    const cleanedNames = newNamesList.length > 0 ? newNamesList : [''];
+    
     setRoleInputs(prev => ({
       ...prev,
       [dept]: {
         ...(prev[dept] || {}),
-        [flatIndex]: value
+        [flatIndex]: cleanedNames
       }
     }));
 
@@ -184,8 +193,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     const deptConf = { ...newConfigs[dept] };
     const groups = JSON.parse(JSON.stringify(deptConf.groups || DEFAULT_DEPT_CONFIGS[dept].groups));
 
+    const validNames = cleanedNames.map(n => n.trim()).filter(Boolean);
+    const primaryName = validNames.join(', ');
+
     if (groups[groupIndex] && groups[groupIndex].roles[roleIndex]) {
-      groups[groupIndex].roles[roleIndex].name = value;
+      groups[groupIndex].roles[roleIndex].name = primaryName;
+      groups[groupIndex].roles[roleIndex].names = validNames;
     }
 
     // inspectorPool 동기화
@@ -193,10 +206,10 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     const newPool: string[] = [];
     flatRoles.forEach((item) => {
       if (item.flatIndex === flatIndex) {
-        newPool.push(value);
+        newPool.push(primaryName);
       } else {
-        const val = roleInputs[dept]?.[item.flatIndex] || '';
-        newPool.push(val);
+        const valArr = roleInputs[dept]?.[item.flatIndex] || [];
+        newPool.push(valArr.filter(Boolean).join(', '));
       }
     });
 
@@ -205,6 +218,23 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     newConfigs[dept] = deptConf;
 
     setSettings({ ...settings, deptConfigs: newConfigs });
+  };
+
+  const addInspectorInput = (dept: DepartmentId, groupIndex: number, roleIndex: number, flatIndex: number) => {
+    const currentList = roleInputs[dept]?.[flatIndex] || [''];
+    updateRoleNames(dept, groupIndex, roleIndex, flatIndex, [...currentList, '']);
+  };
+
+  const removeInspectorInput = (dept: DepartmentId, groupIndex: number, roleIndex: number, flatIndex: number, nameIdx: number) => {
+    const currentList = roleInputs[dept]?.[flatIndex] || [''];
+    const updated = currentList.filter((_, idx) => idx !== nameIdx);
+    updateRoleNames(dept, groupIndex, roleIndex, flatIndex, updated.length > 0 ? updated : ['']);
+  };
+
+  const changeInspectorName = (dept: DepartmentId, groupIndex: number, roleIndex: number, flatIndex: number, nameIdx: number, val: string) => {
+    const currentList = [...(roleInputs[dept]?.[flatIndex] || [''])];
+    currentList[nameIdx] = val;
+    updateRoleNames(dept, groupIndex, roleIndex, flatIndex, currentList);
   };
 
   const inputStyle: React.CSSProperties = { width: '100%', height: '32px', padding: '0 8px', fontSize: '12px', borderRadius: '5px', border: '1px solid #cbd5e1' };
@@ -225,31 +255,63 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
           </span>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {flatRoles.map((item) => (
-            <div key={item.flatIndex} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                width: '115px',
-                color: '#1e293b',
-                background: '#e2e8f0',
-                padding: '5px 6px',
-                borderRadius: '4px',
-                textAlign: 'center',
-                flexShrink: 0
-              }}>
-                {item.nfcNum}번 [{item.roleLabel}]
-              </span>
-              <input
-                type="text"
-                placeholder={`${item.roleLabel} 담당자 이름`}
-                value={roleInputs[dept]?.[item.flatIndex] || ''}
-                onChange={(e) => updateRoleName(dept, item.groupIndex, item.roleIndex, item.flatIndex, e.target.value)}
-                style={{ ...inputStyle, flex: 1 }}
-              />
-            </div>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {flatRoles.map((item) => {
+            const nameList = roleInputs[dept]?.[item.flatIndex] || [''];
+
+            return (
+              <div key={item.flatIndex} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: '#1e293b',
+                    background: '#e2e8f0',
+                    padding: '3px 6px',
+                    borderRadius: '4px',
+                  }}>
+                    {item.nfcNum}번 [{item.roleLabel}]
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => addInspectorInput(dept, item.groupIndex, item.roleIndex, item.flatIndex)}
+                    style={{
+                      background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px',
+                      padding: '2px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px'
+                    }}
+                  >
+                    + 담당자 추가
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                  {nameList.map((nameVal, nIdx) => (
+                    <div key={nIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input
+                        type="text"
+                        placeholder={`${item.roleLabel} 담당자 이름 ${nameList.length > 1 ? nIdx + 1 : ''}`}
+                        value={nameVal}
+                        onChange={(e) => changeInspectorName(dept, item.groupIndex, item.roleIndex, item.flatIndex, nIdx, e.target.value)}
+                        style={{ ...inputStyle, flex: 1 }}
+                      />
+                      {nameList.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeInspectorInput(dept, item.groupIndex, item.roleIndex, item.flatIndex, nIdx)}
+                          style={{
+                            background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px',
+                            width: '26px', height: '32px', fontSize: '12px', fontWeight: 700, cursor: 'pointer'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -332,8 +394,18 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               renderDeptEditor(dept)
             ))}
 
+            <button
+              onClick={handleSave}
+              style={{
+                width: '100%', height: '44px', background: '#2563eb', color: '#fff',
+                fontSize: '15px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '16px', marginBottom: '16px'
+              }}
+            >
+              💾 설정 저장
+            </button>
+
             {/* ── Vercel 다이렉트 주소 메모 ── */}
-            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
               📌 Vercel 다이렉트 바로가기 주소 메모
             </h4>
 
@@ -360,16 +432,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
                 <div><strong>스낵 마감 (52번):</strong> https://spa-guard.vercel.app/?nfc=52</div>
               </div>
             </div>
-
-            <button
-              onClick={handleSave}
-              style={{
-                width: '100%', height: '42px', background: '#2563eb', color: '#fff',
-                fontSize: '14px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '4px'
-              }}
-            >
-              설정 저장
-            </button>
           </div>
       </div>
     </div>

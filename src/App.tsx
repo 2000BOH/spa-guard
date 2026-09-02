@@ -12,6 +12,7 @@ import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { saveInspectionToSupabase, fetchInspectionFromSupabase } from './lib/supabase';
 import { loadAdminSettings, getDeptFlatRoles } from './components/AdminModal';
+import { updateDeptInspectionStatus } from './lib/deptStatus';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
 import MachineRoomPanel from './components/MachineRoomPanel';
@@ -348,6 +349,7 @@ export default function App() {
         setCurrentView('comingSoon');
       }
       updateStateAndSave((prev) => ({ ...prev, inspector, roleName }));
+      updateDeptInspectionStatus(state.date || todayStr, dept, roleName, 'in_progress', inspector);
   };
 
   /** 기계실 패널 열기 (00시 / 03시 / 06시) */
@@ -625,8 +627,14 @@ export default function App() {
           text: msg,
           files: filesArray
         });
-        showToast("📲 카카오톡 단체방을 선택하여 전송하세요!");
-        return;
+      // 점검완료 상태 기록 헬퍼
+      const markCompleted = () => {
+        if (selectedDept) {
+          updateDeptInspectionStatus(state.date || todayStr, selectedDept, state.roleName, 'completed', state.inspector);
+        }
+      };
+
+      markCompleted();
       } else if (navigator.share) {
         downloadA4SplitImages();
         await navigator.share({
@@ -738,8 +746,34 @@ export default function App() {
           cntP={cntP}
           isReadOnly={isReadOnly}
           onChangeCheckDate={handleDateChange}
-          onChangeInspector={(val) => updateStateAndSave((p) => ({ ...p, inspector: val }))}
-          inspectorOptions={selectedDept ? (loadAdminSettings().deptConfigs[selectedDept]?.inspectorPool || []) : []}
+          onChangeInspector={(val) => {
+            updateStateAndSave((p) => ({ ...p, inspector: val }));
+            if (selectedDept) {
+              updateDeptInspectionStatus(state.date || todayStr, selectedDept, state.roleName, 'in_progress', val);
+            }
+          }}
+          inspectorOptions={(() => {
+            if (!selectedDept) return [];
+            const loaded = loadAdminSettings();
+            const deptConfig = loaded.deptConfigs[selectedDept];
+            const flatRoles = getDeptFlatRoles(selectedDept, deptConfig);
+            const matchedRole = flatRoles.find(r => r.roleLabel === state.roleName);
+            
+            let list: string[] = [];
+            if (matchedRole && deptConfig) {
+              const grp = deptConfig.groups?.[matchedRole.groupIndex];
+              const roleDef = grp?.roles?.[matchedRole.roleIndex];
+              if (roleDef?.names && roleDef.names.length > 0) {
+                list = roleDef.names;
+              } else if (roleDef?.name) {
+                list = roleDef.name.split(',').map(s => s.trim()).filter(Boolean);
+              }
+            }
+            if (list.length === 0 && deptConfig?.inspectorPool) {
+              list = deptConfig.inspectorPool.flatMap(p => p.split(',').map(s => s.trim()).filter(Boolean));
+            }
+            return list;
+          })()}
         />
       </Header>
 

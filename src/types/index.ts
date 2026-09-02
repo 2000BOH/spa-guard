@@ -48,10 +48,13 @@ export interface SectionData {
 
 export type DepartmentId = 'facilities' | 'reception' | 'cleaning' | 'food' | 'snack';
 
+export type InspectionStatus = 'none' | 'in_progress' | 'completed';
+
 /** 개별 담당자 역할 및 이름 */
 export interface RoleDef {
   role: string; // 예: '주간', '야간', '오픈', '마감'
-  name: string; // 예: '홍길동' (비워둘 수 있음)
+  name: string; // 단일 이름 (하위 호환)
+  names?: string[]; // 다중 담당자 이름 목록
 }
 
 /** 하위 그룹 (예: 미화 남자/여자) */

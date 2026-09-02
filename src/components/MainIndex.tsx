@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { DepartmentId, AdminSettings } from '../types';
 import { AdminModal, loadAdminSettings } from './AdminModal';
 import { WORK_RULES } from '../data/workRulesData';
+import { getDeptInspectionStatus } from '../lib/deptStatus';
 
 interface MainIndexProps {
   onSelectDepartment: (dept: DepartmentId, inspector: string, roleName?: string) => void;
@@ -16,6 +17,14 @@ const DEPTS: Record<DepartmentId, { name: string; icon: string }> = {
   snack: { name: '스낵', icon: '☕' }
 };
 
+function getTodayStr(): string {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpenPanel }) => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [workRulesDept, setWorkRulesDept] = useState<DepartmentId | null>(null);
@@ -29,6 +38,7 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
   const renderCard = (deptId: DepartmentId) => {
     const dept = DEPTS[deptId];
     const config = settings.deptConfigs[deptId];
+    const todayStr = getTodayStr();
     
     // 그룹 구분 없이 모든 역할을 평면화하여 한 줄로 나열
     const allRoles = config.groups.flatMap(g => 
@@ -73,33 +83,68 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
         }}>
           {allRoles.map((r, ri) => {
             const roleName = r.label ? `${r.label} ${r.role}` : r.role;
+            const statusInfo = getDeptInspectionStatus(todayStr, deptId, roleName);
+            const assignedName = statusInfo.inspector || r.name || '';
+            const status = statusInfo.status;
+
+            let bgColor = '#f1f5f9';
+            let borderColor = '#cbd5e1';
+            let badgeText = '';
+            let badgeColor = '';
+
+            if (status === 'in_progress') {
+              bgColor = '#fef3c7';
+              borderColor = '#f59e0b';
+              badgeText = '🟡 점검중';
+              badgeColor = '#d97706';
+            } else if (status === 'completed') {
+              bgColor = '#cbd5e1'; // 음영 처리된 버튼 스타일
+              borderColor = '#64748b';
+              badgeText = '🟢 점검완료';
+              badgeColor = '#15803d';
+            }
+
             return (
               <button
                 key={ri}
-                onClick={() => onSelectDepartment(deptId, r.name || `${dept.name} ${roleName} 점검자`, roleName)}
+                onClick={() => onSelectDepartment(deptId, assignedName || `${dept.name} ${roleName} 점검자`, roleName)}
                 style={{
-                  height: '46px',
+                  height: '52px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: '#f1f5f9',
-                  border: '1px solid #cbd5e1',
+                  background: bgColor,
+                  border: `1px solid ${borderColor}`,
                   borderRadius: '8px',
-                  color: '#334155',
+                  color: status === 'completed' ? '#1e293b' : '#334155',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  padding: '2px 4px'
+                  padding: '2px 4px',
+                  boxShadow: status === 'completed' ? 'inset 0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.15s ease'
                 }}
               >
-                <span style={{ fontSize: r.name ? '11px' : '13px', fontWeight: r.name ? 600 : 700, color: r.name ? '#64748b' : '#0f172a' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: status === 'completed' ? '#475569' : '#64748b' }}>
                   {roleName}
                 </span>
-                {r.name && (
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginTop: '1px' }}>
-                    {r.name}
+
+                {assignedName ? (
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginTop: '1px' }}>
+                    {assignedName}
+                  </span>
+                ) : null}
+
+                {badgeText && (
+                  <span style={{
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    color: badgeColor,
+                    marginTop: '2px'
+                  }}>
+                    {badgeText}
                   </span>
                 )}
               </button>
