@@ -247,7 +247,7 @@ export default function App() {
             const nameInPool = pool[matchedRole.flatIndex] || '';
 
             const assignedName = nameInGroup || nameInPool;
-            inspectorParam = assignedName || `${DEPT_NAMES[foundDept]} ${matchedRole.roleLabel} 점검자`;
+            inspectorParam = assignedName || '점검자';
           } else {
             setTimeout(() => showToast(`⚠️ 해당 번호(${nfcNum}번)에 배정된 점검자가 없습니다. 관리자 설정을 확인하세요.`), 500);
           }
@@ -768,30 +768,52 @@ export default function App() {
           onChangeInspector={(val) => {
             updateStateAndSave((p) => ({ ...p, inspector: val }));
             if (selectedDept) {
-              updateDeptInspectionStatus(state.date || todayStr, selectedDept, state.roleName, 'in_progress', val);
+              const isCleared = !val || val === '점검자';
+              updateDeptInspectionStatus(
+                state.date || todayStr, 
+                selectedDept, 
+                state.roleName, 
+                isCleared ? 'none' : 'in_progress', 
+                isCleared ? '' : val
+              );
             }
           }}
           inspectorOptions={(() => {
-            if (!selectedDept) return [];
             const loaded = loadAdminSettings();
-            const deptConfig = loaded.deptConfigs[selectedDept];
-            if (!deptConfig) return [];
-
             const namesSet = new Set<string>();
-            deptConfig.groups?.forEach(grp => {
-              grp.roles?.forEach(r => {
-                if (r.names && r.names.length > 0) {
-                  r.names.forEach(n => n.trim() && namesSet.add(n.trim()));
-                } else if (r.name) {
-                  r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
-                }
+
+            // 현재 부서 우선 수집
+            if (selectedDept && loaded.deptConfigs[selectedDept]) {
+              const deptConfig = loaded.deptConfigs[selectedDept];
+              deptConfig.groups?.forEach(grp => {
+                grp.roles?.forEach(r => {
+                  if (r.names && r.names.length > 0) {
+                    r.names.forEach(n => n.trim() && namesSet.add(n.trim()));
+                  } else if (r.name) {
+                    r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
+                  }
+                });
+              });
+              if (deptConfig.inspectorPool) {
+                deptConfig.inspectorPool.forEach(p => {
+                  p.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
+                });
+              }
+            }
+
+            // 기타 부서에 등록된 관리자 지정 담당자 이름들도 함께 추가
+            Object.values(loaded.deptConfigs).forEach(cfg => {
+              cfg.groups?.forEach(grp => {
+                grp.roles?.forEach(r => {
+                  if (r.names && r.names.length > 0) {
+                    r.names.forEach(n => n.trim() && namesSet.add(n.trim()));
+                  } else if (r.name) {
+                    r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
+                  }
+                });
               });
             });
-            if (deptConfig.inspectorPool) {
-              deptConfig.inspectorPool.forEach(p => {
-                p.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
-              });
-            }
+
             return Array.from(namesSet);
           })()}
         />

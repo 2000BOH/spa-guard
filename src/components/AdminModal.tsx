@@ -111,8 +111,14 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS);
   const [showPannelEditor, setShowPannelEditor] = useState(false);
 
-  // 부서별 flatIndex 키 기준의 다중 이름 맵 state (flatIndex -> string[])
-  const [roleInputs, setRoleInputs] = useState<Record<string, Record<number, string[]>>>({});
+  // 파트(부서)별 통합 담당자 이름 목록 state (DepartmentId -> string[])
+  const [deptInspectorInputs, setDeptInspectorInputs] = useState<Record<DepartmentId, string[]>>({
+    facilities: [''],
+    reception: [''],
+    cleaning: [''],
+    food: [''],
+    snack: ['']
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -120,29 +126,36 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       const loadedSettings = loadAdminSettings();
       setSettings(loadedSettings);
       
-      const initialRoleInputs: Record<string, Record<number, string[]>> = {};
+      const initialInputs: Record<DepartmentId, string[]> = {
+        facilities: [],
+        reception: [],
+        cleaning: [],
+        food: [],
+        snack: []
+      };
+
       (Object.keys(DEPT_LABELS) as DepartmentId[]).forEach(dept => {
-        initialRoleInputs[dept] = {};
-        const flatRoles = getDeptFlatRoles(dept, loadedSettings.deptConfigs[dept]);
-        const pool = loadedSettings.deptConfigs[dept]?.inspectorPool || [];
-        
-        flatRoles.forEach((item) => {
-          const grp = loadedSettings.deptConfigs[dept]?.groups?.[item.groupIndex];
-          const roleDef = grp?.roles?.[item.roleIndex];
-          let names: string[] = [];
+        const deptConfig = loadedSettings.deptConfigs[dept];
+        const namesSet = new Set<string>();
 
-          if (roleDef?.names && roleDef.names.length > 0) {
-            names = [...roleDef.names];
-          } else if (roleDef?.name) {
-            names = roleDef.name.split(',').map(s => s.trim()).filter(Boolean);
-          } else if (pool[item.flatIndex]) {
-            names = pool[item.flatIndex].split(',').map(s => s.trim()).filter(Boolean);
-          }
-
-          initialRoleInputs[dept][item.flatIndex] = names.length > 0 ? names : [''];
+        if (deptConfig?.inspectorPool) {
+          deptConfig.inspectorPool.forEach(p => p.split(',').forEach(n => n.trim() && namesSet.add(n.trim())));
+        }
+        deptConfig?.groups?.forEach(grp => {
+          grp.roles?.forEach(r => {
+            if (r.names && r.names.length > 0) {
+              r.names.forEach(n => n.trim() && namesSet.add(n.trim()));
+            } else if (r.name) {
+              r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
+            }
+          });
         });
+
+        const list = Array.from(namesSet);
+        initialInputs[dept] = list.length > 0 ? list : [''];
       });
-      setRoleInputs(initialRoleInputs);
+
+      setDeptInspectorInputs(initialInputs);
     }
   }, [isOpen]);
 
@@ -172,69 +185,48 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  const updateRoleNames = (
-    dept: DepartmentId,
-    groupIndex: number,
-    roleIndex: number,
-    flatIndex: number,
-    newNamesList: string[]
-  ) => {
-    const cleanedNames = newNamesList.length > 0 ? newNamesList : [''];
-    
-    setRoleInputs(prev => ({
-      ...prev,
-      [dept]: {
-        ...(prev[dept] || {}),
-        [flatIndex]: cleanedNames
-      }
-    }));
+  const updateDeptNamesList = (dept: DepartmentId, newList: string[]) => {
+    const cleaned = newList.length > 0 ? newList : [''];
+    setDeptInspectorInputs(prev => ({ ...prev, [dept]: cleaned }));
 
+    const validNames = cleaned.map(n => n.trim()).filter(Boolean);
     const newConfigs = { ...settings.deptConfigs };
     const deptConf = { ...newConfigs[dept] };
     const groups = JSON.parse(JSON.stringify(deptConf.groups || DEFAULT_DEPT_CONFIGS[dept].groups));
 
-    const validNames = cleanedNames.map(n => n.trim()).filter(Boolean);
-    const primaryName = validNames.join(', ');
-
-    if (groups[groupIndex] && groups[groupIndex].roles[roleIndex]) {
-      groups[groupIndex].roles[roleIndex].name = primaryName;
-      groups[groupIndex].roles[roleIndex].names = validNames;
-    }
-
-    // inspectorPool 동기화
-    const flatRoles = getDeptFlatRoles(dept, deptConf);
-    const newPool: string[] = [];
-    flatRoles.forEach((item) => {
-      if (item.flatIndex === flatIndex) {
-        newPool.push(primaryName);
-      } else {
-        const valArr = roleInputs[dept]?.[item.flatIndex] || [];
-        newPool.push(valArr.filter(Boolean).join(', '));
-      }
+    // 각 역할(roles) 및 inspectorPool에 이름 적용
+    let idx = 0;
+    groups.forEach((grp: any) => {
+      grp.roles?.forEach((r: any) => {
+        const assignedName = validNames[idx] || validNames[0] || '';
+        r.name = assignedName;
+        r.names = validNames;
+        idx++;
+      });
     });
 
     deptConf.groups = groups;
-    deptConf.inspectorPool = newPool;
+    deptConf.inspectorPool = validNames;
     newConfigs[dept] = deptConf;
 
-    setSettings({ ...settings, deptConfigs: newConfigs });
+    setSettings(prev => ({ ...prev, deptConfigs: newConfigs }));
   };
 
-  const addInspectorInput = (dept: DepartmentId, groupIndex: number, roleIndex: number, flatIndex: number) => {
-    const currentList = roleInputs[dept]?.[flatIndex] || [''];
-    updateRoleNames(dept, groupIndex, roleIndex, flatIndex, [...currentList, '']);
+  const addDeptInspectorInput = (dept: DepartmentId) => {
+    const currentList = deptInspectorInputs[dept] || [''];
+    updateDeptNamesList(dept, [...currentList, '']);
   };
 
-  const removeInspectorInput = (dept: DepartmentId, groupIndex: number, roleIndex: number, flatIndex: number, nameIdx: number) => {
-    const currentList = roleInputs[dept]?.[flatIndex] || [''];
+  const removeDeptInspectorInput = (dept: DepartmentId, nameIdx: number) => {
+    const currentList = deptInspectorInputs[dept] || [''];
     const updated = currentList.filter((_, idx) => idx !== nameIdx);
-    updateRoleNames(dept, groupIndex, roleIndex, flatIndex, updated.length > 0 ? updated : ['']);
+    updateDeptNamesList(dept, updated.length > 0 ? updated : ['']);
   };
 
-  const changeInspectorName = (dept: DepartmentId, groupIndex: number, roleIndex: number, flatIndex: number, nameIdx: number, val: string) => {
-    const currentList = [...(roleInputs[dept]?.[flatIndex] || [''])];
+  const changeDeptInspectorName = (dept: DepartmentId, nameIdx: number, val: string) => {
+    const currentList = [...(deptInspectorInputs[dept] || [''])];
     currentList[nameIdx] = val;
-    updateRoleNames(dept, groupIndex, roleIndex, flatIndex, currentList);
+    updateDeptNamesList(dept, currentList);
   };
 
   const inputStyle: React.CSSProperties = { width: '100%', height: '32px', padding: '0 8px', fontSize: '12px', borderRadius: '5px', border: '1px solid #cbd5e1' };
@@ -242,80 +234,55 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const sectionStyle: React.CSSProperties = { marginBottom: '10px' };
 
   const renderDeptEditor = (dept: DepartmentId) => {
-    const flatRoles = getDeptFlatRoles(dept, settings.deptConfigs[dept]);
+    const nameList = deptInspectorInputs[dept] || [''];
 
     return (
-      <div key={dept} style={{ marginBottom: '14px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+      <div key={dept} style={{ marginBottom: '14px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
             🏢 {DEPT_LABELS[dept]} 파트 지정 담당자
           </span>
           <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>
-            NFC 기준: {NFC_BASE_NUMBERS[dept]}번 대역
+            NFC 기준: {NFC_BASE_NUMBERS[dept]}번 대역~
           </span>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {flatRoles.map((item) => {
-            const nameList = roleInputs[dept]?.[item.flatIndex] || [''];
-
-            return (
-              <div key={item.flatIndex} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#1e293b',
-                    background: '#e2e8f0',
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                  }}>
-                    {item.nfcNum}번 [{item.roleLabel}]
-                  </span>
-                </div>
-
-                {/* 담당자 이름 입력 인풋 목록 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  {nameList.map((nameVal, nIdx) => (
-                    <div key={nIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <input
-                        type="text"
-                        placeholder={`${item.roleLabel} 담당자 이름 ${nameList.length > 1 ? nIdx + 1 : ''}`}
-                        value={nameVal}
-                        onChange={(e) => changeInspectorName(dept, item.groupIndex, item.roleIndex, item.flatIndex, nIdx, e.target.value)}
-                        style={{ ...inputStyle, flex: 1 }}
-                      />
-                      {nameList.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeInspectorInput(dept, item.groupIndex, item.roleIndex, item.flatIndex, nIdx)}
-                          style={{
-                            background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px',
-                            width: '26px', height: '32px', fontSize: '12px', fontWeight: 700, cursor: 'pointer'
-                          }}
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* 입력창 맨 아래에 + 담당자 추가 버튼 위치 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {nameList.map((nameVal, nIdx) => (
+            <div key={nIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <input
+                type="text"
+                placeholder={`${DEPT_LABELS[dept]} 담당자 성+이름 (예: 홍길동)`}
+                value={nameVal}
+                onChange={(e) => changeDeptInspectorName(dept, nIdx, e.target.value)}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              {nameList.length > 1 && (
                 <button
                   type="button"
-                  onClick={() => addInspectorInput(dept, item.groupIndex, item.roleIndex, item.flatIndex)}
+                  onClick={() => removeDeptInspectorInput(dept, nIdx)}
                   style={{
-                    background: '#f1f5f9', color: '#2563eb', border: '1px dashed #93c5fd', borderRadius: '5px',
-                    padding: '6px 0', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex',
-                    alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '2px', width: '100%'
+                    background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px',
+                    width: '28px', height: '32px', fontSize: '12px', fontWeight: 700, cursor: 'pointer'
                   }}
                 >
-                  + 담당자 추가
+                  ✕
                 </button>
-              </div>
-            );
-          })}
+              )}
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => addDeptInspectorInput(dept)}
+            style={{
+              background: '#f1f5f9', color: '#2563eb', border: '1px dashed #93c5fd', borderRadius: '5px',
+              padding: '7px 0', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '4px', width: '100%'
+            }}
+          >
+            + 담당자 추가
+          </button>
         </div>
       </div>
     );

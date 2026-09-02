@@ -29,12 +29,14 @@ export const MetaStrip: React.FC<MetaStripProps> = ({
 
   if (cleanInspectorOptions.length > 0) {
     optionsList = Array.from(new Set(cleanInspectorOptions));
-    // 현재 inspector가 등록 목록에 없고 시스템 기본 명칭(예: '... 점검자')이 아닌 실제 이름일 경우에만 추가
-    if (inspector && !optionsList.includes(inspector) && !inspector.endsWith('점검자')) {
+    // 현재 inspector가 등록 목록에 포함되어 있지 않더라도, 단말기 저장값 등 유효한 실제 이름일 때만 포함
+    if (inspector && !optionsList.includes(inspector) && inspector !== '점검자' && !inspector.endsWith('점검자') && !inspector.includes('[')) {
       optionsList.push(inspector);
     }
   } else {
-    optionsList = inspector ? [inspector] : ['점검자'];
+    optionsList = (inspector && inspector !== '점검자' && !inspector.endsWith('점검자') && !inspector.includes('[')) 
+      ? [inspector] 
+      : ['점검자'];
   }
 
   return (
@@ -60,7 +62,15 @@ export const MetaStrip: React.FC<MetaStripProps> = ({
                   key={name}
                   type="button"
                   disabled={isReadOnly}
-                  onClick={() => onChangeInspector && onChangeInspector(name)}
+                  onClick={() => {
+                    if (!onChangeInspector) return;
+                    if (isSelected) {
+                      // 다시 누르면 해제되어 점검전 상태('점검자')가 됨
+                      onChangeInspector('점검자');
+                    } else {
+                      onChangeInspector(name);
+                    }
+                  }}
                   style={{
                     padding: '4px 10px',
                     fontSize: '12px',
