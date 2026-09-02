@@ -85,13 +85,9 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
             const roleName = r.label ? `${r.label} ${r.role}` : r.role;
             const statusInfo = getDeptInspectionStatus(todayStr, deptId, roleName);
             
-            // 관리자가 등록한 이름 탐색 (r.names 또는 r.name)
-            const registeredName = (r.names && r.names.length > 0)
-              ? r.names[0]
-              : (r.name ? r.name.split(',')[0].trim() : '');
-
-            // 진행 중인 점검자가 있으면 표출, 없으면 관리자 등록 이름 표출
-            const assignedName = statusInfo.inspector || registeredName;
+            // 점검자가 직접 일지에 진입하여 이름을 선택했을 때만 배정된 것으로 판별
+            const hasAssignedInspector = statusInfo.status !== 'none' && Boolean(statusInfo.inspector) && statusInfo.inspector !== '점검자';
+            const assignedName = hasAssignedInspector ? statusInfo.inspector : '';
             const status = statusInfo.status;
 
             let bgColor = '#f1f5f9';
@@ -99,12 +95,12 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
             let badgeText = '';
             let badgeColor = '';
 
-            if (status === 'in_progress') {
+            if (status === 'in_progress' && hasAssignedInspector) {
               bgColor = '#fef3c7';
               borderColor = '#f59e0b';
               badgeText = '🟡 점검중';
               badgeColor = '#d97706';
-            } else if (status === 'completed') {
+            } else if (status === 'completed' && hasAssignedInspector) {
               bgColor = '#cbd5e1'; // 음영 처리된 버튼 스타일
               borderColor = '#64748b';
               badgeText = '🟢 점검완료';
@@ -138,11 +134,14 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
                   {roleName}
                 </span>
 
-                {assignedName ? (
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginTop: '1px' }}>
-                    {assignedName}
-                  </span>
-                ) : null}
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: hasAssignedInspector ? 700 : 500,
+                  color: hasAssignedInspector ? '#0f172a' : '#94a3b8',
+                  marginTop: '1px'
+                }}>
+                  {hasAssignedInspector ? assignedName : '점검 전'}
+                </span>
 
                 {badgeText && (
                   <span style={{

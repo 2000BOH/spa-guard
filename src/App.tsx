@@ -12,7 +12,7 @@ import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { saveInspectionToSupabase, fetchInspectionFromSupabase } from './lib/supabase';
 import { loadAdminSettings, getDeptFlatRoles } from './components/AdminModal';
-import { updateDeptInspectionStatus } from './lib/deptStatus';
+import { updateDeptInspectionStatus, getDeptInspectionStatus } from './lib/deptStatus';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
 import MachineRoomPanel from './components/MachineRoomPanel';
@@ -338,7 +338,7 @@ export default function App() {
     }
   };
 
-  const handleSelectDepartment = (dept: DepartmentId, defaultInspector: string, roleName?: string) => {
+  const handleSelectDepartment = (dept: DepartmentId, _defaultInspector: string, roleName?: string) => {
       const tabs = getDeptTabs(dept, roleName);
       setSelectedDept(dept);
       if (tabs.length > 0) {
@@ -349,26 +349,13 @@ export default function App() {
         setCurrentView('comingSoon');
       }
 
-      // 해당 부서/역할에 관리자가 등록한 실제 이름 탐색
-      const loaded = loadAdminSettings();
-      const deptConfig = loaded.deptConfigs[dept];
-      const flatRoles = getDeptFlatRoles(dept, deptConfig);
-      const matchedRole = flatRoles.find(r => r.roleLabel === roleName);
+      // 기존 기록 확인 (점검자가 들어가서 자기 이름을 지정한 상태일 때만 유지)
+      const currentStatus = getDeptInspectionStatus(state.date || todayStr, dept, roleName);
+      const activeInspector = (currentStatus.status !== 'none' && currentStatus.inspector && currentStatus.inspector !== '점검자')
+        ? currentStatus.inspector
+        : '점검자';
 
-      let realInspector = defaultInspector;
-      if (matchedRole && deptConfig) {
-        const grp = deptConfig.groups?.[matchedRole.groupIndex];
-        const roleDef = grp?.roles?.[matchedRole.roleIndex];
-        if (roleDef?.names && roleDef.names.length > 0 && roleDef.names[0]) {
-          realInspector = roleDef.names[0];
-        } else if (roleDef?.name) {
-          const first = roleDef.name.split(',')[0].trim();
-          if (first) realInspector = first;
-        }
-      }
-
-      updateStateAndSave((prev) => ({ ...prev, inspector: realInspector, roleName }));
-      updateDeptInspectionStatus(state.date || todayStr, dept, roleName, 'in_progress', realInspector);
+      updateStateAndSave((prev) => ({ ...prev, inspector: activeInspector, roleName }));
   };
 
   /** 기계실 패널 열기 (00시 / 03시 / 06시) */
@@ -779,41 +766,26 @@ export default function App() {
             }
           }}
           inspectorOptions={(() => {
+            if (!selectedDept) return [];
             const loaded = loadAdminSettings();
+            const deptConfig = loaded.deptConfigs[selectedDept];
+            if (!deptConfig) return [];
+
             const namesSet = new Set<string>();
-
-            // 현재 부서 우선 수집
-            if (selectedDept && loaded.deptConfigs[selectedDept]) {
-              const deptConfig = loaded.deptConfigs[selectedDept];
-              deptConfig.groups?.forEach(grp => {
-                grp.roles?.forEach(r => {
-                  if (r.names && r.names.length > 0) {
-                    r.names.forEach(n => n.trim() && namesSet.add(n.trim()));
-                  } else if (r.name) {
-                    r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
-                  }
-                });
-              });
-              if (deptConfig.inspectorPool) {
-                deptConfig.inspectorPool.forEach(p => {
-                  p.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
-                });
-              }
-            }
-
-            // 기타 부서에 등록된 관리자 지정 담당자 이름들도 함께 추가
-            Object.values(loaded.deptConfigs).forEach(cfg => {
-              cfg.groups?.forEach(grp => {
-                grp.roles?.forEach(r => {
-                  if (r.names && r.names.length > 0) {
-                    r.names.forEach(n => n.trim() && namesSet.add(n.trim()));
-                  } else if (r.name) {
-                    r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
-                  }
-                });
+            deptConfig.groups?.forEach(grp => {
+              grp.roles?.forEach(r => {
+                if (r.names && r.names.length > 0) {
+                  r.names.forEach(n => n.trim() && namesSet.add(n.trim()));
+                } else if (r.name) {
+                  r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
+                }
               });
             });
-
+            if (deptConfig.inspectorPool) {
+              deptConfig.inspectorPool.forEach(p => {
+                p.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
+              });
+            }
             return Array.from(namesSet);
           })()}
         />
