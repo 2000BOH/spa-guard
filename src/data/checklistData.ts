@@ -470,70 +470,6 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
         { "id": "t5", "text": "온수 순환 모터(펌프) 발열/소음 점검" },
         { "id": "t6", "text": "온도조절기 설정값 연동 정상 작동 확인" }
       ]
-    },
-    {
-      "category": "1. 여과기 점검",
-      "items": [
-        { "id": "tab4_f1", "text": "① 열탕여과기(여)" },
-        { "id": "tab4_f2", "text": "② 벤치Z 여과기(여)" },
-        { "id": "tab4_f3", "text": "③ 족탕 여과기" },
-        { "id": "tab4_f4", "text": "④ 온탕 여과기(남)" },
-        { "id": "tab4_f5", "text": "⑤ 냉탕 여과기(남)" },
-        { "id": "tab4_f6", "text": "⑥ 열탕 여과기(남)" },
-        { "id": "tab4_f7", "text": "⑦ 냉탕 여과기(여)" },
-        { "id": "tab4_f8", "text": "⑧ 온탕 여과기(여)" },
-        { "id": "tab4_f9", "text": "⑨ 벤치Z 여과기(남)" }
-      ]
-    },
-    {
-      "category": "2. 벤치Z 펌프 점검",
-      "items": [
-        { "id": "tab4_p11", "text": "⑪ 샤워펌프(여)" },
-        { "id": "tab4_p12", "text": "⑫ 파도펌프(여)" },
-        { "id": "tab4_p13", "text": "⑬ 벤치Z 펌프3(여)" },
-        { "id": "tab4_p14", "text": "⑭ 벤치Z 펌프2(여)" },
-        { "id": "tab4_p15", "text": "⑮ 벤치Z 펌프1(여)" },
-        { "id": "tab4_p16", "text": "⑯ 벤치Z 펌프3(남)" },
-        { "id": "tab4_p17", "text": "⑰ 벤치Z 펌프2(남)" },
-        { "id": "tab4_p18", "text": "⑱ 벤치Z 펌프1(남)" }
-      ]
-    },
-    {
-      "category": "3. 기타설비 점검",
-      "items": [
-        { "id": "tab4_g1", "text": "메인전기 판넬 점검" },
-        { "id": "tab4_g2", "text": "사무실 방송장비 및 음향시스템 확인" },
-        { "id": "tab4_g3", "text": "리셉션 PC , 보조전력장치 확인" }
-      ]
-    },
-    {
-      "category": "2층 남탕 수온 및 사우나 온도",
-      "items": [
-        { "id": "tab5_m1", "text": "2층 남탕 온탕" },
-        { "id": "tab5_m2", "text": "2층 남탕 열탕" },
-        { "id": "tab5_m3", "text": "2층 남탕 냉탕" },
-        { "id": "tab5_m4", "text": "2층 남탕 사우나" }
-      ]
-    },
-    {
-      "category": "2층 여탕 수온 및 사우나 온도",
-      "items": [
-        { "id": "tab5_w1", "text": "2층 여탕 온탕" },
-        { "id": "tab5_w2", "text": "2층 여탕 열탕" },
-        { "id": "tab5_w3", "text": "2층 여탕 냉탕" },
-        { "id": "tab5_w4", "text": "2층 여탕 건식" },
-        { "id": "tab5_w5", "text": "2층 여탕 습식" }
-      ]
-    },
-    {
-      "category": "3층 찜질방 테마룸 온도",
-      "items": [
-        { "id": "tab5_s1", "text": "3층 찜질방 불가마" },
-        { "id": "tab5_s2", "text": "3층 찜질방 소금방" },
-        { "id": "tab5_s3", "text": "3층 찜질방 맥반석" },
-        { "id": "tab5_s4", "text": "3층 찜질방 아이스방" },
-        { "id": "tab5_s5", "text": "3층 찜질방 편백방" }
-      ]
     }
   ],
   "tab3": [
@@ -563,8 +499,72 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
     }
   ],
   "tab4": [
+    {
+      "category": "1. 여과기 점검",
+      "items": [
+        { "id": "tab4_f1", "text": "① 열탕여과기(여)", "type": "filter" },
+        { "id": "tab4_f2", "text": "② 벤치Z 여과기(여)", "type": "filter" },
+        { "id": "tab4_f3", "text": "③ 족탕 여과기", "type": "filter" },
+        { "id": "tab4_f4", "text": "④ 온탕 여과기(남)", "type": "filter" },
+        { "id": "tab4_f5", "text": "⑤ 냉탕 여과기(남)", "type": "filter" },
+        { "id": "tab4_f6", "text": "⑥ 열탕 여과기(남)", "type": "filter" },
+        { "id": "tab4_f7", "text": "⑦ 냉탕 여과기(여)", "type": "filter" },
+        { "id": "tab4_f8", "text": "⑧ 온탕 여과기(여)", "type": "filter" },
+        { "id": "tab4_f9", "text": "⑨ 벤치Z 여과기(남)", "type": "filter" }
+      ]
+    },
+    {
+      "category": "2. 벤치Z 펌프 점검",
+      "items": [
+        { "id": "tab4_p11", "text": "⑪ 샤워펌프(여)", "type": "pump" },
+        { "id": "tab4_p12", "text": "⑫ 파도펌프(여)", "type": "pump" },
+        { "id": "tab4_p13", "text": "⑬ 벤치Z 펌프3(여)", "type": "pump" },
+        { "id": "tab4_p14", "text": "⑭ 벤치Z 펌프2(여)", "type": "pump" },
+        { "id": "tab4_p15", "text": "⑮ 벤치Z 펌프1(여)", "type": "pump" },
+        { "id": "tab4_p16", "text": "⑯ 벤치Z 펌프3(남)", "type": "pump" },
+        { "id": "tab4_p17", "text": "⑰ 벤치Z 펌프2(남)", "type": "pump" },
+        { "id": "tab4_p18", "text": "⑱ 벤치Z 펌프1(남)", "type": "pump" }
+      ]
+    },
+    {
+      "category": "3. 기타설비 점검",
+      "items": [
+        { "id": "tab4_g1", "text": "메인전기 판넬 점검" },
+        { "id": "tab4_g2", "text": "사무실 방송장비 및 음향시스템 확인" },
+        { "id": "tab4_g3", "text": "리셉션 PC , 보조전력장치 확인" }
+      ]
+    }
   ],
   "tab5": [
+    {
+      "category": "2층 남탕 수온 및 사우나 온도",
+      "items": [
+        { "id": "tab5_m1", "text": "2층 남탕 온탕" },
+        { "id": "tab5_m2", "text": "2층 남탕 열탕" },
+        { "id": "tab5_m3", "text": "2층 남탕 냉탕" },
+        { "id": "tab5_m4", "text": "2층 남탕 사우나" }
+      ]
+    },
+    {
+      "category": "2층 여탕 수온 및 사우나 온도",
+      "items": [
+        { "id": "tab5_w1", "text": "2층 여탕 온탕" },
+        { "id": "tab5_w2", "text": "2층 여탕 열탕" },
+        { "id": "tab5_w3", "text": "2층 여탕 냉탕" },
+        { "id": "tab5_w4", "text": "2층 여탕 건식" },
+        { "id": "tab5_w5", "text": "2층 여탕 습식" }
+      ]
+    },
+    {
+      "category": "3층 찜질방 테마룸 온도",
+      "items": [
+        { "id": "tab5_s1", "text": "3층 찜질방 불가마" },
+        { "id": "tab5_s2", "text": "3층 찜질방 소금방" },
+        { "id": "tab5_s3", "text": "3층 찜질방 맥반석" },
+        { "id": "tab5_s4", "text": "3층 찜질방 아이스방" },
+        { "id": "tab5_s5", "text": "3층 찜질방 편백방" }
+      ]
+    }
   ],
   "cWTab1": [
     {

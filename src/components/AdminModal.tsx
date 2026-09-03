@@ -369,11 +369,51 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               onClick={handleSave}
               style={{
                 width: '100%', height: '44px', background: '#2563eb', color: '#fff',
-                fontSize: '15px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '16px', marginBottom: '16px'
+                fontSize: '15px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '16px', marginBottom: '8px'
               }}
             >
               💾 설정 저장
             </button>
+
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <button
+                onClick={() => {
+                  const data = localStorage.getItem('spa_admin_settings');
+                  if (data) {
+                    navigator.clipboard.writeText(data).then(() => alert('✅ 설정 데이터가 복사되었습니다.\\n크롬 브라우저를 열고 [설정 데이터 가져오기]를 눌러 붙여넣으세요.'));
+                  } else {
+                    alert('저장된 설정이 없습니다.');
+                  }
+                }}
+                style={{
+                  flex: 1, height: '36px', background: '#f1f5f9', color: '#475569',
+                  fontSize: '12px', fontWeight: 600, borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer'
+                }}
+              >
+                📤 설정 데이터 복사하기 (내보내기)
+              </button>
+              <button
+                onClick={() => {
+                  const data = prompt('복사한 설정 데이터를 아래에 붙여넣어주세요:');
+                  if (data) {
+                    try {
+                      JSON.parse(data);
+                      localStorage.setItem('spa_admin_settings', data);
+                      alert('✅ 설정이 정상적으로 적용되었습니다. 창을 새로고침합니다.');
+                      window.location.reload();
+                    } catch(e) {
+                      alert('데이터 형식이 올바르지 않습니다.');
+                    }
+                  }
+                }}
+                style={{
+                  flex: 1, height: '36px', background: '#f1f5f9', color: '#475569',
+                  fontSize: '12px', fontWeight: 600, borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer'
+                }}
+              >
+                📥 설정 데이터 가져오기 (붙여넣기)
+              </button>
+            </div>
 
             {/* ── Vercel 다이렉트 주소 메모 ── */}
             <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
