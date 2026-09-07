@@ -25,8 +25,7 @@ export const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
   },
   cleaning: {
     groups: [
-      { label: '남자', roles: [{ role: '주간', name: '' }, { role: '야간', name: '' }] },
-      { label: '여자', roles: [{ role: '주간', name: '' }] }
+      { label: '미화', roles: [{ role: '주간', name: '', isWomen: false }, { role: '야간', name: '', isWomen: false }] }
     ]
   },
   food: {
@@ -55,8 +54,9 @@ export function getDeptFlatRoles(dept: DepartmentId, deptConfig?: DeptConfig): F
     config.groups.forEach((grp, gIdx) => {
       grp.roles.forEach((r, rIdx) => {
         const label = grp.label ? `${grp.label} ${r.role}` : r.role;
+        const finalLabel = r.isWomen ? `${label} (여)` : label;
         items.push({
-          roleLabel: label,
+          roleLabel: finalLabel,
           groupIndex: gIdx,
           roleIndex: rIdx,
           flatIndex: idx,
@@ -112,6 +112,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const [showPannelEditor, setShowPannelEditor] = useState(false);
 
   // 파트(부서)별 통합 담당자 이름 목록 state (DepartmentId -> string[])
+  const [deptIsWomenInputs, setDeptIsWomenInputs] = useState<Record<DepartmentId, boolean[]>>({
+    facilities: [], reception: [], cleaning: [], food: [], snack: []
+  });
   const [deptInspectorInputs, setDeptInspectorInputs] = useState<Record<DepartmentId, string[]>>({
     facilities: [''],
     reception: [''],
@@ -127,11 +130,10 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       setSettings(loadedSettings);
       
       const initialInputs: Record<DepartmentId, string[]> = {
-        facilities: [],
-        reception: [],
-        cleaning: [],
-        food: [],
-        snack: []
+        facilities: [], reception: [], cleaning: [], food: [], snack: []
+      };
+      const initialWomenInputs: Record<DepartmentId, boolean[]> = {
+        facilities: [], reception: [], cleaning: [], food: [], snack: []
       };
 
       (Object.keys(DEPT_LABELS) as DepartmentId[]).forEach(dept => {
@@ -141,21 +143,34 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
         if (deptConfig?.inspectorPool) {
           deptConfig.inspectorPool.forEach(p => p.split(',').forEach(n => n.trim() && namesSet.add(n.trim())));
         }
+        const womenFlags: boolean[] = [];
         deptConfig?.groups?.forEach(grp => {
           grp.roles?.forEach(r => {
             if (r.names && r.names.length > 0) {
-              r.names.forEach(n => n.trim() && namesSet.add(n.trim()));
+              r.names.forEach(n => {
+                if (n.trim()) {
+                  namesSet.add(n.trim());
+                  womenFlags.push(!!r.isWomen);
+                }
+              });
             } else if (r.name) {
-              r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
+              r.name.split(',').forEach(n => {
+                if (n.trim()) {
+                  namesSet.add(n.trim());
+                  womenFlags.push(!!r.isWomen);
+                }
+              });
             }
           });
         });
 
         const list = Array.from(namesSet);
         initialInputs[dept] = list.length > 0 ? list : [''];
+        initialWomenInputs[dept] = list.length > 0 ? womenFlags : [false];
       });
 
       setDeptInspectorInputs(initialInputs);
+      setDeptIsWomenInputs(initialWomenInputs);
     }
   }, [isOpen]);
 
@@ -185,11 +200,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  const updateDeptNamesList = (dept: DepartmentId, newList: string[]) => {
+  const updateDeptNamesList = (dept: DepartmentId, newList: string[], newWomenList?: boolean[]) => {
     const cleaned = newList.length > 0 ? newList : [''];
     setDeptInspectorInputs(prev => ({ ...prev, [dept]: cleaned }));
+    if (newWomenList) setDeptIsWomenInputs(prev => ({ ...prev, [dept]: newWomenList.length > 0 ? newWomenList : [false] }));
 
     const validNames = cleaned.map(n => n.trim()).filter(Boolean);
+    const validWomen = newWomenList || deptIsWomenInputs[dept] || [];
     const newConfigs = { ...settings.deptConfigs };
     const deptConf = { ...newConfigs[dept] };
     const groups = JSON.parse(JSON.stringify(deptConf.groups || DEFAULT_DEPT_CONFIGS[dept].groups));
@@ -201,6 +218,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
         const assignedName = validNames[idx] || validNames[0] || '';
         r.name = assignedName;
         r.names = validNames;
+        if (dept === 'cleaning') {
+          r.isWomen = !!validWomen[idx];
+        }
         idx++;
       });
     });
@@ -214,19 +234,28 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
   const addDeptInspectorInput = (dept: DepartmentId) => {
     const currentList = deptInspectorInputs[dept] || [''];
-    updateDeptNamesList(dept, [...currentList, '']);
+    const currentWomen = deptIsWomenInputs[dept] || [false];
+    updateDeptNamesList(dept, [...currentList, ''], [...currentWomen, false]);
   };
 
   const removeDeptInspectorInput = (dept: DepartmentId, nameIdx: number) => {
     const currentList = deptInspectorInputs[dept] || [''];
+    const currentWomen = deptIsWomenInputs[dept] || [false];
     const updated = currentList.filter((_, idx) => idx !== nameIdx);
-    updateDeptNamesList(dept, updated.length > 0 ? updated : ['']);
+    const updatedWomen = currentWomen.filter((_, idx) => idx !== nameIdx);
+    updateDeptNamesList(dept, updated.length > 0 ? updated : [''], updatedWomen.length > 0 ? updatedWomen : [false]);
   };
 
   const changeDeptInspectorName = (dept: DepartmentId, nameIdx: number, val: string) => {
     const currentList = [...(deptInspectorInputs[dept] || [''])];
     currentList[nameIdx] = val;
-    updateDeptNamesList(dept, currentList);
+    updateDeptNamesList(dept, currentList, deptIsWomenInputs[dept]);
+  };
+
+  const changeDeptIsWomen = (dept: DepartmentId, nameIdx: number, checked: boolean) => {
+    const currentWomen = [...(deptIsWomenInputs[dept] || [false])];
+    currentWomen[nameIdx] = checked;
+    updateDeptNamesList(dept, deptInspectorInputs[dept], currentWomen);
   };
 
   const inputStyle: React.CSSProperties = { width: '100%', height: '32px', padding: '0 8px', fontSize: '12px', borderRadius: '5px', border: '1px solid #cbd5e1' };
@@ -235,6 +264,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
   const renderDeptEditor = (dept: DepartmentId) => {
     const nameList = deptInspectorInputs[dept] || [''];
+    const womenList = deptIsWomenInputs[dept] || [];
 
     return (
       <div key={dept} style={{ marginBottom: '14px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
@@ -257,6 +287,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
                 onChange={(e) => changeDeptInspectorName(dept, nIdx, e.target.value)}
                 style={{ ...inputStyle, flex: 1 }}
               />
+              {dept === 'cleaning' && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#334155' }}>
+                  <input type="checkbox" checked={!!womenList[nIdx]} onChange={(e) => changeDeptIsWomen(dept, nIdx, e.target.checked)} />
+                  여자
+                </label>
+              )}
               {nameList.length > 1 && (
                 <button
                   type="button"

@@ -51,13 +51,11 @@ function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
     if (roleName.includes('마감')) return ['sTab2'];
   }
   
-  if (dept === 'cleaning' && roleName) {
-    if (roleName.includes('여자')) {
-      return ['cWTab1', 'cWTab2', 'cWTab3', 'cWTab4'];
-    } else if (roleName.includes('남자') && roleName.includes('야간')) {
-      return ['cNTab1', 'cNTab2', 'cNTab3'];
-    } else if (roleName.includes('남자')) {
-      return ['cMTab1', 'cMTab2', 'cMTab3', 'cMTab4'];
+  if (dept === 'cleaning') {
+    if (roleName && roleName.includes('(여)')) {
+      return ['cTabW'];
+    } else {
+      return ['cTabM'];
     }
   }
   

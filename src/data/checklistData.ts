@@ -6,17 +6,9 @@ export const TAB_INFO: Record<string, { id: string; name: string; htmlName: stri
   tab3: { id: 'tab3', name: '3층 찜질', htmlName: '3층 찜질', title: '3층 찜질 점검' },
   tab4: { id: 'tab4', name: '여과/기타', htmlName: '여과/기타', title: '여과기, 펌프 및 기타설비 점검' },
   tab5: { id: 'tab5', name: '온도체크', htmlName: '온도체크', title: '수온 및 실내 온도체크 점검' },
-  // 미화팀 전용 탭 (여자 주간)
-  cWTab1: { id: 'cWTab1', name: '오픈 전', htmlName: '오픈 전', title: '여자 구역 대청소 (07:00~09:00)' },
-  cWTab2: { id: 'cWTab2', name: '오전 순회', htmlName: '오전 순회', title: '여자 사우나 및 취약구역 (09:00~12:00)' },
-  cWTab3: { id: 'cWTab3', name: '오후 순회', htmlName: '오후 순회', title: '순환 청소 및 재점검 (12:00~18:00)' },
-  cWTab4: { id: 'cWTab4', name: '심화 점검', htmlName: '심화 점검', title: '주간/월간 심화 점검 (여성/공용)' },
-
-  // 미화팀 전용 탭 (남자 주간)
-  cMTab1: { id: 'cMTab1', name: '오픈 전', htmlName: '오픈 전', title: '남자 구역 대청소 (07:00~09:00)' },
-  cMTab2: { id: 'cMTab2', name: '오전 순회', htmlName: '오전 순회', title: '남자 사우나 및 공용 (09:00~12:00)' },
-  cMTab3: { id: 'cMTab3', name: '오후 순회', htmlName: '오후 순회', title: '순환 청소 (12:00~18:00)' },
-  cMTab4: { id: 'cMTab4', name: '심화 점검', htmlName: '심화 점검', title: '주간/월간 심화 점검 (남성)' },
+  // 미화팀 전용 탭
+  cTabW: { id: 'cTabW', name: '여자 미화', htmlName: '여자 미화', title: '여자 구역 미화 점검' },
+  cTabM: { id: 'cTabM', name: '남자 미화', htmlName: '남자 미화', title: '남자 구역 미화 점검' },
 
   // 미화팀 전용 탭 (야간)
   cNTab1: { id: 'cNTab1', name: '저녁 순회', htmlName: '저녁 순회', title: '남자 사우나 및 파우더룸 (18:00~23:00)' },
@@ -40,7 +32,7 @@ export const TAB_INFO: Record<string, { id: string; name: string; htmlName: stri
 export const DEPT_TABS_MAP: Record<DepartmentId, string[]> = {
   facilities: ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'],
   reception: ['rTab1', 'rTab2', 'rTab3'],
-  cleaning: ['cWTab1', 'cWTab2', 'cWTab3', 'cWTab4'], // Default fallback
+  cleaning: ['cTabM'], // Default fallback
   food: ['fTab1', 'fTab2'],
   snack: ['sTab1', 'sTab2']
 };
@@ -566,9 +558,9 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     }
   ],
-  "cWTab1": [
+    "cTabW": [
     {
-      "category": "오픈 전 대청소 (08:00 ~ 10:00)",
+      "category": "오픈 전 대청소",
       "items": [
         { "id": "ct1_1", "text": "[여자 락커룸] 락커 개방 확인, 미회수 물품 관리단 인계" },
         { "id": "ct1_2", "text": "[여자 락커룸] 바닥 머리카락 진공청소 후 물걸레 청소" },
@@ -582,11 +574,9 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
         { "id": "ct1_11", "text": "[2층 리셉션 홀] 바닥 깔판 청소, 대리석 화장대 확인" },
         { "id": "ct1_12", "text": "[2층 리셉션 홀] 출입구 유리 손자국 제거 및 광택" }
       ]
-    }
-  ],
-  "cWTab2": [
+    },
     {
-      "category": "여자 사우나 및 취약구역 집중 (10:00 ~ 12:00)",
+      "category": "오전 순회 (사우나 및 취약구역)",
       "items": [
         { "id": "ct2_2", "text": "[여자 건식 사우나] 목재 및 타일 이상유무" },
         { "id": "ct2_3", "text": "[여자 건식 사우나] 사우나 탕 입구 매트 교체" },
@@ -598,11 +588,9 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
         { "id": "ct2_12", "text": "[3층 라운지] 바닥 청소" },
         { "id": "ct2_13", "text": "[3층 라운지] 조명·정수기·컵 정리 및 확인" }
       ]
-    }
-  ],
-  "cWTab3": [
+    },
     {
-      "category": "순환 청소 및 취약구역 재점검 (12:00 ~ 18:00)",
+      "category": "오후 순회 (순환 청소 및 재점검)",
       "items": [
         { "id": "ct3_1", "text": "[여자 화장실] 변기·세면대 소독, 휴지 리필 (2시간마다)" },
         { "id": "ct3_2", "text": "[3층 풋스파] 데크 냄새 확인 + 방수 상태 점검" },
@@ -617,22 +605,9 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     }
   ],
-  "cWTab4": [
+  "cTabM": [
     {
-      "category": "주간·월간·분기 심화",
-      "items": [
-        { "id": "ct4_1", "text": "[주 1회] 여자 건식 사우나 - 목재 특이사항 확인" },
-        { "id": "ct4_2", "text": "[주 1회] 여자 락커 내부 - 전체 락커 내부 점검" },
-        { "id": "ct4_3", "text": "[주 1회] 여자 세신실 - 곰팡이 취약 부위 살균 처리" },
-        { "id": "ct4_7", "text": "[월 1회] 여탕 배관 확인 및 약품 투여" },
-        { "id": "ct4_8", "text": "[월 1회] 여자 사우나 방부목 - 곰팡이 재발 여부 종합 점검" },
-        { "id": "ct4_9", "text": "[월 1회] 세스코 방역 - 월 정기 방역 입회" }
-      ]
-    }
-  ],
-  "cMTab1": [
-    {
-      "category": "오픈 전 대청소 (08:00 ~ 10:00)",
+      "category": "오픈 전 대청소",
       "items": [
         { "id": "cm1_1", "text": "[남자 락커룸] 락커 개방 확인, 미회수 물품 인계" },
         { "id": "cm1_2", "text": "[남자 락커룸] 바닥 머리카락 진공청소 후 물걸레 청소" },
@@ -644,11 +619,9 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
         { "id": "cm1_8", "text": "[남자 샤워장] 수전·거울 물때 제거 및 광택 마감" },
         { "id": "cm1_10", "text": "[남자 세신실] 타일·의자·확인" }
       ]
-    }
-  ],
-  "cMTab2": [
+    },
     {
-      "category": "남자 사우나 및 공용 (10:00 ~ 12:00)",
+      "category": "오전 순회 (사우나 및 공용)",
       "items": [
         { "id": "cm2_2", "text": "[남자 건식 사우나] 목재 벤치 이상유무 확인" },
         { "id": "cm2_3", "text": "[남자 건식 사우나] 사우나 바닥 매트 1회 교체" },
@@ -660,11 +633,9 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
         { "id": "cm2_10", "text": "[3층 찜질방 (남녀 공용)] 불가마 멍석 정돈, 바닥 청소, 온도 확인" },
         { "id": "cm2_11", "text": "[3층 찜질방 (남녀 공용)] 소금방·아이스방·맥반석방·편백방 정리" }
       ]
-    }
-  ],
-  "cMTab3": [
+    },
     {
-      "category": "순환 청소 (12:00 ~ 18:00)",
+      "category": "오후 순회 (순환 청소)",
       "items": [
         { "id": "cm3_1", "text": "[남자 화장실] 변기·세면대 소독, 휴지 리필 (2시간마다)" },
         { "id": "cm3_2", "text": "[남자 샤워장] 배수구 재점검 및 이물질 제거 (매일 2회)" },
@@ -677,71 +648,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
         { "id": "cm3_10", "text": "[남자 샤워장] 배수구 3차 청소" }
       ]
     }
-  ],
-  "cMTab4": [
-    {
-      "category": "주간·월간·분기 심화 (남자 구역)",
-      "items": [
-        { "id": "cm4_1", "text": "[주 1회] 남자 건식 사우나 - 내부확인" },
-        { "id": "cm4_2", "text": "[주 1회] 남자 락커 내부 확인" },
-        { "id": "cm4_3", "text": "[주 1회] 남자 사우나 조명 - 정상작동 확인" },
-        { "id": "cm4_5", "text": "[월 1회] 남자 사우나 - 곰팡이 재발 여부 종합 점검" },
-        { "id": "cm4_6", "text": "[월 1회] 세스코 방역 - 월 정기 방역 확인" }
-      ]
-    }
-  ],
-  "cNTab1": [
-    {
-      "category": "저녁 순회 (18:00 ~ 23:00)",
-      "items": [
-        { "id": "cn1_1", "text": "[남자 락커룸] 바닥 머리카락·물기 제거" },
-        { "id": "cn1_2", "text": "[남자 파우더룸] 거울·세면대·바닥 청소" },
-        { "id": "cn1_3", "text": "[남자 파우더룸] 어메니티(면봉·화장품) 리필" },
-        { "id": "cn1_4", "text": "[남자 샤워장] 배수구 이물질 제거 (2시간마다)" },
-        { "id": "cn1_5", "text": "[남자 세신실] 타일·의자 소독" },
-        { "id": "cn1_6", "text": "[남자 건식 사우나] 매트 정리, 온도 확인" },
-        { "id": "cn1_7", "text": "[남자 화장실] 변기·세면대 소독, 휴지 리필" },
-        { "id": "cn1_8", "text": "[남자 습식 사우나] 벽면 물기 제거, 배수구 확인" },
-        { "id": "cn1_9", "text": "[남자 사우나 매트] 저녁 매트 교체 (하루 3회차)" },
-        { "id": "cn1_10", "text": "[남자 샤워장] 배수구 재점검 (야간 2회차)" },
-        { "id": "cn1_11", "text": "[남자 파우더룸] 어메니티 재리필, 쓰레기통 비우기" },
-        { "id": "cn1_12", "text": "[남자 락커룸] 바닥 최종 정리, 물기 제거" },
-        { "id": "cn1_13", "text": "[남탕 복도 벽체] 곰팡이 발생 여부 확인 (누수 파생)" }
-      ]
-    }
-  ],
-  "cNTab2": [
-    {
-      "category": "심야 순회 (23:00 ~ 06:00)",
-      "items": [
-        { "id": "cn2_1", "text": "[3층 라운지] 전체 바닥 청소, 매트 정리" },
-        { "id": "cn2_2", "text": "[3층 라운지] 매트 사용 흔적 있는 자리 교체" },
-        { "id": "cn2_3", "text": "[3층 정수기·냉장고] 표면 소독, 물통 확인" },
-        { "id": "cn2_4", "text": "[3층 찜질방 순회] 불가마·소금방·아이스방·맥반석방 매트 정리 및 온도 확인" },
-        { "id": "cn2_5", "text": "[3층 테마찜질방] 심야 온도 확인 및 유지" },
-        { "id": "cn2_6", "text": "[3층 편백방] 매트 교체, 편백 상태 확인" },
-        { "id": "cn2_7", "text": "[3층 공용 화장실] 변기·세면대 소독, 휴지 리필" },
-        { "id": "cn2_8", "text": "[3층 풋스파] 냄새 확인, 배수 정상 여부 점검" },
-        { "id": "cn2_10", "text": "[3층 라운지] 쓰레기통 비우기, 분리수거 후 봉투 교체" },
-        { "id": "cn2_11", "text": "[3층 핀란드사우나] 점검 및 정리" },
-        { "id": "cn2_12", "text": "[3층 매트] 매트 최종 정리" },
-        { "id": "cn2_13", "text": "[3층] 정수기 물통 교체 및 컵 리필" },
-        { "id": "cn2_14", "text": "[특이사항 인계] 야간 발생 이슈 → 주간 인계 일지 작성" }
-      ]
-    }
-  ],
-  "cNTab3": [
-    {
-      "category": "마감 후 심야 대청소 (22:00 이후 통합)",
-      "items": [
-        { "id": "cn3_1", "text": "[남자 락커 유실물] 미회수 물품 최종 확인 후 인계" },
-        { "id": "cn3_2", "text": "[남자 사우나 ] 내부 이상 유무" },
-        { "id": "cn3_3", "text": "[남자 탕 배수] 탕 내 정리 및 청소상태 확인" },
-        { "id": "cn3_4", "text": "[2층~3층 계단실] 계단 정리/확인" },
-        { "id": "cn3_5", "text": "[엘리베이터 홀] 청소상태 확인" },
-        { "id": "cn3_7", "text": "[냉난방 상태 확인] 정리 및 청결상태 확인" },
-        { "id": "cn3_8", "text": "[청소도구 정리] 지정 위치 보관, 도구 세척" }
-      ]
+  ]
     }
   ]
 };

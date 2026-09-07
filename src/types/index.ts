@@ -55,6 +55,7 @@ export interface RoleDef {
   role: string; // 예: '주간', '야간', '오픈', '마감'
   name: string; // 단일 이름 (하위 호환)
   names?: string[]; // 다중 담당자 이름 목록
+  isWomen?: boolean; // 여자사우나 여부 (미화 전용)
 }
 
 /** 하위 그룹 (예: 미화 남자/여자) */
