@@ -649,6 +649,4 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     }
   ]
-    }
-  ]
 };
