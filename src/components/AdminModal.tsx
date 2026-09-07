@@ -89,7 +89,12 @@ export function loadAdminSettings(): AdminSettings {
         for (const key of Object.keys(DEFAULT_DEPT_CONFIGS) as DepartmentId[]) {
           const pConfig = parsed.deptConfigs[key];
           if (pConfig && pConfig.groups && pConfig.groups[0] && Array.isArray(pConfig.groups[0].roles)) {
-            mergedConfigs[key] = pConfig;
+            // Legacy format check for cleaning
+            if (key === 'cleaning' && pConfig.groups.length > 1) {
+              mergedConfigs[key] = DEFAULT_DEPT_CONFIGS[key];
+            } else {
+              mergedConfigs[key] = pConfig;
+            }
           }
         }
       }
