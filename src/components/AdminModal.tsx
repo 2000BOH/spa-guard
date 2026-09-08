@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import MachineRoomPanel from './MachineRoomPanel';
-import type { AdminSettings, DepartmentId } from '../types';
+import type { AdminSettings, DepartmentId, SectionData, CheckItem } from '../types';
 import { NFC_BASE_NUMBERS } from '../types';
+import { DEPT_TABS_MAP, TAB_INFO } from '../data/checklistData';
 import {
   DEFAULT_DEPT_CONFIGS,
   DEFAULT_SETTINGS,
-  loadAdminSettings
+  loadAdminSettings,
+  saveAdminSettings,
+  getEffectiveChecklistData
 } from '../lib/adminSettings';
 
 interface AdminModalProps {
@@ -21,31 +24,35 @@ const DEPT_LABELS: Record<DepartmentId, string> = {
   snack: '스낵'
 };
 
+const DEPT_ICONS: Record<DepartmentId, string> = {
+  facilities: '🛠️',
+  reception: '🛎️',
+  cleaning: '🧹',
+  food: '🍚',
+  snack: '🍜'
+};
+
 export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS);
   const [showPannelEditor, setShowPannelEditor] = useState(false);
+  const [adminTab, setAdminTab] = useState<'settings' | 'checklists'>('settings');
 
-  // 파트(부서)별 통합 담당자 이름 목록 state (DepartmentId -> string[])
+  // 체크리스트 편집 관련 state
+  const [editingDept, setEditingDept] = useState<DepartmentId>('facilities');
+  const [editingTabId, setEditingTabId] = useState<string>('tab1');
+  const [customChecklists, setCustomChecklists] = useState<Record<string, SectionData[]>>({});
+  const [newItemTexts, setNewItemTexts] = useState<Record<number, string>>({});
+  const [draggedItemInfo, setDraggedItemInfo] = useState<{ secIdx: number; itemIdx: number } | null>(null);
+
+  // 파트(부서)별 통합 담당자 이름 목록 state
   const [deptIsWomenInputs, setDeptIsWomenInputs] = useState<Record<DepartmentId, boolean[]>>({
-    facilities: [false],
-    reception: [false],
-    cleaning: [false],
-    food: [false],
-    snack: [false]
+    facilities: [false], reception: [false], cleaning: [false], food: [false], snack: [false]
   });
   const [deptIsNightInputs, setDeptIsNightInputs] = useState<Record<DepartmentId, boolean[]>>({
-    facilities: [false],
-    reception: [false],
-    cleaning: [false],
-    food: [false],
-    snack: [false]
+    facilities: [false], reception: [false], cleaning: [false], food: [false], snack: [false]
   });
   const [deptInspectorInputs, setDeptInspectorInputs] = useState<Record<DepartmentId, string[]>>({
-    facilities: [''],
-    reception: [''],
-    cleaning: [''],
-    food: [''],
-    snack: ['']
+    facilities: [''], reception: [''], cleaning: [''], food: [''], snack: ['']
   });
 
   useEffect(() => {
@@ -53,7 +60,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       setShowPannelEditor(false);
       const loadedSettings = loadAdminSettings();
       setSettings(loadedSettings);
-      
+      setCustomChecklists(loadedSettings.customChecklists || {});
+
       const initialInputs: Record<DepartmentId, string[]> = {
         facilities: [], reception: [], cleaning: [], food: [], snack: []
       };
@@ -69,9 +77,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
         const namesSet = new Set<string>();
 
         if (deptConfig?.inspectorPool) {
-          deptConfig.inspectorPool.forEach(p => p.split(',').forEach(n => n.trim() && namesSet.add(n.trim())));
-        }
-        if (deptConfig?.inspectorPool) {
           deptConfig.inspectorPool.forEach(p => {
             p.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
           });
@@ -79,17 +84,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
           deptConfig?.groups?.forEach(grp => {
             grp.roles?.forEach(r => {
               if (r.names && r.names.length > 0) {
-                r.names.forEach(n => {
-                  if (n.trim()) {
-                    namesSet.add(n.trim());
-                  }
-                });
+                r.names.forEach(n => n.trim() && namesSet.add(n.trim()));
               } else if (r.name) {
-                r.name.split(',').forEach(n => {
-                  if (n.trim()) {
-                    namesSet.add(n.trim());
-                  }
-                });
+                r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
               }
             });
           });
@@ -133,9 +130,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   }
 
   const handleSave = () => {
-    localStorage.setItem('spa_admin_settings', JSON.stringify(settings));
-    alert('관리자 설정이 저장되었습니다.');
-    onClose();
+    const finalSettings: AdminSettings = {
+      ...settings,
+      customChecklists
+    };
+    saveAdminSettings(finalSettings);
+    alert('✅ 관리자 설정이 저장되었습니다. 창을 새로고침하여 적용합니다.');
+    window.location.reload();
   };
 
   const updateDeptNamesList = (dept: DepartmentId, newList: string[], newWomenList?: boolean[], newNightList?: boolean[]) => {
@@ -151,16 +152,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     const deptConf = { ...newConfigs[dept] };
     const groups = JSON.parse(JSON.stringify(deptConf.groups || DEFAULT_DEPT_CONFIGS[dept].groups));
 
-    // 각 역할(roles) 및 inspectorPool에 이름 적용
     let idx = 0;
     groups.forEach((grp: any) => {
       grp.roles?.forEach((r: any) => {
         const assignedName = validNames[idx] || validNames[0] || '';
         r.name = assignedName;
         r.names = validNames;
-        if (dept === 'cleaning') {
-          r.isWomen = !!validWomen[idx];
-        }
         idx++;
       });
     });
@@ -209,6 +206,113 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     const currentNight = [...(deptIsNightInputs[dept] || [false])];
     currentNight[nameIdx] = checked;
     updateDeptNamesList(dept, deptInspectorInputs[dept], deptIsWomenInputs[dept], currentNight);
+  };
+
+  // ── 체크리스트 커스텀 조작 로직 ──
+  const getCurrentSections = (): SectionData[] => {
+    return getEffectiveChecklistData(editingTabId, customChecklists);
+  };
+
+  const updateTabSections = (newSections: SectionData[]) => {
+    const nextCustoms = { ...customChecklists, [editingTabId]: newSections };
+    setCustomChecklists(nextCustoms);
+  };
+
+  const handleAddItem = (secIdx: number) => {
+    const text = (newItemTexts[secIdx] || '').trim();
+    if (!text) {
+      alert('추가할 항목 문구를 입력해주세요.');
+      return;
+    }
+    const sections = JSON.parse(JSON.stringify(getCurrentSections())) as SectionData[];
+    if (!sections[secIdx]) return;
+
+    const newId = `c_${editingTabId}_${secIdx}_${Date.now()}`;
+    sections[secIdx].items.push({ id: newId, text });
+
+    updateTabSections(sections);
+    setNewItemTexts(prev => ({ ...prev, [secIdx]: '' }));
+  };
+
+  const handleDeleteItem = (secIdx: number, itemIdx: number) => {
+    if (!confirm('해당 체크리스트 항목을 삭제하시겠습니까?')) return;
+    const sections = JSON.parse(JSON.stringify(getCurrentSections())) as SectionData[];
+    if (!sections[secIdx] || !sections[secIdx].items[itemIdx]) return;
+
+    sections[secIdx].items.splice(itemIdx, 1);
+    updateTabSections(sections);
+  };
+
+  const handleMoveItem = (secIdx: number, itemIdx: number, dir: 'up' | 'down') => {
+    const sections = JSON.parse(JSON.stringify(getCurrentSections())) as SectionData[];
+    if (!sections[secIdx]) return;
+    const items = sections[secIdx].items;
+    const targetIdx = dir === 'up' ? itemIdx - 1 : itemIdx + 1;
+
+    if (targetIdx < 0 || targetIdx >= items.length) return;
+
+    const temp = items[itemIdx];
+    items[itemIdx] = items[targetIdx];
+    items[targetIdx] = temp;
+
+    updateTabSections(sections);
+  };
+
+  const handleDropItem = (secIdx: number, dropIdx: number) => {
+    if (!draggedItemInfo || draggedItemInfo.secIdx !== secIdx) return;
+    const dragIdx = draggedItemInfo.itemIdx;
+    if (dragIdx === dropIdx) return;
+
+    const sections = JSON.parse(JSON.stringify(getCurrentSections())) as SectionData[];
+    if (!sections[secIdx]) return;
+    const items = sections[secIdx].items;
+
+    const [movedItem] = items.splice(dragIdx, 1);
+    items.splice(dropIdx, 0, movedItem);
+
+    updateTabSections(sections);
+    setDraggedItemInfo(null);
+  };
+
+  const handleUpdateItemText = (secIdx: number, itemIdx: number, newText: string) => {
+    const sections = JSON.parse(JSON.stringify(getCurrentSections())) as SectionData[];
+    if (!sections[secIdx] || !sections[secIdx].items[itemIdx]) return;
+
+    sections[secIdx].items[itemIdx].text = newText;
+    updateTabSections(sections);
+  };
+
+  const handleAddCategory = () => {
+    const categoryName = prompt('새 카테고리(그룹) 이름을 입력해주세요:\n(예: ◆ 4. 신규 구역 점검)');
+    if (!categoryName || !categoryName.trim()) return;
+
+    const sections = JSON.parse(JSON.stringify(getCurrentSections())) as SectionData[];
+    sections.push({ category: categoryName.trim(), items: [] });
+    updateTabSections(sections);
+  };
+
+  const handleDeleteCategory = (secIdx: number) => {
+    if (!confirm('이 카테고리와 내부의 모든 체크 항목을 함께 삭제하시겠습니까?')) return;
+    const sections = JSON.parse(JSON.stringify(getCurrentSections())) as SectionData[];
+    sections.splice(secIdx, 1);
+    updateTabSections(sections);
+  };
+
+  const handleResetTab = () => {
+    const tabName = TAB_INFO[editingTabId]?.name || editingTabId;
+    if (!confirm(`'${tabName}' 탭의 체크리스트를 원래 기본 원본으로 복원하시겠습니까?`)) return;
+
+    const nextCustoms = { ...customChecklists };
+    delete nextCustoms[editingTabId];
+    setCustomChecklists(nextCustoms);
+  };
+
+  const handleDeptSelect = (dept: DepartmentId) => {
+    setEditingDept(dept);
+    const availableTabs = DEPT_TABS_MAP[dept] || [];
+    if (availableTabs.length > 0) {
+      setEditingTabId(availableTabs[0]);
+    }
   };
 
   const inputStyle: React.CSSProperties = { width: '100%', height: '32px', padding: '0 8px', fontSize: '12px', borderRadius: '5px', border: '1px solid #cbd5e1' };
@@ -287,18 +391,244 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     );
   };
 
+  const renderChecklistEditor = () => {
+    const availableTabs = DEPT_TABS_MAP[editingDept] || [];
+    const currentSections = getCurrentSections();
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {/* 파트 선택 버튼들 */}
+        <div>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
+            1. 수정할 파트(부서) 선택:
+          </div>
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            {(Object.keys(DEPT_LABELS) as DepartmentId[]).map((deptKey) => {
+              const isSelected = editingDept === deptKey;
+              return (
+                <button
+                  key={deptKey}
+                  type="button"
+                  onClick={() => handleDeptSelect(deptKey)}
+                  style={{
+                    flex: 1, minWidth: '60px', padding: '8px 4px', fontSize: '12px', fontWeight: 700,
+                    borderRadius: '6px', cursor: 'pointer',
+                    background: isSelected ? '#2563eb' : '#f1f5f9',
+                    color: isSelected ? '#fff' : '#334155',
+                    border: isSelected ? '1px solid #1d4ed8' : '1px solid #cbd5e1'
+                  }}
+                >
+                  {DEPT_ICONS[deptKey]} {DEPT_LABELS[deptKey]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 파트 세부 탭 선택들 */}
+        <div>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
+            2. 상세 체크리스트 탭 선택:
+          </div>
+          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {availableTabs.map((tabId) => {
+              const info = TAB_INFO[tabId];
+              const isSelected = editingTabId === tabId;
+              const hasCustom = !!customChecklists[tabId];
+
+              return (
+                <button
+                  key={tabId}
+                  type="button"
+                  onClick={() => setEditingTabId(tabId)}
+                  style={{
+                    padding: '6px 12px', fontSize: '12px', fontWeight: 700, borderRadius: '20px',
+                    whiteSpace: 'nowrap', cursor: 'pointer',
+                    background: isSelected ? '#0f172a' : '#f8fafc',
+                    color: isSelected ? '#fff' : '#475569',
+                    border: isSelected ? '1px solid #0f172a' : '1px solid #cbd5e1',
+                    display: 'flex', alignItems: 'center', gap: '4px'
+                  }}
+                >
+                  {info?.name || tabId}
+                  {hasCustom && <span style={{ fontSize: '9px', background: '#3b82f6', color: '#fff', padding: '1px 5px', borderRadius: '10px' }}>커스텀</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 복원 & 카테고리 추가 바 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#eff6ff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e40af' }}>
+            📋 {TAB_INFO[editingTabId]?.name || editingTabId} 항목 편집
+          </span>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {customChecklists[editingTabId] && (
+              <button
+                type="button"
+                onClick={handleResetTab}
+                style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5', fontSize: '11px', padding: '4px 8px', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                🔄 원본 복원
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleAddCategory}
+              style={{ background: '#dbeafe', color: '#1e40af', border: '1px solid #93c5fd', fontSize: '11px', padding: '4px 8px', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              + 카테고리 추가
+            </button>
+          </div>
+        </div>
+
+        {/* 카테고리별 체크리스트 세부 편집 목록 */}
+        {currentSections.map((sec, secIdx) => (
+          <div key={secIdx} style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
+                {sec.category}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleDeleteCategory(secIdx)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                그룹 삭제
+              </button>
+            </div>
+
+            {/* 항목 리스트 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
+              {sec.items.map((item: CheckItem, itemIdx: number) => (
+                <div
+                  key={item.id}
+                  draggable
+                  onDragStart={() => setDraggedItemInfo({ secIdx, itemIdx })}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleDropItem(secIdx, itemIdx)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc',
+                    border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 8px'
+                  }}
+                >
+                  {/* 드래그 핸들 */}
+                  <span style={{ cursor: 'grab', color: '#94a3b8', fontSize: '14px', paddingRight: '2px', userSelect: 'none' }} title="드래그하여 순서 변경">
+                    ☰
+                  </span>
+
+                  {/* 순서 변경 버튼 ▲ ▼ */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                    <button
+                      type="button"
+                      disabled={itemIdx === 0}
+                      onClick={() => handleMoveItem(secIdx, itemIdx, 'up')}
+                      style={{ background: 'none', border: 'none', padding: 0, fontSize: '9px', color: itemIdx === 0 ? '#cbd5e1' : '#475569', cursor: itemIdx === 0 ? 'default' : 'pointer' }}
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      disabled={itemIdx === sec.items.length - 1}
+                      onClick={() => handleMoveItem(secIdx, itemIdx, 'down')}
+                      style={{ background: 'none', border: 'none', padding: 0, fontSize: '9px', color: itemIdx === sec.items.length - 1 ? '#cbd5e1' : '#475569', cursor: itemIdx === sec.items.length - 1 ? 'default' : 'pointer' }}
+                    >
+                      ▼
+                    </button>
+                  </div>
+
+                  {/* 텍스트 인라인 수정 */}
+                  <input
+                    type="text"
+                    value={item.text}
+                    onChange={(e) => handleUpdateItemText(secIdx, itemIdx, e.target.value)}
+                    style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', color: '#0f172a', background: '#fff' }}
+                  />
+
+                  {/* 삭제 버튼 */}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteItem(secIdx, itemIdx)}
+                    style={{
+                      background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px',
+                      padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap'
+                    }}
+                  >
+                    🗑️ 삭제
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* 개별 파트(카테고리) 맨 하단 + 항목 추가 입력 폼 */}
+            <div style={{ display: 'flex', gap: '6px', paddingTop: '4px', borderTop: '1px dashed #e2e8f0' }}>
+              <input
+                type="text"
+                placeholder={`'${sec.category}' 구역에 추가할 점검 항목 입력...`}
+                value={newItemTexts[secIdx] || ''}
+                onChange={(e) => setNewItemTexts({ ...newItemTexts, [secIdx]: e.target.value })}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddItem(secIdx)}
+                style={{ flex: 1, border: '1px solid #93c5fd', borderRadius: '5px', padding: '6px 8px', fontSize: '12px' }}
+              />
+              <button
+                type="button"
+                onClick={() => handleAddItem(secIdx)}
+                style={{
+                  background: '#2563eb', color: '#fff', border: 'none', borderRadius: '5px',
+                  padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap'
+                }}
+              >
+                + 항목 추가
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="modal-overlay open" onClick={onClose} style={{ zIndex: 9999 }}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '88vh', overflowY: 'auto' }}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto', width: '92%', maxWidth: '650px' }}>
         <div className="modal-header">
           <h3>⚙️ 관리자 설정</h3>
           <button className="modal-close" onClick={onClose}>&times;</button>
         </div>
 
-        <div style={{ padding: '6px 0' }}>
+        {/* 상단 메인 탭 선택 바 */}
+        <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: '14px', gap: '4px' }}>
+          <button
+            type="button"
+            onClick={() => setAdminTab('settings')}
+            style={{
+              flex: 1, padding: '10px 0', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer',
+              background: adminTab === 'settings' ? '#fff' : '#f8fafc',
+              color: adminTab === 'settings' ? '#2563eb' : '#64748b',
+              borderBottom: adminTab === 'settings' ? '3px solid #2563eb' : 'none'
+            }}
+          >
+            👥 파트별 인원 및 기준 설정
+          </button>
+          <button
+            type="button"
+            onClick={() => setAdminTab('checklists')}
+            style={{
+              flex: 1, padding: '10px 0', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer',
+              background: adminTab === 'checklists' ? '#fff' : '#f8fafc',
+              color: adminTab === 'checklists' ? '#2563eb' : '#64748b',
+              borderBottom: adminTab === 'checklists' ? '3px solid #2563eb' : 'none'
+            }}
+          >
+            📋 파트별 체크리스트 목록 수정
+          </button>
+        </div>
+
+        {adminTab === 'settings' ? (
+          <div style={{ padding: '4px 0' }}>
             {/* ── 기계실 패널 설정 ── */}
             <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
-              ⚙️ 관리자 · 설정 편집
+              ⚙️ 기계실 패널 편집
             </h4>
             
             <div style={{ ...sectionStyle, marginBottom: '16px' }}>
@@ -363,86 +693,91 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             {(Object.keys(DEPT_LABELS) as DepartmentId[]).map((dept) => (
               renderDeptEditor(dept)
             ))}
-
-            <button
-              onClick={handleSave}
-              style={{
-                width: '100%', height: '44px', background: '#2563eb', color: '#fff',
-                fontSize: '15px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '16px', marginBottom: '8px'
-              }}
-            >
-              💾 설정 저장
-            </button>
-
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-              <button
-                onClick={() => {
-                  const data = localStorage.getItem('spa_admin_settings');
-                  if (data) {
-                    navigator.clipboard.writeText(data).then(() => alert('✅ 설정 데이터가 복사되었습니다.\\n크롬 브라우저를 열고 [설정 데이터 가져오기]를 눌러 붙여넣으세요.'));
-                  } else {
-                    alert('저장된 설정이 없습니다.');
-                  }
-                }}
-                style={{
-                  flex: 1, height: '36px', background: '#f1f5f9', color: '#475569',
-                  fontSize: '12px', fontWeight: 600, borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer'
-                }}
-              >
-                📤 설정 데이터 복사하기 (내보내기)
-              </button>
-              <button
-                onClick={() => {
-                  const data = prompt('복사한 설정 데이터를 아래에 붙여넣어주세요:');
-                  if (data) {
-                    try {
-                      JSON.parse(data);
-                      localStorage.setItem('spa_admin_settings', data);
-                      alert('✅ 설정이 정상적으로 적용되었습니다. 창을 새로고침합니다.');
-                      window.location.reload();
-                    } catch {
-                      alert('데이터 형식이 올바르지 않습니다.');
-                    }
-                  }
-                }}
-                style={{
-                  flex: 1, height: '36px', background: '#f1f5f9', color: '#475569',
-                  fontSize: '12px', fontWeight: 600, borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer'
-                }}
-              >
-                📥 설정 데이터 가져오기 (붙여넣기)
-              </button>
-            </div>
-
-            {/* ── Vercel 다이렉트 주소 메모 ── */}
-            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
-              📌 Vercel 다이렉트 바로가기 주소 메모
-            </h4>
-
-            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px', fontSize: '11px', color: '#1e3a8a', marginBottom: '14px' }}>
-              <div style={{ fontWeight: 700, fontSize: '12px', marginBottom: '6px', color: '#1e40af' }}>
-                🔗 배포 사이트 (Vercel) 다이렉트 주소 안내
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #dbeafe', fontFamily: 'monospace' }}>
-                <div><strong>기계실 패널 (00시):</strong> https://spa-guard.vercel.app/?view=panel&time=00시</div>
-                <div><strong>기계실 패널 (03시):</strong> https://spa-guard.vercel.app/?view=panel&time=03시</div>
-                <div><strong>기계실 패널 (06시):</strong> https://spa-guard.vercel.app/?view=panel&time=06시</div>
-                <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '4px 0' }} />
-                <div><strong>시설 주간 (11번):</strong> https://spa-guard.vercel.app/?nfc=11</div>
-                <div><strong>시설 야간 (12번):</strong> https://spa-guard.vercel.app/?nfc=12</div>
-                <div><strong>리셉션 오전 (21번):</strong> https://spa-guard.vercel.app/?nfc=21</div>
-                <div><strong>리셉션 오후 (22번):</strong> https://spa-guard.vercel.app/?nfc=22</div>
-                <div><strong>리셉션 야간 (23번):</strong> https://spa-guard.vercel.app/?nfc=23</div>
-                <div><strong>미화 남주 (31번):</strong> https://spa-guard.vercel.app/?nfc=31</div>
-                <div><strong>미화 남야 (32번):</strong> https://spa-guard.vercel.app/?nfc=32</div>
-                <div><strong>미화 여주 (33번):</strong> https://spa-guard.vercel.app/?nfc=33</div>
-                <div><strong>푸드 오픈 (41번):</strong> https://spa-guard.vercel.app/?nfc=41</div>
-                <div><strong>푸드 마감 (42번):</strong> https://spa-guard.vercel.app/?nfc=42</div>
-                <div><strong>스낵 오픈 (51번):</strong> https://spa-guard.vercel.app/?nfc=51</div>
-                <div><strong>스낵 마감 (52번):</strong> https://spa-guard.vercel.app/?nfc=52</div>
-              </div>
-            </div>
           </div>
+        ) : (
+          /* 📋 파트별 체크리스트 목록 수정 탭 */
+          renderChecklistEditor()
+        )}
+
+        {/* 저장 및 복사/가져오기 버튼 */}
+        <button
+          onClick={handleSave}
+          style={{
+            width: '100%', height: '44px', background: '#2563eb', color: '#fff',
+            fontSize: '15px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '16px', marginBottom: '8px'
+          }}
+        >
+          💾 모든 설정 및 체크리스트 변경사항 저장
+        </button>
+
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          <button
+            onClick={() => {
+              const data = localStorage.getItem('spa_admin_settings');
+              if (data) {
+                navigator.clipboard.writeText(data).then(() => alert('✅ 설정 데이터가 복사되었습니다.\n크롬 브라우저를 열고 [설정 데이터 가져오기]를 눌러 붙여넣으세요.'));
+              } else {
+                alert('저장된 설정이 없습니다.');
+              }
+            }}
+            style={{
+              flex: 1, height: '36px', background: '#f1f5f9', color: '#475569',
+              fontSize: '12px', fontWeight: 600, borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer'
+            }}
+          >
+            📤 설정 데이터 복사하기 (내보내기)
+          </button>
+          <button
+            onClick={() => {
+              const data = prompt('복사한 설정 데이터를 아래에 붙여넣어주세요:');
+              if (data) {
+                try {
+                  JSON.parse(data);
+                  localStorage.setItem('spa_admin_settings', data);
+                  alert('✅ 설정이 정상적으로 적용되었습니다. 창을 새로고침합니다.');
+                  window.location.reload();
+                } catch {
+                  alert('데이터 형식이 올바르지 않습니다.');
+                }
+              }
+            }}
+            style={{
+              flex: 1, height: '36px', background: '#f1f5f9', color: '#475569',
+              fontSize: '12px', fontWeight: 600, borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer'
+            }}
+          >
+            📥 설정 데이터 가져오기 (붙여넣기)
+          </button>
+        </div>
+
+        {/* ── Vercel 다이렉트 주소 메모 ── */}
+        <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
+          📌 Vercel 다이렉트 바로가기 주소 메모
+        </h4>
+
+        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px', fontSize: '11px', color: '#1e3a8a', marginBottom: '14px' }}>
+          <div style={{ fontWeight: 700, fontSize: '12px', marginBottom: '6px', color: '#1e40af' }}>
+            🔗 배포 사이트 (Vercel) 다이렉트 주소 안내
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #dbeafe', fontFamily: 'monospace' }}>
+            <div><strong>기계실 패널 (00시):</strong> https://spa-guard.vercel.app/?view=panel&time=00시</div>
+            <div><strong>기계실 패널 (03시):</strong> https://spa-guard.vercel.app/?view=panel&time=03시</div>
+            <div><strong>기계실 패널 (06시):</strong> https://spa-guard.vercel.app/?view=panel&time=06시</div>
+            <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '4px 0' }} />
+            <div><strong>시설 주간 (11번):</strong> https://spa-guard.vercel.app/?nfc=11</div>
+            <div><strong>시설 야간 (12번):</strong> https://spa-guard.vercel.app/?nfc=12</div>
+            <div><strong>리셉션 오전 (21번):</strong> https://spa-guard.vercel.app/?nfc=21</div>
+            <div><strong>리셉션 오후 (22번):</strong> https://spa-guard.vercel.app/?nfc=22</div>
+            <div><strong>리셉션 야간 (23번):</strong> https://spa-guard.vercel.app/?nfc=23</div>
+            <div><strong>미화 남주 (31번):</strong> https://spa-guard.vercel.app/?nfc=31</div>
+            <div><strong>미화 남야 (32번):</strong> https://spa-guard.vercel.app/?nfc=32</div>
+            <div><strong>미화 여주 (33번):</strong> https://spa-guard.vercel.app/?nfc=33</div>
+            <div><strong>푸드 오픈 (41번):</strong> https://spa-guard.vercel.app/?nfc=41</div>
+            <div><strong>푸드 마감 (42번):</strong> https://spa-guard.vercel.app/?nfc=42</div>
+            <div><strong>스낵 오픈 (51번):</strong> https://spa-guard.vercel.app/?nfc=51</div>
+            <div><strong>스낵 마감 (52번):</strong> https://spa-guard.vercel.app/?nfc=52</div>
+          </div>
+        </div>
       </div>
     </div>
   );

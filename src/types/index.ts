@@ -80,6 +80,7 @@ export interface AdminSettings {
   hairCatcherMonthlyCount: number; // 헤어캐처 월간 점검 횟수
   deptConfigs: DeptConfigMap;      // 파트별 인원 설정
   enableMachineRoomPanel?: boolean; // 기계실 00/03/06시 패널 기능 활성화 여부
+  customChecklists?: Record<string, SectionData[]>; // 관리자 커스텀 체크리스트
 }
 
 export const NFC_BASE_NUMBERS: Record<DepartmentId, number> = {

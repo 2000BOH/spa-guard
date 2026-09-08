@@ -4,14 +4,14 @@ import { jsPDF } from 'jspdf';
 
 import type { AppState, TabId, StatusType, ItemState, CheckItem, DepartmentId } from './types';
 import { NFC_BASE_NUMBERS } from './types';
-import { TAB_INFO, CHECKLIST_DATA, DEPT_TABS_MAP } from './data/checklistData';
+import { TAB_INFO, DEPT_TABS_MAP } from './data/checklistData';
 import { Header } from './components/Header';
 import { MetaStrip } from './components/MetaStrip';
 import { CheckListView } from './components/CheckListView';
 import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { saveInspectionToSupabase, fetchInspectionFromSupabase } from './lib/supabase';
-import { loadAdminSettings, getDeptFlatRoles } from './lib/adminSettings';
+import { loadAdminSettings, getDeptFlatRoles, getEffectiveChecklistData } from './lib/adminSettings';
 import { updateDeptInspectionStatus, getDeptInspectionStatus } from './lib/deptStatus';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
@@ -421,7 +421,8 @@ export default function App() {
   };
 
   // Counts Calculation
-  const activeSections = CHECKLIST_DATA[currentTab] || [];
+  const adminSettings = loadAdminSettings();
+  const activeSections = getEffectiveChecklistData(currentTab, adminSettings.customChecklists);
   const activeItems = activeSections.flatMap((s) => s.items);
 
   let cntN = 0;
@@ -554,7 +555,7 @@ export default function App() {
     availableTabs.forEach((tid) => {
       const tabInfo = TAB_INFO[tid];
       if (!tabInfo) return;
-      const sections = CHECKLIST_DATA[tid] || [];
+      const sections = getEffectiveChecklistData(tid, adminSettings.customChecklists);
       const items = sections.flatMap((s) => s.items);
 
       let n = 0;

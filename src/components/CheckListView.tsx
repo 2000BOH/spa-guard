@@ -1,17 +1,17 @@
 import React from 'react';
 import type { TabId, ItemState, StatusType, CheckItem } from '../types';
-import { CHECKLIST_DATA, TAB_INFO } from '../data/checklistData';
-import { loadAdminSettings } from '../lib/adminSettings';
+import { TAB_INFO } from '../data/checklistData';
+import { loadAdminSettings, getEffectiveChecklistData } from '../lib/adminSettings';
 
 interface CheckListViewProps {
   currentTab: TabId;
   itemsState: Record<string, ItemState>;
   summaryText: string;
   isReadOnly: boolean;
-  onSetStatus: (id: string, status: StatusType) => void;
-  onSaveNote: (id: string, note: string) => void;
-  onChangeSummary: (summary: string) => void;
-  onUpdateTab4ItemBatch: (id: string, updates: Partial<ItemState>) => void;
+  onSetStatus: (itemId: string, status: StatusType) => void;
+  onSaveNote: (itemId: string, note: string) => void;
+  onChangeSummary: (summaryText: string) => void;
+  onUpdateTab4ItemBatch: (itemId: string, updates: Partial<ItemState>) => void;
 }
 
 // Helper: Calculate item-specific historical average pressure across all saved dates in localStorage
@@ -58,9 +58,9 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   onChangeSummary,
   onUpdateTab4ItemBatch
 }) => {
-  const sections = CHECKLIST_DATA[currentTab] || [];
-  const tabNameClean = TAB_INFO[currentTab]?.name || '';
   const adminSettings = loadAdminSettings();
+  const sections = getEffectiveChecklistData(currentTab, adminSettings.customChecklists);
+  const tabNameClean = TAB_INFO[currentTab]?.name || '';
 
   // Pressure options 1.0 to 2.4 (step 0.1)
   const pressureOptions: number[] = [];

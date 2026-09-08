@@ -1,5 +1,6 @@
-import type { AdminSettings, DepartmentId, DeptConfigMap, DeptConfig } from '../types';
+import type { AdminSettings, DepartmentId, DeptConfigMap, DeptConfig, SectionData } from '../types';
 import { NFC_BASE_NUMBERS } from '../types';
+import { CHECKLIST_DATA } from '../data/checklistData';
 
 export const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
   facilities: {
@@ -64,7 +65,8 @@ export const DEFAULT_SETTINGS: AdminSettings = {
   defaultBackwashCount: 2,
   hairCatcherMonthlyCount: 2,
   deptConfigs: DEFAULT_DEPT_CONFIGS,
-  enableMachineRoomPanel: false
+  enableMachineRoomPanel: false,
+  customChecklists: {}
 };
 
 export function loadAdminSettings(): AdminSettings {
@@ -91,11 +93,30 @@ export function loadAdminSettings(): AdminSettings {
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
-        deptConfigs: mergedConfigs
+        deptConfigs: mergedConfigs,
+        customChecklists: parsed.customChecklists || {}
       };
     }
   } catch {
     // ignore json error
   }
   return DEFAULT_SETTINGS;
+}
+
+export function saveAdminSettings(settings: AdminSettings): void {
+  try {
+    localStorage.setItem('spa_admin_settings', JSON.stringify(settings));
+  } catch (err) {
+    console.error('Failed to save admin settings to localStorage:', err);
+  }
+}
+
+/**
+ * 특정 탭의 체크리스트 데이터 반환 (커스텀 데이터가 있으면 우선 반영)
+ */
+export function getEffectiveChecklistData(tabId: string, customChecklists?: Record<string, SectionData[]>): SectionData[] {
+  if (customChecklists && customChecklists[tabId] && customChecklists[tabId].length > 0) {
+    return customChecklists[tabId];
+  }
+  return (CHECKLIST_DATA[tabId] as SectionData[]) || [];
 }
