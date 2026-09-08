@@ -25,7 +25,11 @@ export const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
   },
   cleaning: {
     groups: [
-      { label: '미화', roles: [{ role: '주간', name: '', isWomen: false }, { role: '야간', name: '', isWomen: false }] }
+      { label: '미화', roles: [
+        { role: '주간(남)', name: '', isWomen: false },
+        { role: '주간(여)', name: '', isWomen: true },
+        { role: '야간', name: '', isWomen: false }
+      ]}
     ]
   },
   food: {
@@ -54,7 +58,7 @@ export function getDeptFlatRoles(dept: DepartmentId, deptConfig?: DeptConfig): F
     config.groups.forEach((grp, gIdx) => {
       grp.roles.forEach((r, rIdx) => {
         const label = grp.label ? `${grp.label} ${r.role}` : r.role;
-        const finalLabel = r.isWomen ? `${label} (여)` : label;
+        const finalLabel = (r.isWomen && !label.includes('(여)')) ? `${label} (여)` : label;
         items.push({
           roleLabel: finalLabel,
           groupIndex: gIdx,
@@ -90,7 +94,7 @@ export function loadAdminSettings(): AdminSettings {
           const pConfig = parsed.deptConfigs[key];
           if (pConfig && pConfig.groups && pConfig.groups[0] && Array.isArray(pConfig.groups[0].roles)) {
             // Legacy format check for cleaning
-            if (key === 'cleaning' && pConfig.groups.length > 1) {
+            if (key === 'cleaning' && (pConfig.groups.length > 1 || pConfig.groups[0]?.roles?.length !== 3)) {
               mergedConfigs[key] = DEFAULT_DEPT_CONFIGS[key];
             } else {
               mergedConfigs[key] = pConfig;
