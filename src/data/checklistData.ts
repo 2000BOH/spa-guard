@@ -40,7 +40,7 @@ export const DEPT_TABS_MAP: Record<DepartmentId, string[]> = {
 export const CHECKLIST_DATA: Record<string, { category: string; items: { id: string; text: string; type?: string }[] }[]> = {
   "rTab1": [
     {
-      "category": "◆ 인수인계 및 오픈 준비",
+      "category": "◆ 인수인계",
       "items": [
         { "id": "r_m_1", "text": "[심야조 인수인계] 심야조 시제 확인 및 서명 후 인수" },
         { "id": "r_m_2", "text": "[POS1·3 시작 시제] 시작 시제 카운트" },
@@ -53,17 +53,12 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 오전 사전 확인",
+      "category": "◆ 상시업무(고객응대)",
       "items": [
         { "id": "r_m_11", "text": "[회원 만료 예정] 당일·익일 만료 회원 확인 → 연장 안내 준비" },
         { "id": "r_m_12", "text": "[락커 만료 예정] 당일·익일 락커 만료 확인 → 연장 안내 준비" },
         { "id": "r_m_13", "text": "[예약 확인] 여행사등 단체 방문 일정 확인 및 준비" },
-        { "id": "r_m_17", "text": "[카카오톡 공지 확인] 카카오톡 받은 파일 폴더 신규 파일 확인" }
-      ]
-    },
-    {
-      "category": "◆ 오전 상시 업무 (고객 응대)",
-      "items": [
+        { "id": "r_m_17", "text": "[카카오톡 공지 확인] 카카오톡 받은 파일 폴더 신규 파일 확인" },
         { "id": "r_m_18", "text": "[오전 고객 응대] 입장·연장·퇴장 처리, POS 결제 진행" },
         { "id": "r_m_19", "text": "[신규 회원 등록] 회원리스트에 신규 회원 등록" },
         { "id": "r_m_23", "text": "[락커 종료 처리] 락커 종료 시 락커비움 또는 회원권종료 표시" },
@@ -76,7 +71,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 오전 마감 (16:00 인계)",
+      "category": "◆ 마감",
       "items": [
         { "id": "r_m_35", "text": "[POS1·POS2 시제 마감] 시제 정확히 카운트 후 인계 준비" },
         { "id": "r_m_36", "text": "[현금 매출 기록] 리셉션_각종서류 오전란 매출 기록 및 서명" },
@@ -88,7 +83,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
   ],
   "rTab2": [
     {
-      "category": "◆ 인수인계 (16:00 시작)",
+      "category": "◆ 인수인계",
       "items": [
         { "id": "r_a_2", "text": "[POS1·POS2 시작 시제] 시작 시제 카운트 (전 교대 마감 잔액과 일치)" },
         { "id": "r_a_3", "text": "[계좌입금 미확인 건] 오전 미처리 계좌입금 확인" },
@@ -96,17 +91,12 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 저녁 피크 대응 (17:00 ~ 22:00)",
+      "category": "◆ 상시업무(고객응대)",
       "items": [
         { "id": "r_a_7", "text": "[저녁 피크 응대] 대량 방문 대응, 대기줄 관리" },
         { "id": "r_a_16", "text": "[유실물 접수] 저녁 유실물 접수 및 대장 기록" },
         { "id": "r_a_17", "text": "[대양 키오스크] 정상 작동 확인, 영수증 용지 리필" },
-        { "id": "r_a_18", "text": "[카드 단말기] 카드 결제 정상 처리 여부 확인" }
-      ]
-    },
-    {
-      "category": "◆ 야간 응대 (22:00 ~ 24:00)",
-      "items": [
+        { "id": "r_a_18", "text": "[카드 단말기] 카드 결제 정상 처리 여부 확인" },
         { "id": "r_a_19", "text": "[야간 고객 응대] 야간 입장·연장·퇴장 처리" },
         { "id": "r_a_20", "text": "[심야 이용 안내] 심야 사용 시설·규정 안내" },
         { "id": "r_a_22", "text": "[시설 이상 발견] 시설 이상 시 야간 기관장 즉시 통보" },
@@ -114,7 +104,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 오후 마감 준비 (23:30 ~ 24:00)",
+      "category": "◆ 마감",
       "items": [
         { "id": "r_a_24", "text": "[POS1·POS2 시제 카운트] 시제 정확히 카운트 (2인 교차 확인)" },
         { "id": "r_a_28", "text": "[특이사항 인계 준비] 오후 발생 이슈·유실물·클레임 인계 문서 작성" },
