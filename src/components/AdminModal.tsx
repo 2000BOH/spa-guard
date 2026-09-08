@@ -27,8 +27,8 @@ export const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
     groups: [
       { label: '미화', roles: [
         { role: '주간(남)', name: '', isWomen: false },
-        { role: '주간(여)', name: '', isWomen: true },
-        { role: '야간', name: '', isWomen: false }
+        { role: '야간', name: '', isWomen: false },
+        { role: '주간(여)', name: '', isWomen: true }
       ]}
     ]
   },
