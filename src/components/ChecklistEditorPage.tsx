@@ -136,13 +136,6 @@ export const ChecklistEditorPage: React.FC<ChecklistEditorPageProps> = ({
     updateTabSections(sections);
   };
 
-  const handleDeleteCategory = (secIdx: number) => {
-    if (!confirm('이 카테고리와 내부의 모든 체크 항목을 함께 삭제하시겠습니까?')) return;
-    const sections = JSON.parse(JSON.stringify(getCurrentSections())) as SectionData[];
-    sections.splice(secIdx, 1);
-    updateTabSections(sections);
-  };
-
   const handleResetTab = () => {
     const tabName = TAB_INFO[editingTabId]?.name || editingTabId;
     if (!confirm(`'${tabName}' 탭의 체크리스트를 원본 기본값으로 복원하시겠습니까?`)) return;
@@ -248,13 +241,6 @@ export const ChecklistEditorPage: React.FC<ChecklistEditorPageProps> = ({
                 <span style={{ fontSize: '14px', fontWeight: 700, color: '#38bdf8' }}>
                   {sec.category}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteCategory(secIdx)}
-                  style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}
-                >
-                  그룹 삭제
-                </button>
               </div>
 
               {/* 항목 리스트 */}
