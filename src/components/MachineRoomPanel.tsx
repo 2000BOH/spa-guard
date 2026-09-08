@@ -121,7 +121,7 @@ export default function MachineRoomPanel({ admin = false, initialSlot }: Machine
       s = JSON.parse(localStorage.getItem('spa.panel.schedule.v1') || 'null');
       a = JSON.parse(localStorage.getItem('spa.panel.actual.v1') || '{}') || {};
       m = JSON.parse(localStorage.getItem('spa.panel.mark.v1') || '{}') || {};
-    } catch (e) {}
+    } catch {}
     if (!s) s = defaultSchedule();
     setSchedule(s);
     setActual(a);
@@ -130,12 +130,6 @@ export default function MachineRoomPanel({ admin = false, initialSlot }: Machine
 
     const timer = setInterval(() => setNow(new Date()), 20000);
     return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (initialSlot) {
-      setSlot(initialSlot);
-    }
   }, [initialSlot]);
 
   const saveSchedule = (s: any) => {
@@ -145,14 +139,14 @@ export default function MachineRoomPanel({ admin = false, initialSlot }: Machine
         localStorage.setItem('spa.panel.prevday.v1', JSON.stringify(schedule || s));
         localStorage.setItem('spa.panel.meta.v1', JSON.stringify({ date: todayStr() }));
       }
-    } catch (e) {}
+    } catch {}
     setSchedule(s);
-    try { localStorage.setItem('spa.panel.schedule.v1', JSON.stringify(s)); } catch (e) {}
+    try { localStorage.setItem('spa.panel.schedule.v1', JSON.stringify(s)); } catch {}
   };
 
   const saveActual = (a: any) => {
     setActual(a);
-    try { localStorage.setItem('spa.panel.actual.v1', JSON.stringify(a)); } catch (e) {}
+    try { localStorage.setItem('spa.panel.actual.v1', JSON.stringify(a)); } catch {}
   };
 
   const cycleMark = (d: any) => {
@@ -162,7 +156,7 @@ export default function MachineRoomPanel({ admin = false, initialSlot }: Machine
     const next = order[(order.indexOf(cur as any) + 1) % order.length];
     const m = { ...marks, [d.id]: next };
     setMarks(m);
-    try { localStorage.setItem('spa.panel.mark.v1', JSON.stringify(m)); } catch (e) {}
+    try { localStorage.setItem('spa.panel.mark.v1', JSON.stringify(m)); } catch {}
   };
 
   const setPos = (d: any, pos: string) => {
@@ -184,7 +178,7 @@ export default function MachineRoomPanel({ admin = false, initialSlot }: Machine
 
   const copyPrevDay = () => {
     let prev = null;
-    try { prev = JSON.parse(localStorage.getItem('spa.panel.prevday.v1') || 'null'); } catch (e) {}
+    try { prev = JSON.parse(localStorage.getItem('spa.panel.prevday.v1') || 'null'); } catch {}
     if (!prev) prev = defaultSchedule();
     const s = { ...schedule };
     s[slot] = { ...prev[slot] };

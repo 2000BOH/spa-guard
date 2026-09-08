@@ -11,7 +11,7 @@ import { CheckListView } from './components/CheckListView';
 import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { saveInspectionToSupabase, fetchInspectionFromSupabase } from './lib/supabase';
-import { loadAdminSettings, getDeptFlatRoles } from './components/AdminModal';
+import { loadAdminSettings, getDeptFlatRoles } from './lib/adminSettings';
 import { updateDeptInspectionStatus, getDeptInspectionStatus } from './lib/deptStatus';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
@@ -187,7 +187,7 @@ export default function App() {
         };
         try {
           localStorage.setItem(getStorageKey(targetDate), JSON.stringify(finalState));
-        } catch (e) {}
+        } catch {}
         return finalState;
       });
 
@@ -277,6 +277,7 @@ export default function App() {
         return { ...next, ...updatedSec };
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 모바일 <-> PC 실시간 연동 (10초 주기 서버 동기화 폴링)
@@ -539,11 +540,7 @@ export default function App() {
   const handleSubmitToKakao = async () => {
     showToast("⏳ 표지 포함 카톡 전송 데이터 준비 중...");
 
-    saveInspectionToSupabase(state).then((res) => {
-      if (res.success) {
-        console.log('Supabase Saved Successfully');
-      }
-    });
+    saveInspectionToSupabase(state);
 
     let msg = `{시설 점검 보고}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n`;

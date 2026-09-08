@@ -1,7 +1,7 @@
 import React from 'react';
 import type { TabId, ItemState, StatusType, CheckItem } from '../types';
 import { CHECKLIST_DATA, TAB_INFO } from '../data/checklistData';
-import { loadAdminSettings } from './AdminModal';
+import { loadAdminSettings } from '../lib/adminSettings';
 
 interface CheckListViewProps {
   currentTab: TabId;

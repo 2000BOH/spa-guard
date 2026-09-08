@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { DepartmentId, AdminSettings } from '../types';
-import { AdminModal, loadAdminSettings } from './AdminModal';
+import { AdminModal } from './AdminModal';
+import { loadAdminSettings } from '../lib/adminSettings';
 import { WORK_RULES } from '../data/workRulesData';
 import { getDeptInspectionStatus } from '../lib/deptStatus';
 
