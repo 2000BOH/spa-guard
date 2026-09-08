@@ -372,7 +372,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
   ],
   "tab1": [
     {
-      "category": "◆ 1. 공조 및 환기설비",
+      "category": "◆ 공조 및 환기설비",
       "items": [
         { "id": "f1_1", "text": "2층 공조기(AHU) 가동 상태 및 비정상 소음/진동 확인" },
         { "id": "f1_2", "text": "환기 닥트 및 흡배기 점검" },
@@ -380,7 +380,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 2. 소방 및 안전 시설",
+      "category": "◆ 소방 및 안전 시설",
       "items": [
         { "id": "f1_4", "text": "2층 비상 유도등 상시 점등 및 배터리 점검" },
         { "id": "f1_5", "text": "소화기 비치 위치 확인 및 압력 게이지 정상 여부" },
@@ -389,7 +389,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 3. 로비 / 리셉션 / 락카존",
+      "category": "◆ 로비 / 리셉션 / 락카존",
       "items": [
         { "id": "f1_8", "text": "신발장 및 락카 전자키/도어락 정상 작동 확인" },
         { "id": "f1_9", "text": "리셉션 POS/키오스크 및 결제 단말기 작동 점검" },
@@ -398,7 +398,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 4. 탈의실 및 파우더룸",
+      "category": "◆ 탈의실 및 파우더룸",
       "items": [
         { "id": "f1_12", "text": "헤어드라이기/선풍기 및 콘센트 과열/누전 점검" },
         { "id": "f1_13", "text": "탈의실 환풍기 가동 및 실내 냄새/습기 배출 상태" },
@@ -407,7 +407,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 5. 공용부(승강기/계단/주차/외곽)",
+      "category": "◆ 공용부(승강기/계단/주차/외곽)",
       "items": [
         { "id": "f1_16", "text": "승강기(엘리베이터) 운행 상태 및 비상통화 버튼 점검" },
         { "id": "f1_17", "text": "계단실 센서등/비상등 점등 및 난간 흔들림 점검" },
@@ -418,7 +418,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
   ],
   "tab2": [
     {
-      "category": "◆ 1. 보일러실",
+      "category": "◆ 보일러실",
       "items": [
         { "id": "b1", "text": "가동 시 평소와 다른 기계 소음 및 심한 진동 확인" },
         { "id": "b2", "text": "보일러 온도계/압력계 바늘 정상 범위 점검" },
@@ -432,7 +432,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 2. 폐수열 회수기",
+      "category": "◆ 폐수열 회수기",
       "items": [
         { "id": "w1", "text": "장비 외관 및 배관 연결부 누수 여부 점검" },
         { "id": "w2", "text": "폐수 순환 펌프 과열 및 비정상 소음 점검" },
@@ -443,7 +443,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 3. 온수탱크",
+      "category": "◆ 온수탱크",
       "items": [
         { "id": "t1", "text": "탱크 외부 보온재 훼손 여부 점검" },
         { "id": "t2", "text": "스파용 온수 적정 온도 유지 상태 확인" },
@@ -456,14 +456,14 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
   ],
   "tab3": [
     {
-      "category": "◆ 1. 탕 수처리 및 여과설비",
+      "category": "◆ 탕 수처리 및 여과설비",
       "items": [
         { "id": "f3_1", "text": "탕수 순환 펌프 수압 및 가동 소음 점검" },
         { "id": "f3_2", "text": "온탕/열탕/냉탕 수온계 정상 작동 및 온도 유지" }
       ]
     },
     {
-      "category": "◆ 2. 사우나 및 테마찜질방",
+      "category": "◆ 사우나 및 테마찜질방",
       "items": [
         { "id": "f3_3", "text": "테마방(소금/황토/편백 등) 발열체 및 실내 온도 확인" },
         { "id": "f3_4", "text": "아이스방/냉찜질방 냉각 콤프레셔 및 성에 제거 점검" },
@@ -471,7 +471,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 3. 탕내 샤워설비 및 배수",
+      "category": "◆ 탕내 샤워설비 및 배수",
       "items": [
         { "id": "f3_6", "text": "입식/좌식 샤워기 수압, 온수 혼합 밸브 및 누수 확인" },
         { "id": "f3_7", "text": "바닥 배수구 트랩 물빠짐 상태 및 머리카락 청소" },
@@ -482,7 +482,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
   ],
   "tab4": [
     {
-      "category": "◆ 1. 여과기 점검",
+      "category": "◆ 여과기 점검",
       "items": [
         { "id": "tab4_f1", "text": "① 열탕여과기(여)", "type": "filter" },
         { "id": "tab4_f2", "text": "② 벤치Z 여과기(여)", "type": "filter" },
@@ -496,7 +496,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 2. 벤치Z 펌프 점검",
+      "category": "◆ 벤치Z 펌프 점검",
       "items": [
         { "id": "tab4_p11", "text": "⑪ 샤워펌프(여)", "type": "pump" },
         { "id": "tab4_p12", "text": "⑫ 파도펌프(여)", "type": "pump" },
@@ -509,7 +509,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "◆ 3. 기타설비 점검",
+      "category": "◆ 기타설비 점검",
       "items": [
         { "id": "tab4_g1", "text": "메인전기 판넬 점검" },
         { "id": "tab4_g2", "text": "사무실 방송장비 및 음향시스템 확인" },

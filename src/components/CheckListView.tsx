@@ -548,14 +548,108 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
         </div>
 
         {/* 2. 기타설비 점검 */}
-        {generalSections.map((section, gIdx) => (
-          <div key={gIdx} className="section-card" style={{ marginTop: '10px' }}>
+        {generalSections.map((section, gIdx) => {
+          const secStartIndex = generalSections.slice(0, gIdx).reduce((acc, s) => acc + s.items.length, 0);
+
+          return (
+            <div key={gIdx} className="section-card" style={{ marginTop: '10px' }}>
+              <div className="section-title">
+                <span>{section.category}</span>
+                <span className="badge-count">{section.items.length} 항목</span>
+              </div>
+
+              {section.items.map((item: CheckItem, itemIdx: number) => {
+                const displayIdx = secStartIndex + itemIdx + 1;
+                const state = itemsState[item.id] || {};
+                const statusClass = state.status === 'normal' 
+                  ? 'status-normal' 
+                  : state.status === 'issue' 
+                    ? 'status-issue' 
+                    : '';
+
+                return (
+                  <div key={item.id} className={`slim-item ${statusClass}`}>
+                    <div 
+                      className="slim-row" 
+                      onClick={() => {
+                        if (!isReadOnly) {
+                          onSetStatus(item.id, state.status === 'normal' ? null : 'normal');
+                        }
+                      }}
+                    >
+                      <div className="item-left">
+                        <span className="item-text">
+                          <strong style={{ color: '#2563eb', marginRight: '6px', fontWeight: 700 }}>{displayIdx}.</strong>
+                          {item.text}
+                        </span>
+                      </div>
+                      <div className="item-btns" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                          className="btn-toggle btn-normal"
+                          disabled={isReadOnly}
+                          onClick={() => !isReadOnly && onSetStatus(item.id, state.status === 'normal' ? null : 'normal')}
+                        >
+                          이상무
+                        </button>
+                        <button 
+                          className="btn-toggle btn-issue"
+                          disabled={isReadOnly}
+                          onClick={() => !isReadOnly && onSetStatus(item.id, state.status === 'issue' ? null : 'issue')}
+                        >
+                          이상
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className={`slim-note-box ${state.status === 'issue' ? 'show' : ''}`}>
+                      <input 
+                        type="text" 
+                        className="slim-note-input"
+                        placeholder="⚠️ 이상 내용 입력" 
+                        value={state.note || ''}
+                        disabled={isReadOnly}
+                        onChange={(e) => !isReadOnly && onSaveNote(item.id, e.target.value)}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* 종합 의견 */}
+        <div className="summary-box">
+          <label htmlFor="summaryText" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span><span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}</span>
+          </label>
+          <textarea
+            id="summaryText"
+            placeholder="해당 시설의 특이사항이나 점검 의견을 기재하세요."
+            value={summaryText || ''}
+            disabled={isReadOnly}
+            onChange={(e) => !isReadOnly && onChangeSummary(e.target.value)}
+          />
+        </div>
+      </main>
+    );
+  }
+
+  // Standard View for Tabs 1, 2, 3
+  return (
+    <main className="main-container">
+      {sections.map((section, sIdx) => {
+        const secStartIndex = sections.slice(0, sIdx).reduce((acc, s) => acc + s.items.length, 0);
+
+        return (
+          <div key={sIdx} className="section-card">
             <div className="section-title">
               <span>{section.category}</span>
               <span className="badge-count">{section.items.length} 항목</span>
             </div>
 
             {section.items.map((item: CheckItem, itemIdx: number) => {
+              const displayIdx = secStartIndex + itemIdx + 1;
               const state = itemsState[item.id] || {};
               const statusClass = state.status === 'normal' 
                 ? 'status-normal' 
@@ -575,7 +669,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                   >
                     <div className="item-left">
                       <span className="item-text">
-                        <strong style={{ color: '#2563eb', marginRight: '6px', fontWeight: 700 }}>{itemIdx + 1}.</strong>
+                        <strong style={{ color: '#2563eb', marginRight: '6px', fontWeight: 700 }}>{displayIdx}.</strong>
                         {item.text}
                       </span>
                     </div>
@@ -611,92 +705,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
               );
             })}
           </div>
-        ))}
-
-        {/* 종합 의견 */}
-        <div className="summary-box">
-          <label htmlFor="summaryText" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span><span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}</span>
-          </label>
-          <textarea
-            id="summaryText"
-            placeholder="해당 시설의 특이사항이나 점검 의견을 기재하세요."
-            value={summaryText || ''}
-            disabled={isReadOnly}
-            onChange={(e) => !isReadOnly && onChangeSummary(e.target.value)}
-          />
-        </div>
-      </main>
-    );
-  }
-
-  // Standard View for Tabs 1, 2, 3
-  return (
-    <main className="main-container">
-      {sections.map((section, sIdx) => (
-        <div key={sIdx} className="section-card">
-          <div className="section-title">
-            <span>{section.category}</span>
-            <span className="badge-count">{section.items.length} 항목</span>
-          </div>
-
-          {section.items.map((item: CheckItem, itemIdx: number) => {
-            const state = itemsState[item.id] || {};
-            const statusClass = state.status === 'normal' 
-              ? 'status-normal' 
-              : state.status === 'issue' 
-                ? 'status-issue' 
-                : '';
-
-            return (
-              <div key={item.id} className={`slim-item ${statusClass}`}>
-                <div 
-                  className="slim-row" 
-                  onClick={() => {
-                    if (!isReadOnly) {
-                      onSetStatus(item.id, state.status === 'normal' ? null : 'normal');
-                    }
-                  }}
-                >
-                  <div className="item-left">
-                    <span className="item-text">
-                      <strong style={{ color: '#2563eb', marginRight: '6px', fontWeight: 700 }}>{itemIdx + 1}.</strong>
-                      {item.text}
-                    </span>
-                  </div>
-                  <div className="item-btns" onClick={(e) => e.stopPropagation()}>
-                    <button 
-                      className="btn-toggle btn-normal"
-                      disabled={isReadOnly}
-                      onClick={() => !isReadOnly && onSetStatus(item.id, state.status === 'normal' ? null : 'normal')}
-                    >
-                      이상무
-                    </button>
-                    <button 
-                      className="btn-toggle btn-issue"
-                      disabled={isReadOnly}
-                      onClick={() => !isReadOnly && onSetStatus(item.id, state.status === 'issue' ? null : 'issue')}
-                    >
-                      이상
-                    </button>
-                  </div>
-                </div>
-
-                <div className={`slim-note-box ${state.status === 'issue' ? 'show' : ''}`}>
-                  <input 
-                    type="text" 
-                    className="slim-note-input"
-                    placeholder="⚠️ 이상 내용 입력" 
-                    value={state.note || ''}
-                    disabled={isReadOnly}
-                    onChange={(e) => !isReadOnly && onSaveNote(item.id, e.target.value)}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
+        );
+      })}
 
       <div className="summary-box">
         <label htmlFor="summaryText" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

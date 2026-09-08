@@ -128,7 +128,7 @@ export const ChecklistEditorPage: React.FC<ChecklistEditorPageProps> = ({
   };
 
   const handleAddCategory = () => {
-    const categoryName = prompt('새 카테고리(그룹) 이름을 입력해주세요:\n(예: ◆ 4. 신규 구역 점검)');
+    const categoryName = prompt('새 카테고리(그룹) 이름을 입력해주세요:\n(예: ◆ 신규 구역 점검)');
     if (!categoryName || !categoryName.trim()) return;
 
     const sections = JSON.parse(JSON.stringify(getCurrentSections())) as SectionData[];
@@ -235,104 +235,112 @@ export const ChecklistEditorPage: React.FC<ChecklistEditorPageProps> = ({
 
         {/* 카테고리별 세부 항목 편집기 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {currentSections.map((sec, secIdx) => (
-            <div key={secIdx} style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', padding: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #334155', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: '#38bdf8' }}>
-                  {sec.category}
-                </span>
-              </div>
+          {currentSections.map((sec, secIdx) => {
+            const secStartIndex = currentSections.slice(0, secIdx).reduce((acc, s) => acc + s.items.length, 0);
 
-              {/* 항목 리스트 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
-                {sec.items.map((item: CheckItem, itemIdx: number) => (
-                  <div
-                    key={item.id}
-                    draggable
-                    onDragStart={() => setDraggedItemInfo({ secIdx, itemIdx })}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => handleDropItem(secIdx, itemIdx)}
+            return (
+              <div key={secIdx} style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', padding: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #334155', paddingBottom: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#38bdf8' }}>
+                    {sec.category}
+                  </span>
+                </div>
+
+                {/* 항목 리스트 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                  {sec.items.map((item: CheckItem, itemIdx: number) => {
+                    const displayIdx = secStartIndex + itemIdx + 1;
+
+                    return (
+                      <div
+                        key={item.id}
+                        draggable
+                        onDragStart={() => setDraggedItemInfo({ secIdx, itemIdx })}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => handleDropItem(secIdx, itemIdx)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '8px', background: '#0f172a',
+                          border: '1px solid #334155', borderRadius: '6px', padding: '8px 10px'
+                        }}
+                      >
+                        {/* 드래그 핸들 */}
+                        <span style={{ cursor: 'grab', color: '#64748b', fontSize: '16px', userSelect: 'none' }} title="드래그하여 순서 변경">
+                          ☰
+                        </span>
+
+                        {/* ▲ / ▼ 순서 변경 버튼 */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <button
+                            type="button"
+                            disabled={itemIdx === 0}
+                            onClick={() => handleMoveItem(secIdx, itemIdx, 'up')}
+                            style={{ background: 'none', border: 'none', padding: 0, fontSize: '10px', color: itemIdx === 0 ? '#334155' : '#94a3b8', cursor: itemIdx === 0 ? 'default' : 'pointer' }}
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            disabled={itemIdx === sec.items.length - 1}
+                            onClick={() => handleMoveItem(secIdx, itemIdx, 'down')}
+                            style={{ background: 'none', border: 'none', padding: 0, fontSize: '10px', color: itemIdx === sec.items.length - 1 ? '#334155' : '#94a3b8', cursor: itemIdx === sec.items.length - 1 ? 'default' : 'pointer' }}
+                          >
+                            ▼
+                          </button>
+                        </div>
+
+                        {/* 개별 순번 번호 */}
+                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#38bdf8', minWidth: '22px', textAlign: 'right' }}>
+                          {displayIdx}.
+                        </span>
+
+                        {/* 항목 인라인 텍스트 수정 */}
+                        <input
+                          type="text"
+                          value={item.text}
+                          onChange={(e) => handleUpdateItemText(secIdx, itemIdx, e.target.value)}
+                          style={{ flex: 1, border: '1px solid #334155', borderRadius: '5px', padding: '6px 10px', fontSize: '13px', color: '#f8fafc', background: '#1e293b' }}
+                        />
+
+                        {/* 삭제 버튼 */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteItem(secIdx, itemIdx)}
+                          style={{
+                            background: '#ef4444', color: '#fff', border: 'none', borderRadius: '5px',
+                            padding: '6px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap'
+                          }}
+                        >
+                          🗑️ 삭제
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 개별 카테고리 맨 하단 + 항목 추가 입력 폼 */}
+                <div style={{ display: 'flex', gap: '8px', paddingTop: '8px', borderTop: '1px dashed #334155' }}>
+                  <input
+                    type="text"
+                    placeholder={`'${sec.category}' 구역에 추가할 점검 항목 입력...`}
+                    value={newItemTexts[secIdx] || ''}
+                    onChange={(e) => setNewItemTexts({ ...newItemTexts, [secIdx]: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddItem(secIdx)}
+                    style={{ flex: 1, border: '1px solid #0284c7', borderRadius: '6px', padding: '8px 10px', fontSize: '13px', background: '#0f172a', color: '#fff' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddItem(secIdx)}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '8px', background: '#0f172a',
-                      border: '1px solid #334155', borderRadius: '6px', padding: '8px 10px'
+                      background: '#0284c7', color: '#fff', border: 'none', borderRadius: '6px',
+                      padding: '8px 14px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap'
                     }}
                   >
-                    {/* 드래그 핸들 */}
-                    <span style={{ cursor: 'grab', color: '#64748b', fontSize: '16px', userSelect: 'none' }} title="드래그하여 순서 변경">
-                      ☰
-                    </span>
-
-                    {/* ▲ / ▼ 순서 변경 버튼 */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      <button
-                        type="button"
-                        disabled={itemIdx === 0}
-                        onClick={() => handleMoveItem(secIdx, itemIdx, 'up')}
-                        style={{ background: 'none', border: 'none', padding: 0, fontSize: '10px', color: itemIdx === 0 ? '#334155' : '#94a3b8', cursor: itemIdx === 0 ? 'default' : 'pointer' }}
-                      >
-                        ▲
-                      </button>
-                      <button
-                        type="button"
-                        disabled={itemIdx === sec.items.length - 1}
-                        onClick={() => handleMoveItem(secIdx, itemIdx, 'down')}
-                        style={{ background: 'none', border: 'none', padding: 0, fontSize: '10px', color: itemIdx === sec.items.length - 1 ? '#334155' : '#94a3b8', cursor: itemIdx === sec.items.length - 1 ? 'default' : 'pointer' }}
-                      >
-                        ▼
-                      </button>
-                    </div>
-
-                    {/* 개별 순번 번호 */}
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#38bdf8', minWidth: '22px', textAlign: 'right' }}>
-                      {itemIdx + 1}.
-                    </span>
-
-                    {/* 항목 인라인 텍스트 수정 */}
-                    <input
-                      type="text"
-                      value={item.text}
-                      onChange={(e) => handleUpdateItemText(secIdx, itemIdx, e.target.value)}
-                      style={{ flex: 1, border: '1px solid #334155', borderRadius: '5px', padding: '6px 10px', fontSize: '13px', color: '#f8fafc', background: '#1e293b' }}
-                    />
-
-                    {/* 삭제 버튼 */}
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteItem(secIdx, itemIdx)}
-                      style={{
-                        background: '#ef4444', color: '#fff', border: 'none', borderRadius: '5px',
-                        padding: '6px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap'
-                      }}
-                    >
-                      🗑️ 삭제
-                    </button>
-                  </div>
-                ))}
+                    + 항목 추가
+                  </button>
+                </div>
               </div>
-
-              {/* 개별 카테고리 맨 하단 + 항목 추가 입력 폼 */}
-              <div style={{ display: 'flex', gap: '8px', paddingTop: '8px', borderTop: '1px dashed #334155' }}>
-                <input
-                  type="text"
-                  placeholder={`'${sec.category}' 구역에 추가할 점검 항목 입력...`}
-                  value={newItemTexts[secIdx] || ''}
-                  onChange={(e) => setNewItemTexts({ ...newItemTexts, [secIdx]: e.target.value })}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddItem(secIdx)}
-                  style={{ flex: 1, border: '1px solid #0284c7', borderRadius: '6px', padding: '8px 10px', fontSize: '13px', background: '#0f172a', color: '#fff' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleAddItem(secIdx)}
-                  style={{
-                    background: '#0284c7', color: '#fff', border: 'none', borderRadius: '6px',
-                    padding: '8px 14px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap'
-                  }}
-                >
-                  + 항목 추가
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
