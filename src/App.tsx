@@ -558,6 +558,12 @@ export default function App() {
 
     saveInspectionToSupabase(state);
 
+    const markCompleted = () => {
+      if (selectedDept) {
+        updateDeptInspectionStatus(state.date || todayStr, selectedDept, state.roleName, 'completed', state.inspector);
+      }
+    };
+
     let msg = `{시설 점검 보고}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n`;
     msg += `🏢 업소명: 블루오션 웰니스 스파\n`;
@@ -638,38 +644,57 @@ export default function App() {
       // First file in array is the COVER PAGE image!
       const filesArray = [fileCover, file1, file2];
 
-      if (navigator.canShare && navigator.canShare({ files: filesArray })) {
-        await navigator.share({
-          title: '{시설 점검 보고}',
-          text: msg,
-          files: filesArray
-        });
-      // 점검완료 상태 기록 헬퍼
-      const markCompleted = () => {
-        if (selectedDept) {
-          updateDeptInspectionStatus(state.date || todayStr, selectedDept, state.roleName, 'completed', state.inspector);
-        }
-      };
+      let sharedSuccessfully = false;
 
-      markCompleted();
-      } else if (navigator.share) {
-        downloadA4SplitImages();
-        await navigator.share({
-          title: '{시설 점검 보고}',
-          text: msg
-        });
-        showToast("📲 보고서와 이미지가 준비되었습니다.");
-        return;
+      // 1단계: 모바일 공유 API (파일 3개 직접 공유)
+      if (navigator.canShare && navigator.canShare({ files: filesArray })) {
+        try {
+          await navigator.share({
+            title: '{시설 점검 보고}',
+            text: msg,
+            files: filesArray
+          });
+          sharedSuccessfully = true;
+        } catch (shareErr) {
+          console.warn("파일 포함 공유 실패 또는 사용자 취소:", shareErr);
+        }
       }
 
-      downloadA4SplitImages();
-      navigator.clipboard.writeText(msg).then(() => {
-        alert("📋 요약 보고서가 복사되었고 점검표 표지 포함 이미지 3장이 다운로드되었습니다!\n\n카카오톡 단체방에 [붙여넣기]하고 다운로드된 표지 및 사진 3장을 함께 올려주세요.");
-      });
+      // 2단계: 파일 공유 거부/미지원 시 텍스트만 공유창 호출
+      if (!sharedSuccessfully && navigator.share) {
+        try {
+          downloadA4SplitImages();
+          await navigator.share({
+            title: '{시설 점검 보고}',
+            text: msg
+          });
+          sharedSuccessfully = true;
+          showToast("📲 보고서와 이미지가 준비되었습니다.");
+        } catch (shareErr) {
+          console.warn("텍스트 공유 실패 또는 사용자 취소:", shareErr);
+        }
+      }
+
+      // 3단계: 웹 공유 API 전체 미지원/실패 시 클립보드 복사 & 이미지 다운로드
+      if (!sharedSuccessfully) {
+        downloadA4SplitImages();
+        try {
+          await navigator.clipboard.writeText(msg);
+          alert("📋 요약 보고서가 복사되었고 점검표 표지 포함 이미지 3장이 다운로드되었습니다!\n\n카카오톡 단체방에 [붙여넣기]하고 다운로드된 표지 및 사진 3장을 함께 올려주세요.");
+        } catch (clipErr) {
+          console.warn("클립보드 복사 실패:", clipErr);
+          alert("📋 점검표 표지 포함 이미지 3장이 다운로드되었습니다.\n\n요약 보고서 텍스트를 카카오톡 단체방에 직접 공유해주세요.");
+        }
+      }
+
+      markCompleted();
     } catch (e) {
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
+      if (container) {
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+      }
       console.error(e);
+      alert("카카오톡 전송 처리 중 오류가 발생했습니다: " + e);
     }
   };
 
