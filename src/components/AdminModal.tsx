@@ -122,7 +122,18 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
   // 파트(부서)별 통합 담당자 이름 목록 state (DepartmentId -> string[])
   const [deptIsWomenInputs, setDeptIsWomenInputs] = useState<Record<DepartmentId, boolean[]>>({
-    facilities: [], reception: [], cleaning: [], food: [], snack: []
+    facilities: [false],
+    reception: [false],
+    cleaning: [false],
+    food: [false],
+    snack: [false]
+  });
+  const [deptIsNightInputs, setDeptIsNightInputs] = useState<Record<DepartmentId, boolean[]>>({
+    facilities: [false],
+    reception: [false],
+    cleaning: [false],
+    food: [false],
+    snack: [false]
   });
   const [deptInspectorInputs, setDeptInspectorInputs] = useState<Record<DepartmentId, string[]>>({
     facilities: [''],
@@ -144,6 +155,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       const initialWomenInputs: Record<DepartmentId, boolean[]> = {
         facilities: [], reception: [], cleaning: [], food: [], snack: []
       };
+      const initialNightInputs: Record<DepartmentId, boolean[]> = {
+        facilities: [], reception: [], cleaning: [], food: [], snack: []
+      };
 
       (Object.keys(DEPT_LABELS) as DepartmentId[]).forEach(dept => {
         const deptConfig = loadedSettings.deptConfigs[dept];
@@ -152,34 +166,44 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
         if (deptConfig?.inspectorPool) {
           deptConfig.inspectorPool.forEach(p => p.split(',').forEach(n => n.trim() && namesSet.add(n.trim())));
         }
-        const womenFlags: boolean[] = [];
-        deptConfig?.groups?.forEach(grp => {
-          grp.roles?.forEach(r => {
-            if (r.names && r.names.length > 0) {
-              r.names.forEach(n => {
-                if (n.trim()) {
-                  namesSet.add(n.trim());
-                  womenFlags.push(!!r.isWomen);
-                }
-              });
-            } else if (r.name) {
-              r.name.split(',').forEach(n => {
-                if (n.trim()) {
-                  namesSet.add(n.trim());
-                  womenFlags.push(!!r.isWomen);
-                }
-              });
-            }
+        if (deptConfig?.inspectorPool) {
+          deptConfig.inspectorPool.forEach(p => {
+            p.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
           });
-        });
+        } else {
+          deptConfig?.groups?.forEach(grp => {
+            grp.roles?.forEach(r => {
+              if (r.names && r.names.length > 0) {
+                r.names.forEach(n => {
+                  if (n.trim()) {
+                    namesSet.add(n.trim());
+                  }
+                });
+              } else if (r.name) {
+                r.name.split(',').forEach(n => {
+                  if (n.trim()) {
+                    namesSet.add(n.trim());
+                  }
+                });
+              }
+            });
+          });
+        }
 
         const list = Array.from(namesSet);
         initialInputs[dept] = list.length > 0 ? list : [''];
-        initialWomenInputs[dept] = list.length > 0 ? womenFlags : [false];
+        
+        let womenFlags = deptConfig?.womenPool || [];
+        let nightFlags = deptConfig?.nightPool || [];
+        while (womenFlags.length < list.length) womenFlags.push(false);
+        while (nightFlags.length < list.length) nightFlags.push(false);
+        initialWomenInputs[dept] = womenFlags.length > 0 ? womenFlags : [false];
+        initialNightInputs[dept] = nightFlags.length > 0 ? nightFlags : [false];
       });
 
       setDeptInspectorInputs(initialInputs);
       setDeptIsWomenInputs(initialWomenInputs);
+      setDeptIsNightInputs(initialNightInputs);
     }
   }, [isOpen]);
 
@@ -209,13 +233,15 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  const updateDeptNamesList = (dept: DepartmentId, newList: string[], newWomenList?: boolean[]) => {
+  const updateDeptNamesList = (dept: DepartmentId, newList: string[], newWomenList?: boolean[], newNightList?: boolean[]) => {
     const cleaned = newList.length > 0 ? newList : [''];
     setDeptInspectorInputs(prev => ({ ...prev, [dept]: cleaned }));
     if (newWomenList) setDeptIsWomenInputs(prev => ({ ...prev, [dept]: newWomenList.length > 0 ? newWomenList : [false] }));
+    if (newNightList) setDeptIsNightInputs(prev => ({ ...prev, [dept]: newNightList.length > 0 ? newNightList : [false] }));
 
     const validNames = cleaned.map(n => n.trim()).filter(Boolean);
     const validWomen = newWomenList || deptIsWomenInputs[dept] || [];
+    const validNight = newNightList || deptIsNightInputs[dept] || [];
     const newConfigs = { ...settings.deptConfigs };
     const deptConf = { ...newConfigs[dept] };
     const groups = JSON.parse(JSON.stringify(deptConf.groups || DEFAULT_DEPT_CONFIGS[dept].groups));
@@ -236,6 +262,10 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
     deptConf.groups = groups;
     deptConf.inspectorPool = validNames;
+    if (dept === 'cleaning') {
+      deptConf.womenPool = validWomen.slice(0, validNames.length);
+      deptConf.nightPool = validNight.slice(0, validNames.length);
+    }
     newConfigs[dept] = deptConf;
 
     setSettings(prev => ({ ...prev, deptConfigs: newConfigs }));
@@ -244,27 +274,36 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const addDeptInspectorInput = (dept: DepartmentId) => {
     const currentList = deptInspectorInputs[dept] || [''];
     const currentWomen = deptIsWomenInputs[dept] || [false];
-    updateDeptNamesList(dept, [...currentList, ''], [...currentWomen, false]);
+    const currentNight = deptIsNightInputs[dept] || [false];
+    updateDeptNamesList(dept, [...currentList, ''], [...currentWomen, false], [...currentNight, false]);
   };
 
   const removeDeptInspectorInput = (dept: DepartmentId, nameIdx: number) => {
     const currentList = deptInspectorInputs[dept] || [''];
     const currentWomen = deptIsWomenInputs[dept] || [false];
+    const currentNight = deptIsNightInputs[dept] || [false];
     const updated = currentList.filter((_, idx) => idx !== nameIdx);
     const updatedWomen = currentWomen.filter((_, idx) => idx !== nameIdx);
-    updateDeptNamesList(dept, updated.length > 0 ? updated : [''], updatedWomen.length > 0 ? updatedWomen : [false]);
+    const updatedNight = currentNight.filter((_, idx) => idx !== nameIdx);
+    updateDeptNamesList(dept, updated.length > 0 ? updated : [''], updatedWomen.length > 0 ? updatedWomen : [false], updatedNight.length > 0 ? updatedNight : [false]);
   };
 
   const changeDeptInspectorName = (dept: DepartmentId, nameIdx: number, val: string) => {
     const currentList = [...(deptInspectorInputs[dept] || [''])];
     currentList[nameIdx] = val;
-    updateDeptNamesList(dept, currentList, deptIsWomenInputs[dept]);
+    updateDeptNamesList(dept, currentList, deptIsWomenInputs[dept], deptIsNightInputs[dept]);
   };
 
   const changeDeptIsWomen = (dept: DepartmentId, nameIdx: number, checked: boolean) => {
     const currentWomen = [...(deptIsWomenInputs[dept] || [false])];
     currentWomen[nameIdx] = checked;
-    updateDeptNamesList(dept, deptInspectorInputs[dept], currentWomen);
+    updateDeptNamesList(dept, deptInspectorInputs[dept], currentWomen, deptIsNightInputs[dept]);
+  };
+
+  const changeDeptIsNight = (dept: DepartmentId, nameIdx: number, checked: boolean) => {
+    const currentNight = [...(deptIsNightInputs[dept] || [false])];
+    currentNight[nameIdx] = checked;
+    updateDeptNamesList(dept, deptInspectorInputs[dept], deptIsWomenInputs[dept], currentNight);
   };
 
   const inputStyle: React.CSSProperties = { width: '100%', height: '32px', padding: '0 8px', fontSize: '12px', borderRadius: '5px', border: '1px solid #cbd5e1' };
@@ -294,13 +333,23 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
                 placeholder={`${DEPT_LABELS[dept]} 담당자 성+이름 (예: 홍길동)`}
                 value={nameVal}
                 onChange={(e) => changeDeptInspectorName(dept, nIdx, e.target.value)}
-                style={{ ...inputStyle, flex: 1 }}
+                style={{ 
+                  ...inputStyle, 
+                  flex: 1,
+                  border: (dept === 'cleaning' && !!womenList[nIdx]) ? '2px solid #ef4444' : inputStyle.border
+                }}
               />
               {dept === 'cleaning' && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#334155' }}>
-                  <input type="checkbox" checked={!!womenList[nIdx]} onChange={(e) => changeDeptIsWomen(dept, nIdx, e.target.checked)} />
-                  여자
-                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#334155' }}>
+                    <input type="checkbox" checked={!!womenList[nIdx]} onChange={(e) => changeDeptIsWomen(dept, nIdx, e.target.checked)} />
+                    여자
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#334155' }}>
+                    <input type="checkbox" checked={!!(deptIsNightInputs[dept] || [])[nIdx]} onChange={(e) => changeDeptIsNight(dept, nIdx, e.target.checked)} />
+                    야간
+                  </label>
+                </div>
               )}
               {nameList.length > 1 && (
                 <button

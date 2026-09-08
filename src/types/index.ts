@@ -68,6 +68,8 @@ export interface PersonnelGroup {
 export interface DeptConfig {
   groups: PersonnelGroup[];
   inspectorPool?: string[];
+  womenPool?: boolean[];
+  nightPool?: boolean[];
 }
 
 export type DeptConfigMap = Record<DepartmentId, DeptConfig>;

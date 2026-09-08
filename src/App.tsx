@@ -770,29 +770,43 @@ export default function App() {
             if (!deptConfig) return [];
 
             const namesSet = new Set<string>();
-            const isWomanTab = state.roleName && state.roleName.includes('(여)');
 
-            deptConfig.groups?.forEach(grp => {
-              grp.roles?.forEach(r => {
-                if (selectedDept === 'cleaning') {
-                  if (isWomanTab && !r.isWomen) return;
-                  if (!isWomanTab && r.isWomen) return;
-                  if (r.name) {
-                    r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
-                  }
+            if (selectedDept === 'cleaning') {
+              const isWomanTab = state.roleName && state.roleName.includes('(여)');
+              const isNightTab = state.roleName && state.roleName.includes('야간');
+              const pool = deptConfig.inspectorPool || [];
+              const womenPool = deptConfig.womenPool || [];
+              const nightPool = deptConfig.nightPool || [];
+              
+              pool.forEach((n, idx) => {
+                const isW = !!womenPool[idx];
+                const isN = !!nightPool[idx];
+                
+                if (isNightTab) {
+                  if (!isN) return;
+                } else if (isWomanTab) {
+                  if (!isW || isN) return;
                 } else {
+                  if (isW || isN) return;
+                }
+                
+                n.split(',').forEach(sn => sn.trim() && namesSet.add(sn.trim()));
+              });
+            } else {
+              deptConfig.groups?.forEach(grp => {
+                grp.roles?.forEach(r => {
                   if (r.names && r.names.length > 0) {
                     r.names.forEach(n => n.trim() && namesSet.add(n.trim()));
                   } else if (r.name) {
                     r.name.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
                   }
-                }
+                });
               });
-            });
-            if (selectedDept !== 'cleaning' && deptConfig.inspectorPool) {
-              deptConfig.inspectorPool.forEach(p => {
-                p.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
-              });
+              if (deptConfig.inspectorPool) {
+                deptConfig.inspectorPool.forEach(p => {
+                  p.split(',').forEach(n => n.trim() && namesSet.add(n.trim()));
+                });
+              }
             }
             return Array.from(namesSet);
           })()}
