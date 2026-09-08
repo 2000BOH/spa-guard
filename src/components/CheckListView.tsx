@@ -574,7 +574,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                     }}
                   >
                     <div className="item-left">
-                      <span className="dot"></span>
                       <span className="item-text">
                         <strong style={{ color: '#2563eb', marginRight: '6px', fontWeight: 700 }}>{itemIdx + 1}.</strong>
                         {item.text}
@@ -660,7 +659,6 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                   }}
                 >
                   <div className="item-left">
-                    <span className="dot"></span>
                     <span className="item-text">
                       <strong style={{ color: '#2563eb', marginRight: '6px', fontWeight: 700 }}>{itemIdx + 1}.</strong>
                       {item.text}
