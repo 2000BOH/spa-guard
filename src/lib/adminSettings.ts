@@ -5,25 +5,30 @@ import { saveAdminSettingsToSupabase } from './supabase';
 
 export const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
   facilities: {
-    groups: [{ roles: [{ role: '주간', name: '' }, { role: '야간', name: '' }] }]
+    groups: [{ roles: [{ role: '주간', name: '이수용, 김성민' }, { role: '야간', name: '이수용, 김성민' }] }],
+    inspectorPool: ['이수용', '김성민']
   },
   reception: {
-    groups: [{ roles: [{ role: '오전', name: '' }, { role: '오후', name: '' }, { role: '야간', name: '' }] }]
+    groups: [{ roles: [{ role: '오전', name: '차윤미' }, { role: '오후', name: '이정온' }, { role: '야간', name: '차윤미, 이정온' }] }],
+    inspectorPool: ['차윤미', '이정온']
   },
   cleaning: {
     groups: [
       { label: '미화', roles: [
-        { role: '주간(남)', name: '', isWomen: false },
-        { role: '야간', name: '', isWomen: false },
-        { role: '주간(여)', name: '', isWomen: true }
+        { role: '주간(남)', name: '미화팀', isWomen: false },
+        { role: '야간', name: '미화팀', isWomen: false },
+        { role: '주간(여)', name: '미화팀', isWomen: true }
       ]}
-    ]
+    ],
+    inspectorPool: ['미화팀']
   },
   food: {
-    groups: [{ roles: [{ role: '오픈', name: '' }, { role: '마감', name: '' }] }]
+    groups: [{ roles: [{ role: '오픈', name: '차윤미' }, { role: '마감', name: '차윤미' }] }],
+    inspectorPool: ['차윤미']
   },
   snack: {
-    groups: [{ roles: [{ role: '오픈', name: '' }, { role: '마감', name: '' }] }]
+    groups: [{ roles: [{ role: '오픈', name: '이정온' }, { role: '마감', name: '이정온' }] }],
+    inspectorPool: ['이정온']
   }
 };
 

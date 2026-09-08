@@ -641,16 +641,29 @@ export default function App() {
       container.style.position = 'absolute';
       container.style.left = '-9999px';
 
-      const blobCover = await new Promise<Blob>((resolve) => canvasCover.toBlob((b) => resolve(b!), 'image/jpeg', 0.95));
-      const blob1 = await new Promise<Blob>((resolve) => canvas1.toBlob((b) => resolve(b!), 'image/jpeg', 0.95));
-      const blob2 = await new Promise<Blob>((resolve) => canvas2.toBlob((b) => resolve(b!), 'image/jpeg', 0.95));
+      // 3개 페이지(표지, 앞면, 뒷면)를 1개의 통합 이미지로 세로 합성 (카톡 1개 묶음 메시지로 전송)
+      const totalWidth = Math.max(canvasCover.width, canvas1.width, canvas2.width);
+      const totalHeight = canvasCover.height + canvas1.height + canvas2.height;
 
-      const fileCover = new File([blobCover], `시설관리일지_${state.date}_0표지.jpg`, { type: 'image/jpeg' });
-      const file1 = new File([blob1], `시설관리일지_${state.date}_1페이지(앞면).jpg`, { type: 'image/jpeg' });
-      const file2 = new File([blob2], `시설관리일지_${state.date}_2페이지(뒷면).jpg`, { type: 'image/jpeg' });
+      const combinedCanvas = document.createElement('canvas');
+      combinedCanvas.width = totalWidth;
+      combinedCanvas.height = totalHeight;
 
-      // First file in array is the COVER PAGE image!
-      const filesArray = [fileCover, file1, file2];
+      const ctx = combinedCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+        ctx.drawImage(canvasCover, (totalWidth - canvasCover.width) / 2, 0);
+        ctx.drawImage(canvas1, (totalWidth - canvas1.width) / 2, canvasCover.height);
+        ctx.drawImage(canvas2, (totalWidth - canvas2.width) / 2, canvasCover.height + canvas1.height);
+      }
+
+      const combinedBlob = await new Promise<Blob>((resolve) => combinedCanvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
+      const combinedFile = new File([combinedBlob], `시설관리일지_${state.date}_통합보고서.jpg`, { type: 'image/jpeg' });
+
+      // 단일 통합 보고서 이미지로 1개 메시지 묶음 전송!
+      const filesArray = [combinedFile];
 
       let sharedSuccessfully = false;
 
@@ -819,8 +832,7 @@ export default function App() {
           }}
           inspectorOptions={(() => {
             if (!selectedDept) return [];
-            const loaded = loadAdminSettings();
-            const deptConfig = loaded.deptConfigs[selectedDept];
+            const deptConfig = adminSettings?.deptConfigs?.[selectedDept];
             if (!deptConfig) return [];
 
             const namesSet = new Set<string>();
