@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
-import type { AppState, TabId, StatusType, ItemState, CheckItem, DepartmentId } from './types';
+import type { AppState, TabId, StatusType, ItemState, CheckItem, DepartmentId, AdminSettings } from './types';
 import { NFC_BASE_NUMBERS } from './types';
 import { TAB_INFO, DEPT_TABS_MAP } from './data/checklistData';
 import { Header } from './components/Header';
@@ -10,8 +10,8 @@ import { MetaStrip } from './components/MetaStrip';
 import { CheckListView } from './components/CheckListView';
 import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
-import { saveInspectionToSupabase, fetchInspectionFromSupabase } from './lib/supabase';
-import { loadAdminSettings, getDeptFlatRoles, getEffectiveChecklistData } from './lib/adminSettings';
+import { saveInspectionToSupabase, fetchInspectionFromSupabase, fetchAdminSettingsFromSupabase } from './lib/supabase';
+import { loadAdminSettings, saveAdminSettings, getDeptFlatRoles, getEffectiveChecklistData } from './lib/adminSettings';
 import { updateDeptInspectionStatus, getDeptInspectionStatus } from './lib/deptStatus';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
@@ -92,6 +92,7 @@ export default function App() {
   const [availableTabs, setAvailableTabs] = useState<TabId[]>([]);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
+  const [adminSettings, setAdminSettings] = useState<AdminSettings>(loadAdminSettings);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const todayStr = getTodayStr();
@@ -185,7 +186,8 @@ export default function App() {
           ...prev,
           ...remoteState,
           items: mergedItems,
-          summaries: mergedSummaries
+          summaries: mergedSummaries,
+          inspector: (prev.inspector && prev.inspector !== '점검자') ? prev.inspector : remoteState.inspector
         };
         try {
           localStorage.setItem(getStorageKey(targetDate), JSON.stringify(finalState));
@@ -207,7 +209,14 @@ export default function App() {
       ...sec
     });
 
-    // 앱 시작 시 서버 데이터 자동 동기화
+    // 앱 시작 시 서버 데이터(관리자 설정 & 오늘 점검 데이터) 자동 동기화
+    fetchAdminSettingsFromSupabase().then((res) => {
+      if (res.success && res.settings) {
+        saveAdminSettings(res.settings as AdminSettings);
+        setAdminSettings(res.settings as AdminSettings);
+      }
+    });
+
     syncWithSupabase(todayStr);
 
     // Parse URL params for QR scanning direct access
@@ -244,8 +253,8 @@ export default function App() {
         }
 
         if (foundDept) {
-          const adminSettings = loadAdminSettings();
-          const deptConfig = adminSettings.deptConfigs[foundDept];
+          const currentAdminSettings = loadAdminSettings();
+          const deptConfig = currentAdminSettings.deptConfigs[foundDept];
           const flatRoles = getDeptFlatRoles(foundDept, deptConfig);
           const matchedRole = flatRoles.find(r => r.nfcNum === nfcNum);
 
@@ -436,7 +445,6 @@ export default function App() {
   };
 
   // Counts Calculation
-  const adminSettings = loadAdminSettings();
   const activeSections = getEffectiveChecklistData(currentTab, adminSettings.customChecklists);
   const activeItems = activeSections.flatMap((s) => s.items);
 

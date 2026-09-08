@@ -93,3 +93,63 @@ export async function fetchInspectionFromSupabase(checkDate: string) {
   }
 }
 
+export async function saveAdminSettingsToSupabase(settings: unknown) {
+  if (!supabase) return { success: false, reason: 'unconfigured' };
+  try {
+    const { data: existing } = await supabase
+      .from('inspection_logs')
+      .select('id')
+      .eq('store_name', 'ADMIN_SETTINGS_STORE')
+      .limit(1);
+
+    const payload = {
+      store_name: 'ADMIN_SETTINGS_STORE',
+      check_date: '1970-01-01',
+      inspector: 'ADMIN',
+      security_code: 'ADMIN_SETTINGS',
+      recorded_at: new Date().toISOString(),
+      items_state: settings as Record<string, unknown>,
+      summaries: {},
+      created_at: new Date().toISOString()
+    };
+
+    if (existing && existing.length > 0) {
+      const { data, error } = await supabase
+        .from('inspection_logs')
+        .update(payload)
+        .eq('id', existing[0].id);
+      if (error) return { success: false, error };
+      return { success: true, data };
+    } else {
+      const { data, error } = await supabase
+        .from('inspection_logs')
+        .insert([payload]);
+      if (error) return { success: false, error };
+      return { success: true, data };
+    }
+  } catch (err) {
+    console.error('saveAdminSettingsToSupabase exception:', err);
+    return { success: false, error: err };
+  }
+}
+
+export async function fetchAdminSettingsFromSupabase() {
+  if (!supabase) return { success: false, reason: 'unconfigured' };
+  try {
+    const { data, error } = await supabase
+      .from('inspection_logs')
+      .select('*')
+      .eq('store_name', 'ADMIN_SETTINGS_STORE')
+      .limit(1);
+
+    if (error) return { success: false, error };
+    if (data && data.length > 0 && data[0].items_state) {
+      return { success: true, settings: data[0].items_state };
+    }
+    return { success: true, settings: null };
+  } catch (err) {
+    console.error('fetchAdminSettingsFromSupabase exception:', err);
+    return { success: false, error: err };
+  }
+}
+

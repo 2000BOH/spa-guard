@@ -1,6 +1,7 @@
 import type { AdminSettings, DepartmentId, DeptConfigMap, DeptConfig, SectionData } from '../types';
 import { NFC_BASE_NUMBERS } from '../types';
 import { CHECKLIST_DATA } from '../data/checklistData';
+import { saveAdminSettingsToSupabase } from './supabase';
 
 export const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
   facilities: {
@@ -106,6 +107,7 @@ export function loadAdminSettings(): AdminSettings {
 export function saveAdminSettings(settings: AdminSettings): void {
   try {
     localStorage.setItem('spa_admin_settings', JSON.stringify(settings));
+    saveAdminSettingsToSupabase(settings);
   } catch (err) {
     console.error('Failed to save admin settings to localStorage:', err);
   }
