@@ -1,0 +1,17 @@
+{
+  "name": "SpaGuard - 스파 시설 통합 안전점검표",
+  "short_name": "SpaGuard",
+  "description": "블루오션 웰니스 스파 시설 통합 일일 안전점검표",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
