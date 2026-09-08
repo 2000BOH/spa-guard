@@ -560,7 +560,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
   ],
     "cTabW": [
     {
-      "category": "오픈 전 대청소",
+      "category": "공통",
       "items": [
         { "id": "ct1_1", "text": "[여자 락커룸] 락커 개방 확인, 미회수 물품 관리단 인계" },
         { "id": "ct1_2", "text": "[여자 락커룸] 바닥 머리카락 진공청소 후 물걸레 청소" },
@@ -576,7 +576,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "오전 순회 (사우나 및 취약구역)",
+      "category": "사우나 및 공용",
       "items": [
         { "id": "ct2_2", "text": "[여자 건식 사우나] 목재 및 타일 이상유무" },
         { "id": "ct2_3", "text": "[여자 건식 사우나] 사우나 탕 입구 매트 교체" },
@@ -590,7 +590,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "오후 순회 (순환 청소 및 재점검)",
+      "category": "순회점검",
       "items": [
         { "id": "ct3_1", "text": "[여자 화장실] 변기·세면대 소독, 휴지 리필 (2시간마다)" },
         { "id": "ct3_2", "text": "[3층 풋스파] 데크 냄새 확인 + 방수 상태 점검" },
@@ -607,7 +607,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
   ],
   "cTabM": [
     {
-      "category": "오픈 전 대청소",
+      "category": "공통",
       "items": [
         { "id": "cm1_1", "text": "[남자 락커룸] 락커 개방 확인, 미회수 물품 인계" },
         { "id": "cm1_2", "text": "[남자 락커룸] 바닥 머리카락 진공청소 후 물걸레 청소" },
@@ -621,7 +621,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "오전 순회 (사우나 및 공용)",
+      "category": "사우나 및 공용",
       "items": [
         { "id": "cm2_2", "text": "[남자 건식 사우나] 목재 벤치 이상유무 확인" },
         { "id": "cm2_3", "text": "[남자 건식 사우나] 사우나 바닥 매트 1회 교체" },
@@ -635,7 +635,7 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
       ]
     },
     {
-      "category": "오후 순회 (순환 청소)",
+      "category": "순회점검",
       "items": [
         { "id": "cm3_1", "text": "[남자 화장실] 변기·세면대 소독, 휴지 리필 (2시간마다)" },
         { "id": "cm3_2", "text": "[남자 샤워장] 배수구 재점검 및 이물질 제거 (매일 2회)" },
