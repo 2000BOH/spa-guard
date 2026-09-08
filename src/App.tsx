@@ -16,6 +16,7 @@ import { updateDeptInspectionStatus, getDeptInspectionStatus } from './lib/deptS
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
 import MachineRoomPanel from './components/MachineRoomPanel';
+import { ChecklistEditorPage } from './components/ChecklistEditorPage';
 
 const DEPT_NAMES: Record<string, string> = {
   facilities: '시설',
@@ -82,8 +83,9 @@ function getYesterdayStr(): string {
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'main' | 'checklist' | 'comingSoon' | 'panel'>('main');
+  const [currentView, setCurrentView] = useState<'main' | 'checklist' | 'comingSoon' | 'panel' | 'editor'>('main');
   const [selectedDept, setSelectedDept] = useState<DepartmentId | null>(null);
+  const [directEditorDept, setDirectEditorDept] = useState<DepartmentId | null>(null);
   const [panelTimeLabel, setPanelTimeLabel] = useState('');
 
   const [currentTab, setCurrentTab] = useState<TabId>('tab2');
@@ -214,11 +216,24 @@ export default function App() {
     let inspectorParam = params.get('inspector');
     let roleNameParam = params.get('roleName') || undefined;
     
-    // NFC 태그 파싱 (자동 배정 로직)
+    // NFC 태그 파싱 (자동 배정 및 편집 파트 파싱)
     const nfcParam = params.get('nfc');
     if (nfcParam) {
       const nfcNum = parseInt(nfcParam, 10);
       if (!isNaN(nfcNum)) {
+        // 91~95번 NFC: 각 파트 팀장 전용 독립 체크리스트 편집 전용 페이지
+        if (nfcNum >= 91 && nfcNum <= 95) {
+          const editMap: Record<number, DepartmentId> = {
+            91: 'facilities', 92: 'reception', 93: 'cleaning', 94: 'food', 95: 'snack'
+          };
+          const targetDept = editMap[nfcNum];
+          if (targetDept) {
+            setDirectEditorDept(targetDept);
+            setCurrentView('editor');
+            return;
+          }
+        }
+
         // 어느 부서인지 파악 (예: 11~19 -> facilities)
         let foundDept: DepartmentId | null = null;
         for (const [dept, baseNum] of Object.entries(NFC_BASE_NUMBERS)) {
@@ -708,6 +723,16 @@ export default function App() {
           <MachineRoomPanel admin={false} initialSlot={mappedSlot} />
         </div>
       </div>
+    );
+  }
+
+  // 91~95번 NFC 전용 팀장 독립 파트 체크리스트 편집 페이지
+  if (currentView === 'editor' && directEditorDept) {
+    return (
+      <ChecklistEditorPage
+        dept={directEditorDept}
+        isDirectAccess={true}
+      />
     );
   }
 

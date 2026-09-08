@@ -90,3 +90,11 @@ export const NFC_BASE_NUMBERS: Record<DepartmentId, number> = {
   food: 41,
   snack: 51
 };
+
+export const NFC_EDIT_NUMBERS: Record<DepartmentId, number> = {
+  facilities: 91,
+  reception: 92,
+  cleaning: 93,
+  food: 94,
+  snack: 95
+};
