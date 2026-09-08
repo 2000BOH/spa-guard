@@ -660,16 +660,14 @@ export default function App() {
         }
       }
 
-      // 2단계: 파일 공유 거부/미지원 시 텍스트만 공유창 호출
+      // 2단계: 파일 공유 거부/미지원 시 텍스트만 공유창 호출 (이미지 다운로드창 노출 방지)
       if (!sharedSuccessfully && navigator.share) {
         try {
-          downloadA4SplitImages();
           await navigator.share({
             title: '{시설 점검 보고}',
             text: msg
           });
           sharedSuccessfully = true;
-          showToast("📲 보고서와 이미지가 준비되었습니다.");
         } catch (shareErr) {
           console.warn("텍스트 공유 실패 또는 사용자 취소:", shareErr);
         }
