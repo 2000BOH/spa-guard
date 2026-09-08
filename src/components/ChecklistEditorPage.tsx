@@ -282,6 +282,11 @@ export const ChecklistEditorPage: React.FC<ChecklistEditorPageProps> = ({
                       </button>
                     </div>
 
+                    {/* 개별 순번 번호 */}
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#38bdf8', minWidth: '22px', textAlign: 'right' }}>
+                      {itemIdx + 1}.
+                    </span>
+
                     {/* 항목 인라인 텍스트 수정 */}
                     <input
                       type="text"

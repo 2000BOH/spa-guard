@@ -555,7 +555,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
               <span className="badge-count">{section.items.length} 항목</span>
             </div>
 
-            {section.items.map((item: CheckItem) => {
+            {section.items.map((item: CheckItem, itemIdx: number) => {
               const state = itemsState[item.id] || {};
               const statusClass = state.status === 'normal' 
                 ? 'status-normal' 
@@ -575,7 +575,10 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                   >
                     <div className="item-left">
                       <span className="dot"></span>
-                      <span className="item-text">{item.text}</span>
+                      <span className="item-text">
+                        <strong style={{ color: '#2563eb', marginRight: '6px', fontWeight: 700 }}>{itemIdx + 1}.</strong>
+                        {item.text}
+                      </span>
                     </div>
                     <div className="item-btns" onClick={(e) => e.stopPropagation()}>
                       <button 
@@ -638,7 +641,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
             <span className="badge-count">{section.items.length} 항목</span>
           </div>
 
-          {section.items.map((item: CheckItem) => {
+          {section.items.map((item: CheckItem, itemIdx: number) => {
             const state = itemsState[item.id] || {};
             const statusClass = state.status === 'normal' 
               ? 'status-normal' 
@@ -658,7 +661,10 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                 >
                   <div className="item-left">
                     <span className="dot"></span>
-                    <span className="item-text">{item.text}</span>
+                    <span className="item-text">
+                      <strong style={{ color: '#2563eb', marginRight: '6px', fontWeight: 700 }}>{itemIdx + 1}.</strong>
+                      {item.text}
+                    </span>
                   </div>
                   <div className="item-btns" onClick={(e) => e.stopPropagation()}>
                     <button 
