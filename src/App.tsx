@@ -227,17 +227,20 @@ export default function App() {
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'inspection_logs' },
-          (payload: { new?: Record<string, any> }) => {
-            const newRec = payload.new;
-            if (newRec) {
-              if (newRec.store_name === 'ADMIN_SETTINGS_STORE' && newRec.items_state) {
-                saveAdminSettings(newRec.items_state as AdminSettings);
-                setAdminSettings(newRec.items_state as AdminSettings);
+          async () => {
+            // payload.new 데이터에 의존하지 않고 직접 re-fetch
+            // (REPLICA IDENTITY FULL 미설정 시 payload에 컬럼 데이터가 없을 수 있음)
+            const adminRes = await fetchAdminSettingsFromSupabase();
+            if (adminRes.success && adminRes.settings) {
+              const prevJson = localStorage.getItem('spa_admin_settings');
+              const newJson = JSON.stringify(adminRes.settings);
+              if (prevJson !== newJson) {
+                saveAdminSettings(adminRes.settings as AdminSettings);
+                setAdminSettings(adminRes.settings as AdminSettings);
                 showToast('⚡ 관리자 설정이 실시간 동기화되었습니다');
-              } else if (newRec.check_date === todayStr) {
-                syncWithSupabase(todayStr, true);
               }
             }
+            syncWithSupabase(todayStr, true);
           }
         )
         .subscribe();
