@@ -26,6 +26,16 @@ const DEPT_NAMES: Record<string, string> = {
   snack: '스낵'
 };
 
+function addPageNumber(canvas: HTMLCanvasElement, pageNum: number, totalPages: number) {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const fontSize = Math.round(canvas.width * 0.022);
+  ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+  ctx.fillStyle = '#475569';
+  ctx.textAlign = 'center';
+  ctx.fillText(`- ${pageNum} / ${totalPages} -`, canvas.width / 2, canvas.height - Math.round(fontSize * 0.7));
+}
+
 function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
   let tabs = DEPT_TABS_MAP[dept] || [];
   
@@ -519,42 +529,38 @@ export default function App() {
   // Image & PDF Export Logic
   const downloadA4SplitImages = async () => {
     setIsSaveModalOpen(false);
-    showToast("⏳ A4 규격 표지 포함 이미지 생성 중...");
+    showToast("⏳ A4 규격 이미지 생성 중...");
 
     const container = document.getElementById('printDocumentHiddenContainer');
     if (!container) return;
     container.style.position = 'relative';
     container.style.left = '0';
 
+    const deptName = (selectedDept && DEPT_NAMES[selectedDept]) || '점검';
+    const baseName = `${state.date}_${deptName}_${state.inspector || '점검자'}`;
+
     try {
-      const coverEl = document.getElementById('a4PageCover')!;
       const page1El = document.getElementById('a4Page1')!;
       const page2El = document.getElementById('a4Page2')!;
 
-      const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#0f172a' });
-      const linkCover = document.createElement('a');
-      linkCover.download = `시설관리일지_블루오션웰니스스파_${state.date}_0표지.jpg`;
-      linkCover.href = canvasCover.toDataURL('image/jpeg', 0.95);
-      linkCover.click();
+      const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
+      addPageNumber(canvas1, 1, 2);
+      const link1 = document.createElement('a');
+      link1.download = `${baseName}_1.jpg`;
+      link1.href = canvas1.toDataURL('image/jpeg', 0.95);
+      link1.click();
 
       setTimeout(async () => {
-        const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
-        const link1 = document.createElement('a');
-        link1.download = `시설관리일지_블루오션웰니스스파_${state.date}_1페이지(앞면).jpg`;
-        link1.href = canvas1.toDataURL('image/jpeg', 0.95);
-        link1.click();
+        const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
+        addPageNumber(canvas2, 2, 2);
+        const link2 = document.createElement('a');
+        link2.download = `${baseName}_2.jpg`;
+        link2.href = canvas2.toDataURL('image/jpeg', 0.95);
+        link2.click();
 
-        setTimeout(async () => {
-          const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
-          const link2 = document.createElement('a');
-          link2.download = `시설관리일지_블루오션웰니스스파_${state.date}_2페이지(뒷면).jpg`;
-          link2.href = canvas2.toDataURL('image/jpeg', 0.95);
-          link2.click();
-
-          container.style.position = 'absolute';
-          container.style.left = '-9999px';
-          showToast("✅ 표지 포함 JPG 3장이 다운로드되었습니다.");
-        }, 300);
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        showToast("✅ JPG 2장이 다운로드되었습니다.");
       }, 300);
     } catch (err) {
       container.style.position = 'absolute';
@@ -572,6 +578,9 @@ export default function App() {
     container.style.position = 'relative';
     container.style.left = '0';
 
+    const deptName = (selectedDept && DEPT_NAMES[selectedDept]) || '점검';
+    const baseName = `${state.date}_${deptName}_${state.inspector || '점검자'}`;
+
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -581,12 +590,14 @@ export default function App() {
       const page2El = document.getElementById('a4Page2')!;
 
       const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
+      addPageNumber(canvas1, 1, 2);
       const img1 = canvas1.toDataURL('image/jpeg', 0.95);
       const imgHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
       pdf.addImage(img1, 'JPEG', 0, 0, pdfWidth, Math.min(pdfHeight, imgHeight1));
 
       pdf.addPage();
       const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
+      addPageNumber(canvas2, 2, 2);
       const img2 = canvas2.toDataURL('image/jpeg', 0.95);
       const imgHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
       pdf.addImage(img2, 'JPEG', 0, 0, pdfWidth, Math.min(pdfHeight, imgHeight2));
@@ -594,7 +605,7 @@ export default function App() {
       container.style.position = 'absolute';
       container.style.left = '-9999px';
 
-      pdf.save(`시설관리일지_블루오션웰니스스파_${state.date}_A4.pdf`);
+      pdf.save(`${baseName}.pdf`);
       showToast("✅ A4 2페이지 PDF 문서가 다운로드되었습니다.");
     } catch (err) {
       container.style.position = 'absolute';
@@ -672,6 +683,9 @@ export default function App() {
     container.style.position = 'relative';
     container.style.left = '0';
 
+    const deptName = (selectedDept && DEPT_NAMES[selectedDept]) || '점검';
+    const baseName = `${state.date}_${deptName}_${state.inspector || '점검자'}`;
+
     try {
       const coverEl = document.getElementById('a4PageCover')!;
       const page1El = document.getElementById('a4Page1')!;
@@ -679,34 +693,23 @@ export default function App() {
 
       const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#0f172a' });
       const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
+      addPageNumber(canvas1, 1, 2);
       const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
+      addPageNumber(canvas2, 2, 2);
 
       container.style.position = 'absolute';
       container.style.left = '-9999px';
 
-      // 3개 페이지(표지, 앞면, 뒷면)를 1개의 통합 이미지로 세로 합성 (카톡 1개 묶음 메시지로 전송)
-      const totalWidth = Math.max(canvasCover.width, canvas1.width, canvas2.width);
-      const totalHeight = canvasCover.height + canvas1.height + canvas2.height;
+      // 표지 1장 + 페이지별 개별 이미지 (카톡 3장 전송)
+      const coverBlob = await new Promise<Blob>((resolve) => canvasCover.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
+      const blob1 = await new Promise<Blob>((resolve) => canvas1.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
+      const blob2 = await new Promise<Blob>((resolve) => canvas2.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
 
-      const combinedCanvas = document.createElement('canvas');
-      combinedCanvas.width = totalWidth;
-      combinedCanvas.height = totalHeight;
-
-      const ctx = combinedCanvas.getContext('2d');
-      if (ctx) {
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, totalWidth, totalHeight);
-
-        ctx.drawImage(canvasCover, (totalWidth - canvasCover.width) / 2, 0);
-        ctx.drawImage(canvas1, (totalWidth - canvas1.width) / 2, canvasCover.height);
-        ctx.drawImage(canvas2, (totalWidth - canvas2.width) / 2, canvasCover.height + canvas1.height);
-      }
-
-      const combinedBlob = await new Promise<Blob>((resolve) => combinedCanvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
-      const combinedFile = new File([combinedBlob], `시설관리일지_${state.date}_통합보고서.jpg`, { type: 'image/jpeg' });
-
-      // 단일 통합 보고서 이미지로 1개 메시지 묶음 전송!
-      const filesArray = [combinedFile];
+      const filesArray = [
+        new File([coverBlob], `${baseName}_표지.jpg`, { type: 'image/jpeg' }),
+        new File([blob1], `${baseName}_1.jpg`, { type: 'image/jpeg' }),
+        new File([blob2], `${baseName}_2.jpg`, { type: 'image/jpeg' }),
+      ];
 
       let sharedSuccessfully = false;
 
