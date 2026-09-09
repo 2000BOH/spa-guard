@@ -343,16 +343,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             📏 점검 기준값
           </h4>
 
-          <div style={sectionStyle}>
-            <label style={labelStyle}>기본 기준온도 (℃)</label>
-            <input
-              type="number" step="0.1"
-              value={settings.defaultTargetTemp}
-              onChange={(e) => setSettings({ ...settings, defaultTargetTemp: parseFloat(e.target.value) || 0 })}
-              style={inputStyle}
-            />
-          </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', ...sectionStyle }}>
             <div>
               <label style={labelStyle}>역세척 (주간 횟수)</label>
