@@ -311,8 +311,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
                   alignItems: 'center', justifyContent: 'center', gap: '2px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                 }}
               >
-                <span>{DEPT_ICONS[deptKey]} {DEPT_LABELS[deptKey]} 파트</span>
-                <span style={{ fontSize: '9px', color: '#bae6fd', fontWeight: 500 }}>NFC {NFC_EDIT_NUMBERS[deptKey]}번 편집기</span>
+                <span>{DEPT_LABELS[deptKey]} 파트</span>
+                <span style={{ fontSize: '9px', color: '#bae6fd', fontWeight: 500 }}>점검리스트</span>
               </button>
             ))}
           </div>
