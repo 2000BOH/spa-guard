@@ -15,14 +15,8 @@ export async function saveInspectionToSupabase(state: AppState) {
   }
 
   try {
-    // 1. 해당 날짜 레코드 존재하는지 확인
-    const { data: existing } = await supabase
-      .from('inspection_logs')
-      .select('id')
-      .eq('check_date', state.date)
-      .eq('store_name', state.storeName)
-      .limit(1);
-
+    // UPDATE RLS 정책 없이도 동작하도록 항상 INSERT
+    // (fetchInspection은 recorded_at 최신순으로 가져오므로 최신 레코드가 자동 사용됨)
     const payload = {
       store_name: state.storeName,
       check_date: state.date,
@@ -34,30 +28,15 @@ export async function saveInspectionToSupabase(state: AppState) {
       created_at: new Date().toISOString()
     };
 
-    if (existing && existing.length > 0) {
-      // 기존 기록이 있으면 데이터 업데이트
-      const { data, error } = await supabase
-        .from('inspection_logs')
-        .update(payload)
-        .eq('id', existing[0].id);
+    const { data, error } = await supabase
+      .from('inspection_logs')
+      .insert([payload]);
 
-      if (error) {
-        console.error('Supabase Update Error:', error);
-        return { success: false, error };
-      }
-      return { success: true, data };
-    } else {
-      // 없으면 새로 삽입
-      const { data, error } = await supabase
-        .from('inspection_logs')
-        .insert([payload]);
-
-      if (error) {
-        console.error('Supabase Insert Error:', error);
-        return { success: false, error };
-      }
-      return { success: true, data };
+    if (error) {
+      console.error('Supabase Insert Error:', error);
+      return { success: false, error };
     }
+    return { success: true, data };
   } catch (err) {
     console.error('Supabase Exception:', err);
     return { success: false, error: err };
@@ -96,12 +75,8 @@ export async function fetchInspectionFromSupabase(checkDate: string) {
 export async function saveAdminSettingsToSupabase(settings: unknown) {
   if (!supabase) return { success: false, reason: 'unconfigured' };
   try {
-    const { data: existing } = await supabase
-      .from('inspection_logs')
-      .select('id')
-      .eq('store_name', 'ADMIN_SETTINGS_STORE')
-      .limit(1);
-
+    // UPDATE RLS 정책 없이도 동작하도록 항상 INSERT
+    // (fetchAdminSettings는 recorded_at 최신순으로 가져오므로 최신 레코드가 자동 사용됨)
     const payload = {
       store_name: 'ADMIN_SETTINGS_STORE',
       check_date: '1970-01-01',
@@ -113,20 +88,11 @@ export async function saveAdminSettingsToSupabase(settings: unknown) {
       created_at: new Date().toISOString()
     };
 
-    if (existing && existing.length > 0) {
-      const { data, error } = await supabase
-        .from('inspection_logs')
-        .update(payload)
-        .eq('id', existing[0].id);
-      if (error) return { success: false, error };
-      return { success: true, data };
-    } else {
-      const { data, error } = await supabase
-        .from('inspection_logs')
-        .insert([payload]);
-      if (error) return { success: false, error };
-      return { success: true, data };
-    }
+    const { data, error } = await supabase
+      .from('inspection_logs')
+      .insert([payload]);
+    if (error) return { success: false, error };
+    return { success: true, data };
   } catch (err) {
     console.error('saveAdminSettingsToSupabase exception:', err);
     return { success: false, error: err };
@@ -140,6 +106,7 @@ export async function fetchAdminSettingsFromSupabase() {
       .from('inspection_logs')
       .select('*')
       .eq('store_name', 'ADMIN_SETTINGS_STORE')
+      .order('recorded_at', { ascending: false })
       .limit(1);
 
     if (error) return { success: false, error };
