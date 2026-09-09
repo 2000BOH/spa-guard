@@ -11,7 +11,7 @@ import { CheckListView } from './components/CheckListView';
 import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { supabase, saveInspectionToSupabase, fetchInspectionFromSupabase, fetchAdminSettingsFromSupabase } from './lib/supabase';
-import { loadAdminSettings, saveAdminSettings, getDeptFlatRoles, getEffectiveChecklistData } from './lib/adminSettings';
+import { loadAdminSettings, saveAdminSettings, applyAdminSettings, getDeptFlatRoles, getEffectiveChecklistData } from './lib/adminSettings';
 import { updateDeptInspectionStatus, getDeptInspectionStatus } from './lib/deptStatus';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
@@ -212,7 +212,7 @@ export default function App() {
     // 앱 시작 시 서버 데이터(관리자 설정 & 오늘 점검 데이터) 자동 동기화
     fetchAdminSettingsFromSupabase().then((res) => {
       if (res.success && res.settings) {
-        saveAdminSettings(res.settings as AdminSettings);
+        applyAdminSettings(res.settings as AdminSettings);
         setAdminSettings(res.settings as AdminSettings);
       }
     });
@@ -235,7 +235,7 @@ export default function App() {
               const prevJson = localStorage.getItem('spa_admin_settings');
               const newJson = JSON.stringify(adminRes.settings);
               if (prevJson !== newJson) {
-                saveAdminSettings(adminRes.settings as AdminSettings);
+                applyAdminSettings(adminRes.settings as AdminSettings);
                 setAdminSettings(adminRes.settings as AdminSettings);
                 showToast('⚡ 관리자 설정이 실시간 동기화되었습니다');
               }
@@ -338,9 +338,21 @@ export default function App() {
   // 모바일 <-> PC 실시간 연동 (10초 주기 서버 동기화 폴링)
   useEffect(() => {
     if (!state.date) return;
-    const interval = setInterval(() => {
+    const syncAll = async () => {
+      // 점검 데이터 동기화
       syncWithSupabase(state.date);
-    }, 10000);
+      // 관리자 설정(담당자 등) 동기화 - Realtime이 동작하지 않을 때도 반영되도록
+      const adminRes = await fetchAdminSettingsFromSupabase();
+      if (adminRes.success && adminRes.settings) {
+        const prevJson = localStorage.getItem('spa_admin_settings');
+        const newJson = JSON.stringify(adminRes.settings);
+        if (prevJson !== newJson) {
+          applyAdminSettings(adminRes.settings as AdminSettings);
+          setAdminSettings(adminRes.settings as AdminSettings);
+        }
+      }
+    };
+    const interval = setInterval(syncAll, 10000);
     return () => clearInterval(interval);
   }, [state.date]);
 

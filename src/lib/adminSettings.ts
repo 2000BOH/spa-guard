@@ -144,6 +144,15 @@ export function saveAdminSettings(settings: AdminSettings): void {
   }
 }
 
+// Supabase 재전송 없이 로컬에만 적용 (다른 기기에서 동기화된 설정 수신 시 사용)
+export function applyAdminSettings(settings: AdminSettings): void {
+  try {
+    localStorage.setItem('spa_admin_settings', JSON.stringify(settings));
+  } catch (err) {
+    console.error('Failed to apply admin settings to localStorage:', err);
+  }
+}
+
 /**
  * 특정 탭의 체크리스트 데이터 반환 (커스텀 데이터가 있으면 우선 반영)
  */
