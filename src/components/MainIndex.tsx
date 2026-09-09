@@ -8,6 +8,7 @@ import { getDeptInspectionStatus } from '../lib/deptStatus';
 interface MainIndexProps {
   onSelectDepartment: (dept: DepartmentId, inspector: string, roleName?: string) => void;
   onOpenPanel: (timeLabel: string) => void;
+  adminSettings?: AdminSettings;
 }
 
 const DEPTS: Record<DepartmentId, { name: string; icon: string }> = {
@@ -26,14 +27,18 @@ function getTodayStr(): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpenPanel }) => {
+export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpenPanel, adminSettings }) => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [workRulesDept, setWorkRulesDept] = useState<DepartmentId | null>(null);
-  const [settings, setSettings] = useState<AdminSettings>(loadAdminSettings());
+  const [settings, setSettings] = useState<AdminSettings>(() => adminSettings || loadAdminSettings());
 
   useEffect(() => {
-    if (!isAdminOpen) setSettings(loadAdminSettings());
-  }, [isAdminOpen]);
+    if (adminSettings) {
+      setSettings(adminSettings);
+    } else if (!isAdminOpen) {
+      setSettings(loadAdminSettings());
+    }
+  }, [adminSettings, isAdminOpen]);
 
   /** 파트별 카드 렌더링 */
   const renderCard = (deptId: DepartmentId) => {

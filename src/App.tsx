@@ -10,7 +10,7 @@ import { MetaStrip } from './components/MetaStrip';
 import { CheckListView } from './components/CheckListView';
 import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
-import { saveInspectionToSupabase, fetchInspectionFromSupabase, fetchAdminSettingsFromSupabase } from './lib/supabase';
+import { supabase, saveInspectionToSupabase, fetchInspectionFromSupabase, fetchAdminSettingsFromSupabase } from './lib/supabase';
 import { loadAdminSettings, saveAdminSettings, getDeptFlatRoles, getEffectiveChecklistData } from './lib/adminSettings';
 import { updateDeptInspectionStatus, getDeptInspectionStatus } from './lib/deptStatus';
 import { MainIndex } from './components/MainIndex';
@@ -218,6 +218,34 @@ export default function App() {
     });
 
     syncWithSupabase(todayStr);
+
+    // Supabase Realtime 구독: 다른 디바이스(PC/모바일)에서 변경 시 실시간 푸시 동기화
+    if (supabase) {
+      const client = supabase;
+      const channel = client
+        .channel('public:inspection_logs_realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'inspection_logs' },
+          (payload: { new?: Record<string, any> }) => {
+            const newRec = payload.new;
+            if (newRec) {
+              if (newRec.store_name === 'ADMIN_SETTINGS_STORE' && newRec.items_state) {
+                saveAdminSettings(newRec.items_state as AdminSettings);
+                setAdminSettings(newRec.items_state as AdminSettings);
+                showToast('⚡ 관리자 설정이 실시간 동기화되었습니다');
+              } else if (newRec.check_date === todayStr) {
+                syncWithSupabase(todayStr, true);
+              }
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        client.removeChannel(channel);
+      };
+    }
 
     // Parse URL params for QR scanning direct access
     const params = new URLSearchParams(window.location.search);
@@ -720,7 +748,7 @@ export default function App() {
   if (currentView === 'main') {
     return (
       <>
-        <MainIndex onSelectDepartment={handleSelectDepartment} onOpenPanel={handleOpenPanel} />
+        <MainIndex onSelectDepartment={handleSelectDepartment} onOpenPanel={handleOpenPanel} adminSettings={adminSettings} />
         <Toast message={toastMsg} />
       </>
     );
