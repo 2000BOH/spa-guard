@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import MachineRoomPanel from './MachineRoomPanel';
 import { ChecklistEditorPage } from './ChecklistEditorPage';
 import type { AdminSettings, DepartmentId } from '../types';
-import { NFC_BASE_NUMBERS, NFC_EDIT_NUMBERS } from '../types';
 import {
   DEFAULT_DEPT_CONFIGS,
   DEFAULT_SETTINGS,

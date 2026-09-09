@@ -11,7 +11,7 @@ import { CheckListView } from './components/CheckListView';
 import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { supabase, saveInspectionToSupabase, fetchInspectionFromSupabase, fetchAdminSettingsFromSupabase } from './lib/supabase';
-import { loadAdminSettings, saveAdminSettings, applyAdminSettings, getDeptFlatRoles, getEffectiveChecklistData } from './lib/adminSettings';
+import { loadAdminSettings, applyAdminSettings, getDeptFlatRoles, getEffectiveChecklistData } from './lib/adminSettings';
 import { updateDeptInspectionStatus, getDeptInspectionStatus } from './lib/deptStatus';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
