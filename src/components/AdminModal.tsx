@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MachineRoomPanel from './MachineRoomPanel';
 import { ChecklistEditorPage } from './ChecklistEditorPage';
 import type { AdminSettings, DepartmentId } from '../types';
@@ -23,20 +23,64 @@ const DEPT_LABELS: Record<DepartmentId, string> = {
   snack: '스낵'
 };
 
-const DEPT_ICONS: Record<DepartmentId, string> = {
-  facilities: '🛠️',
-  reception: '🛎️',
-  cleaning: '🧹',
-  food: '🍚',
-  snack: '🍜'
-};
+const LINKS = [
+  { label: '시설 점검리스트 (91번)', url: 'https://spa-guard.vercel.app/?nfc=91' },
+  { label: '리셉션 점검리스트 (92번)', url: 'https://spa-guard.vercel.app/?nfc=92' },
+  { label: '미화 점검리스트 (93번)', url: 'https://spa-guard.vercel.app/?nfc=93' },
+  { label: '푸드 점검리스트 (94번)', url: 'https://spa-guard.vercel.app/?nfc=94' },
+  { label: '스낵 점검리스트 (95번)', url: 'https://spa-guard.vercel.app/?nfc=95' },
+  null,
+  { label: '기계실 패널 (00시)', url: 'https://spa-guard.vercel.app/?view=panel&time=00시' },
+  { label: '기계실 패널 (03시)', url: 'https://spa-guard.vercel.app/?view=panel&time=03시' },
+  { label: '기계실 패널 (06시)', url: 'https://spa-guard.vercel.app/?view=panel&time=06시' },
+  null,
+  { label: '시설 주간 (11번)', url: 'https://spa-guard.vercel.app/?nfc=11' },
+  { label: '시설 야간 (12번)', url: 'https://spa-guard.vercel.app/?nfc=12' },
+  { label: '리셉션 오전 (21번)', url: 'https://spa-guard.vercel.app/?nfc=21' },
+  { label: '리셉션 오후 (22번)', url: 'https://spa-guard.vercel.app/?nfc=22' },
+  { label: '리셉션 야간 (23번)', url: 'https://spa-guard.vercel.app/?nfc=23' },
+  { label: '미화 남주 (31번)', url: 'https://spa-guard.vercel.app/?nfc=31' },
+  { label: '미화 남야 (32번)', url: 'https://spa-guard.vercel.app/?nfc=32' },
+  { label: '미화 여주 (33번)', url: 'https://spa-guard.vercel.app/?nfc=33' },
+  { label: '푸드 오픈 (41번)', url: 'https://spa-guard.vercel.app/?nfc=41' },
+  { label: '푸드 마감 (42번)', url: 'https://spa-guard.vercel.app/?nfc=42' },
+  { label: '스낵 오픈 (51번)', url: 'https://spa-guard.vercel.app/?nfc=51' },
+  { label: '스낵 마감 (52번)', url: 'https://spa-guard.vercel.app/?nfc=52' },
+];
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      title="주소 복사"
+      style={{
+        background: copied ? '#22c55e' : '#e2e8f0',
+        border: 'none', borderRadius: '4px', padding: '2px 7px',
+        fontSize: '10px', fontWeight: 700, cursor: 'pointer',
+        color: copied ? '#fff' : '#475569', flexShrink: 0
+      }}
+    >
+      {copied ? '✓ 복사됨' : '복사'}
+    </button>
+  );
+}
 
 export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS);
   const [showPannelEditor, setShowPannelEditor] = useState(false);
   const [editingDeptPage, setEditingDeptPage] = useState<DepartmentId | null>(null);
+  const [showLinks, setShowLinks] = useState(false);
 
-  // 파트(부서)별 통합 담당자 이름 목록 state
+  const skipAutoSaveRef = useRef(true);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [deptIsWomenInputs, setDeptIsWomenInputs] = useState<Record<DepartmentId, boolean[]>>({
     facilities: [false], reception: [false], cleaning: [false], food: [false], snack: [false]
   });
@@ -49,6 +93,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
+      skipAutoSaveRef.current = true;
       setShowPannelEditor(false);
       setEditingDeptPage(null);
       const loadedSettings = loadAdminSettings();
@@ -86,7 +131,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
         const list = Array.from(namesSet);
         initialInputs[dept] = list.length > 0 ? list : [''];
-        
+
         let womenFlags = deptConfig?.womenPool || [];
         let nightFlags = deptConfig?.nightPool || [];
         while (womenFlags.length < list.length) womenFlags.push(false);
@@ -98,12 +143,28 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       setDeptInspectorInputs(initialInputs);
       setDeptIsWomenInputs(initialWomenInputs);
       setDeptIsNightInputs(initialNightInputs);
+
+      // 초기 로드 완료 후 자동저장 허용
+      setTimeout(() => { skipAutoSaveRef.current = false; }, 100);
+    } else {
+      skipAutoSaveRef.current = true;
     }
   }, [isOpen]);
 
+  // 설정 변경 시 자동 저장 (800ms 디바운스)
+  useEffect(() => {
+    if (skipAutoSaveRef.current) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      saveAdminSettings(settings);
+    }, 800);
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [settings]);
+
   if (!isOpen) return null;
 
-  // 독립 체크리스트 파트 편집 페이지 전환
   if (editingDeptPage) {
     return (
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10000, overflowY: 'auto' }}>
@@ -116,13 +177,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     );
   }
 
-  // 기계실 패널 편집 페이지 전환
   if (showPannelEditor) {
     return (
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10000, background: '#0f172a', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '10px 16px', background: '#1e293b', display: 'flex', alignItems: 'center' }}>
-          <button 
-            onClick={() => setShowPannelEditor(false)} 
+          <button
+            onClick={() => setShowPannelEditor(false)}
             style={{ color: '#fff', background: 'none', border: 'none', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
           >
             ← 관리자 설정으로 돌아가기
@@ -134,12 +194,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       </div>
     );
   }
-
-  const handleSave = () => {
-    saveAdminSettings(settings);
-    alert('관리자 설정이 저장되었습니다.');
-    onClose();
-  };
 
   const updateDeptNamesList = (dept: DepartmentId, newList: string[], newWomenList?: boolean[], newNightList?: boolean[]) => {
     const cleaned = newList.length > 0 ? newList : [''];
@@ -220,12 +274,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
     return (
       <div key={dept} style={{ marginBottom: '14px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+        <div style={{ marginBottom: '8px' }}>
           <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
-            🏢 {DEPT_LABELS[dept]} 파트 지정 담당자
-          </span>
-          <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>
-            NFC 기준: {NFC_BASE_NUMBERS[dept]}번 대역~
+            {DEPT_LABELS[dept]} 파트 담당자
           </span>
         </div>
 
@@ -234,11 +285,11 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             <div key={nIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <input
                 type="text"
-                placeholder={`${DEPT_LABELS[dept]} 담당자 성+이름 (예: 홍길동)`}
+                placeholder={`${DEPT_LABELS[dept]} 담당자 이름 (예: 홍길동)`}
                 value={nameVal}
                 onChange={(e) => changeDeptInspectorName(dept, nIdx, e.target.value)}
-                style={{ 
-                  ...inputStyle, 
+                style={{
+                  ...inputStyle,
                   flex: 1,
                   border: (dept === 'cleaning' && !!womenList[nIdx]) ? '2px solid #ef4444' : inputStyle.border
                 }}
@@ -295,7 +346,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div style={{ padding: '6px 0' }}>
-          {/* ── 각 파트별 체크리스트 목록 수정 버튼 (기계실 편집 바로 위에 위치!) ── */}
+
+          {/* ── 파트별 체크리스트 편집 버튼 ── */}
           <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
             📋 파트별 체크리스트 목록 편집 (팀장 전용 관리)
           </h4>
@@ -311,8 +363,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
                   alignItems: 'center', justifyContent: 'center', gap: '2px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                 }}
               >
-                <span>{DEPT_LABELS[deptKey]} 파트</span>
-                <span style={{ fontSize: '9px', color: '#bae6fd', fontWeight: 500 }}>점검리스트</span>
+                <span>{DEPT_LABELS[deptKey]}</span>
+                <span style={{ fontSize: '9px', color: '#bae6fd', fontWeight: 500 }}>점검 리스트</span>
               </button>
             ))}
           </div>
@@ -321,7 +373,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
           <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
             ⚙️ 기계실 패널 편집
           </h4>
-          
+
           <div style={{ ...sectionStyle, marginBottom: '16px' }}>
             <button
               onClick={() => setShowPannelEditor(true)}
@@ -331,7 +383,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
               }}
             >
-              <span>⚙️</span> 기계실 패널 설정 편집 (pannel.html)
+              <span>⚙️</span> 기계실 패널 설정 편집
             </button>
             <div style={{ fontSize: '10px', color: '#64748b', marginTop: '4px' }}>
               버튼 위치 등 기준값을 설정합니다. 점검자는 메인화면에서 시간을 선택하여 확인합니다.
@@ -366,25 +418,17 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* ── 파트별 역할 지정 담당자 ── */}
+          {/* ── 파트별 지정 담당자 ── */}
           <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '14px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
-            👥 파트별 지정 담당자 입력 (역할/시간대별 1대1 매핑)
+            👥 파트별 지정 담당자
           </h4>
 
-          {(Object.keys(DEPT_LABELS) as DepartmentId[]).map((dept) => (
-            renderDeptEditor(dept)
-          ))}
+          {(Object.keys(DEPT_LABELS) as DepartmentId[]).map((dept) => renderDeptEditor(dept))}
 
-          {/* 저장 버튼 */}
-          <button
-            onClick={handleSave}
-            style={{
-              width: '100%', height: '44px', background: '#2563eb', color: '#fff',
-              fontSize: '15px', fontWeight: 700, borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '16px', marginBottom: '8px'
-            }}
-          >
-            💾 설정 저장
-          </button>
+          {/* 자동저장 안내 */}
+          <div style={{ textAlign: 'center', fontSize: '11px', color: '#94a3b8', marginTop: '8px', marginBottom: '16px' }}>
+            ✅ 변경사항은 자동으로 저장됩니다
+          </div>
 
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
             <button
@@ -426,40 +470,37 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             </button>
           </div>
 
-          {/* ── Vercel 다이렉트 주소 메모 ── */}
-          <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', marginTop: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
-            📌 Vercel 다이렉트 바로가기 주소 메모
-          </h4>
+          {/* ── 바로가기 주소 (접기/펼치기) ── */}
+          <button
+            onClick={() => setShowLinks(v => !v)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px',
+              padding: '10px 14px', cursor: 'pointer', marginBottom: showLinks ? '0' : '14px'
+            }}
+          >
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e40af' }}>🔗 바로가기 주소</span>
+            <span style={{ fontSize: '13px', color: '#2563eb', fontWeight: 700 }}>{showLinks ? '▲ 접기' : '▼ 펼치기'}</span>
+          </button>
 
-          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px', fontSize: '11px', color: '#1e3a8a', marginBottom: '14px' }}>
-            <div style={{ fontWeight: 700, fontSize: '12px', marginBottom: '6px', color: '#1e40af' }}>
-              🔗 배포 사이트 (Vercel) 다이렉트 주소 안내
+          {showLinks && (
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '10px', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                {LINKS.map((item, i) =>
+                  item === null ? (
+                    <hr key={i} style={{ border: 'none', borderTop: '1px solid #dbeafe', margin: '2px 0' }} />
+                  ) : (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', padding: '6px 8px', borderRadius: '5px', border: '1px solid #dbeafe' }}>
+                      <span style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 600, minWidth: '130px', flexShrink: 0 }}>{item.label}</span>
+                      <span style={{ fontSize: '10px', color: '#475569', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{item.url}</span>
+                      <CopyButton text={item.url} />
+                    </div>
+                  )
+                )}
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #dbeafe', fontFamily: 'monospace' }}>
-              <div><strong>시설 편집기 (91번):</strong> https://spa-guard.vercel.app/?nfc=91</div>
-              <div><strong>리셉션 편집기 (92번):</strong> https://spa-guard.vercel.app/?nfc=92</div>
-              <div><strong>미화 편집기 (93번):</strong> https://spa-guard.vercel.app/?nfc=93</div>
-              <div><strong>푸드 편집기 (94번):</strong> https://spa-guard.vercel.app/?nfc=94</div>
-              <div><strong>스낵 편집기 (95번):</strong> https://spa-guard.vercel.app/?nfc=95</div>
-              <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '4px 0' }} />
-              <div><strong>기계실 패널 (00시):</strong> https://spa-guard.vercel.app/?view=panel&time=00시</div>
-              <div><strong>기계실 패널 (03시):</strong> https://spa-guard.vercel.app/?view=panel&time=03시</div>
-              <div><strong>기계실 패널 (06시):</strong> https://spa-guard.vercel.app/?view=panel&time=06시</div>
-              <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '4px 0' }} />
-              <div><strong>시설 주간 (11번):</strong> https://spa-guard.vercel.app/?nfc=11</div>
-              <div><strong>시설 야간 (12번):</strong> https://spa-guard.vercel.app/?nfc=12</div>
-              <div><strong>리셉션 오전 (21번):</strong> https://spa-guard.vercel.app/?nfc=21</div>
-              <div><strong>리셉션 오후 (22번):</strong> https://spa-guard.vercel.app/?nfc=22</div>
-              <div><strong>리셉션 야간 (23번):</strong> https://spa-guard.vercel.app/?nfc=23</div>
-              <div><strong>미화 남주 (31번):</strong> https://spa-guard.vercel.app/?nfc=31</div>
-              <div><strong>미화 남야 (32번):</strong> https://spa-guard.vercel.app/?nfc=32</div>
-              <div><strong>미화 여주 (33번):</strong> https://spa-guard.vercel.app/?nfc=33</div>
-              <div><strong>푸드 오픈 (41번):</strong> https://spa-guard.vercel.app/?nfc=41</div>
-              <div><strong>푸드 마감 (42번):</strong> https://spa-guard.vercel.app/?nfc=42</div>
-              <div><strong>스낵 오픈 (51번):</strong> https://spa-guard.vercel.app/?nfc=51</div>
-              <div><strong>스낵 마감 (52번):</strong> https://spa-guard.vercel.app/?nfc=52</div>
-            </div>
-          </div>
+          )}
+
         </div>
       </div>
     </div>
