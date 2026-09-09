@@ -5,30 +5,30 @@ import { saveAdminSettingsToSupabase } from './supabase';
 
 export const DEFAULT_DEPT_CONFIGS: DeptConfigMap = {
   facilities: {
-    groups: [{ roles: [{ role: '주간', name: '이수용, 김성민' }, { role: '야간', name: '이수용, 김성민' }] }],
+    groups: [{ roles: [{ role: '주간', name: '이수용' }, { role: '야간', name: '김성민' }] }],
     inspectorPool: ['이수용', '김성민']
   },
   reception: {
-    groups: [{ roles: [{ role: '오전', name: '차윤미' }, { role: '오후', name: '이정온' }, { role: '야간', name: '차윤미, 이정온' }] }],
-    inspectorPool: ['차윤미', '이정온']
+    groups: [{ roles: [{ role: '오전', name: '차윤미' }, { role: '오후', name: '이정은' }, { role: '야간', name: '이정은' }] }],
+    inspectorPool: ['차윤미', '이정은']
   },
   cleaning: {
     groups: [
       { label: '미화', roles: [
-        { role: '주간(남)', name: '미화팀', isWomen: false },
-        { role: '야간', name: '미화팀', isWomen: false },
-        { role: '주간(여)', name: '미화팀', isWomen: true }
+        { role: '주간(남)', name: '미화(남)', isWomen: false },
+        { role: '야간', name: '미화(야)', isWomen: false },
+        { role: '주간(여)', name: '미화(여)', isWomen: true }
       ]}
     ],
     inspectorPool: ['미화팀']
   },
   food: {
-    groups: [{ roles: [{ role: '오픈', name: '차윤미' }, { role: '마감', name: '차윤미' }] }],
+    groups: [{ roles: [{ role: '오픈', name: '차윤미' }, { role: '마감', name: '푸드담당' }] }],
     inspectorPool: ['차윤미']
   },
   snack: {
-    groups: [{ roles: [{ role: '오픈', name: '이정온' }, { role: '마감', name: '이정온' }] }],
-    inspectorPool: ['이정온']
+    groups: [{ roles: [{ role: '오픈', name: '이정은' }, { role: '마감', name: '스낵담당' }] }],
+    inspectorPool: ['이정은']
   }
 };
 
@@ -75,18 +75,42 @@ export const DEFAULT_SETTINGS: AdminSettings = {
   customChecklists: {}
 };
 
+function sanitizeDeptConfigs(configs: DeptConfigMap): DeptConfigMap {
+  const cleaned: DeptConfigMap = { ...configs };
+  (Object.keys(DEFAULT_DEPT_CONFIGS) as DepartmentId[]).forEach(dept => {
+    const defaultConf = DEFAULT_DEPT_CONFIGS[dept];
+    const currConf = cleaned[dept];
+    if (!currConf || !currConf.groups) {
+      cleaned[dept] = defaultConf;
+      return;
+    }
+    
+    // Check if any role has multi-name strings like "이수용, 김성민"
+    let hasComma = false;
+    currConf.groups.forEach(g => {
+      g.roles?.forEach(r => {
+        if (r.name && r.name.includes(',')) hasComma = true;
+      });
+    });
+
+    if (hasComma) {
+      cleaned[dept] = defaultConf;
+    }
+  });
+  return cleaned;
+}
+
 export function loadAdminSettings(): AdminSettings {
   try {
     const saved = localStorage.getItem('spa_admin_settings');
     if (saved) {
       const parsed = JSON.parse(saved);
-      const mergedConfigs: DeptConfigMap = { ...DEFAULT_DEPT_CONFIGS };
+      let mergedConfigs: DeptConfigMap = { ...DEFAULT_DEPT_CONFIGS };
       
       if (parsed.deptConfigs) {
         for (const key of Object.keys(DEFAULT_DEPT_CONFIGS) as DepartmentId[]) {
           const pConfig = parsed.deptConfigs[key];
           if (pConfig && pConfig.groups && pConfig.groups[0] && Array.isArray(pConfig.groups[0].roles)) {
-            // Legacy format check for cleaning
             if (key === 'cleaning' && (pConfig.groups.length > 1 || pConfig.groups[0]?.roles?.length !== 3)) {
               mergedConfigs[key] = DEFAULT_DEPT_CONFIGS[key];
             } else {
@@ -95,6 +119,8 @@ export function loadAdminSettings(): AdminSettings {
           }
         }
       }
+
+      mergedConfigs = sanitizeDeptConfigs(mergedConfigs);
 
       return {
         ...DEFAULT_SETTINGS,

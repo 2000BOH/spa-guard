@@ -157,7 +157,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     let idx = 0;
     groups.forEach((grp: any) => {
       grp.roles?.forEach((r: any) => {
-        const assignedName = validNames[idx] || validNames[0] || '';
+        const assignedName = validNames[idx] || (idx === 0 && validNames.length > 0 ? validNames[0] : '');
         r.name = assignedName;
         r.names = validNames;
         idx++;

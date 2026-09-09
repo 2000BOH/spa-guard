@@ -88,7 +88,8 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
             
             // 점검자가 직접 일지에 진입하여 이름을 선택했을 때만 배정된 것으로 판별
             const hasAssignedInspector = statusInfo.status !== 'none' && Boolean(statusInfo.inspector) && statusInfo.inspector !== '점검자';
-            const assignedName = hasAssignedInspector ? statusInfo.inspector : '';
+            const presetName = r.name || '';
+            const assignedName = hasAssignedInspector ? statusInfo.inspector : presetName;
             const status = statusInfo.status;
 
             let bgColor = '#f1f5f9';
@@ -137,11 +138,11 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
 
                 <span style={{
                   fontSize: '12px',
-                  fontWeight: hasAssignedInspector ? 700 : 500,
-                  color: hasAssignedInspector ? '#0f172a' : '#94a3b8',
+                  fontWeight: (hasAssignedInspector || presetName) ? 700 : 500,
+                  color: (hasAssignedInspector || presetName) ? '#0f172a' : '#94a3b8',
                   marginTop: '1px'
                 }}>
-                  {hasAssignedInspector ? assignedName : '점검 전'}
+                  {assignedName || '점검자'}
                 </span>
 
                 {badgeText && (
