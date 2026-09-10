@@ -36,6 +36,21 @@ function addPageNumber(canvas: HTMLCanvasElement, pageNum: number, totalPages: n
   ctx.fillText(`- ${pageNum} / ${totalPages} -`, canvas.width / 2, canvas.height - Math.round(fontSize * 0.7));
 }
 
+// 캔버스를 A4 세로 비율(210:297)로 정확히 자름
+function cropToA4(srcCanvas: HTMLCanvasElement): HTMLCanvasElement {
+  const targetWidth = srcCanvas.width;
+  const targetHeight = Math.round(srcCanvas.width * 297 / 210);
+  const dest = document.createElement('canvas');
+  dest.width = targetWidth;
+  dest.height = targetHeight;
+  const ctx = dest.getContext('2d')!;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, targetWidth, targetHeight);
+  const drawH = Math.min(srcCanvas.height, targetHeight);
+  ctx.drawImage(srcCanvas, 0, 0, srcCanvas.width, drawH, 0, 0, targetWidth, drawH);
+  return dest;
+}
+
 function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
   let tabs = DEPT_TABS_MAP[dept] || [];
   
@@ -543,7 +558,8 @@ export default function App() {
       const page1El = document.getElementById('a4Page1')!;
       const page2El = document.getElementById('a4Page2')!;
 
-      const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
+      const raw1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
+      const canvas1 = cropToA4(raw1);
       addPageNumber(canvas1, 1, 2);
       const link1 = document.createElement('a');
       link1.download = `${baseName}_1.jpg`;
@@ -551,7 +567,8 @@ export default function App() {
       link1.click();
 
       setTimeout(async () => {
-        const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
+        const raw2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
+        const canvas2 = cropToA4(raw2);
         addPageNumber(canvas2, 2, 2);
         const link2 = document.createElement('a');
         link2.download = `${baseName}_2.jpg`;
@@ -560,7 +577,7 @@ export default function App() {
 
         container.style.position = 'absolute';
         container.style.left = '-9999px';
-        showToast("✅ JPG 2장이 다운로드되었습니다.");
+        showToast("✅ A4 비율 JPG 2장 다운로드 완료");
       }, 300);
     } catch (err) {
       container.style.position = 'absolute';
@@ -582,31 +599,30 @@ export default function App() {
     const baseName = `${state.date}_${deptName}_${state.inspector || '점검자'}`;
 
     try {
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const pdfWidth = 210; // A4 mm
+      const pdfHeight = 297; // A4 mm
 
       const page1El = document.getElementById('a4Page1')!;
       const page2El = document.getElementById('a4Page2')!;
 
       const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
       addPageNumber(canvas1, 1, 2);
-      const img1 = canvas1.toDataURL('image/jpeg', 0.95);
       const imgHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
-      pdf.addImage(img1, 'JPEG', 0, 0, pdfWidth, Math.min(pdfHeight, imgHeight1));
+      // 첫 페이지: 내용 높이에 맞춘 커스텀 크기 (눌림 없음)
+      const pdf = new jsPDF({ unit: 'mm', format: [pdfWidth, Math.max(pdfHeight, imgHeight1)] });
+      pdf.addImage(canvas1.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, imgHeight1);
 
-      pdf.addPage();
       const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
       addPageNumber(canvas2, 2, 2);
-      const img2 = canvas2.toDataURL('image/jpeg', 0.95);
       const imgHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
-      pdf.addImage(img2, 'JPEG', 0, 0, pdfWidth, Math.min(pdfHeight, imgHeight2));
+      pdf.addPage([pdfWidth, Math.max(pdfHeight, imgHeight2)]);
+      pdf.addImage(canvas2.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, imgHeight2);
 
       container.style.position = 'absolute';
       container.style.left = '-9999px';
 
       pdf.save(`${baseName}.pdf`);
-      showToast("✅ A4 2페이지 PDF 문서가 다운로드되었습니다.");
+      showToast("✅ PDF 다운로드 완료");
     } catch (err) {
       container.style.position = 'absolute';
       container.style.left = '-9999px';
@@ -713,7 +729,7 @@ export default function App() {
 
       let sharedSuccessfully = false;
 
-      // 1단계: 모바일 공유 API (파일 3개 직접 공유)
+      // 1단계: 모바일 공유 API (파일 3개 직접 공유) — 카카오톡 공유창 열림
       if (navigator.canShare && navigator.canShare({ files: filesArray })) {
         try {
           await navigator.share({
@@ -727,28 +743,28 @@ export default function App() {
         }
       }
 
-      // 2단계: 파일 공유 거부/미지원 시 텍스트만 공유창 호출 (이미지 다운로드창 노출 방지)
-      if (!sharedSuccessfully && navigator.share) {
-        try {
-          await navigator.share({
-            title: '{시설 점검 보고}',
-            text: msg
-          });
-          sharedSuccessfully = true;
-        } catch (shareErr) {
-          console.warn("텍스트 공유 실패 또는 사용자 취소:", shareErr);
-        }
-      }
-
-      // 3단계: 웹 공유 API 전체 미지원/실패 시 클립보드 복사 & 이미지 다운로드
+      // 2단계: 파일 공유 미지원/실패 시 이미지 3장 다운로드 + 클립보드 복사
       if (!sharedSuccessfully) {
-        downloadA4SplitImages();
+        // 표지 + 1페이지 + 2페이지 개별 다운로드
+        const dlFiles = [
+          { blob: coverBlob, name: `${baseName}_표지.jpg` },
+          { blob: blob1, name: `${baseName}_1.jpg` },
+          { blob: blob2, name: `${baseName}_2.jpg` },
+        ];
+        for (const f of dlFiles) {
+          const url = URL.createObjectURL(f.blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = f.name;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
         try {
           await navigator.clipboard.writeText(msg);
-          alert("📋 요약 보고서가 복사되었고 점검표 표지 포함 이미지 3장이 다운로드되었습니다!\n\n카카오톡 단체방에 [붙여넣기]하고 다운로드된 표지 및 사진 3장을 함께 올려주세요.");
+          alert("📋 요약 보고서가 복사되었고 점검표 이미지 3장이 다운로드되었습니다!\n\n카카오톡 단체방에 [붙여넣기]하고 다운로드된 이미지 3장을 함께 올려주세요.");
         } catch (clipErr) {
           console.warn("클립보드 복사 실패:", clipErr);
-          alert("📋 점검표 표지 포함 이미지 3장이 다운로드되었습니다.\n\n요약 보고서 텍스트를 카카오톡 단체방에 직접 공유해주세요.");
+          alert("📋 점검표 이미지 3장이 다운로드되었습니다.\n\n요약 보고서 텍스트를 카카오톡 단체방에 직접 공유해주세요.");
         }
       }
 
