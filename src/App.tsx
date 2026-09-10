@@ -88,13 +88,14 @@ function findBestSplitRow(srcCanvas: HTMLCanvasElement, nominalY: number, range:
   return nominalY;
 }
 
-// 캔버스를 A4 단위로 분할 — 표 행 경계에서 끊고 하단 4% 여백에 페이지 번호 공간 확보
+// 캔버스를 A4 단위로 분할 — 표 행 경계에서 끊고 상단 2%·하단 4% 여백 확보
 function splitCanvasToA4Pages(srcCanvas: HTMLCanvasElement): HTMLCanvasElement[] {
   const pageW = srcCanvas.width;
   const pageH = Math.round(srcCanvas.width * 297 / 210);
-  const bottomPad = Math.round(pageH * 0.04);
-  const contentH = pageH - bottomPad;
-  const searchRange = Math.round(contentH * 0.08); // ±8% 범위에서 최적 분할점 탐색
+  const topPad = Math.round(pageH * 0.02);    // 상단 여백
+  const bottomPad = Math.round(pageH * 0.04); // 하단 여백 (페이지 번호 영역)
+  const contentH = pageH - topPad - bottomPad;
+  const searchRange = Math.round(contentH * 0.08);
   const pages: HTMLCanvasElement[] = [];
   let y = 0;
   while (y < srcCanvas.height) {
@@ -109,7 +110,7 @@ function splitCanvasToA4Pages(srcCanvas: HTMLCanvasElement): HTMLCanvasElement[]
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, pageW, pageH);
     const sliceH = Math.min(actualEnd - y, srcCanvas.height - y);
-    ctx.drawImage(srcCanvas, 0, y, pageW, sliceH, 0, 0, pageW, sliceH);
+    ctx.drawImage(srcCanvas, 0, y, pageW, sliceH, 0, topPad, pageW, sliceH);
     pages.push(dest);
     y = actualEnd;
   }
