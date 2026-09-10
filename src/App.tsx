@@ -51,25 +51,61 @@ function cropToA4(srcCanvas: HTMLCanvasElement): HTMLCanvasElement {
   return dest;
 }
 
-// 캔버스를 A4 단위로 분할 — 하단 4% 여백에 페이지 번호 공간 확보
+// 분할 지점 근처에서 가장 밝은(흰) 행을 찾아 표 행 중간 절단 방지
+function findBestSplitRow(srcCanvas: HTMLCanvasElement, nominalY: number, range: number): number {
+  const ctx = srcCanvas.getContext('2d');
+  if (!ctx || nominalY <= 0 || nominalY >= srcCanvas.height) return nominalY;
+  const w = srcCanvas.width;
+  const searchStart = Math.max(0, nominalY - range);
+  const searchEnd = Math.min(srcCanvas.height - 1, nominalY + range);
+  const h = searchEnd - searchStart + 1;
+  const data = ctx.getImageData(0, searchStart, w, h).data;
+
+  const rowLight = (row: number) => {
+    let light = 0;
+    for (let x = 0; x < w; x++) {
+      const i = (row * w + x) * 4;
+      if ((data[i] + data[i + 1] + data[i + 2]) / 3 > 230) light++;
+    }
+    return light / w;
+  };
+
+  const base = nominalY - searchStart;
+  // 위쪽 방향 우선 탐색
+  for (let d = 0; d <= base; d++) {
+    if (rowLight(base - d) > 0.85) return searchStart + base - d;
+  }
+  // 아래쪽 탐색
+  for (let d = 1; d < h - base; d++) {
+    if (rowLight(base + d) > 0.85) return searchStart + base + d;
+  }
+  return nominalY;
+}
+
+// 캔버스를 A4 단위로 분할 — 표 행 경계에서 끊고 하단 4% 여백에 페이지 번호 공간 확보
 function splitCanvasToA4Pages(srcCanvas: HTMLCanvasElement): HTMLCanvasElement[] {
   const pageW = srcCanvas.width;
   const pageH = Math.round(srcCanvas.width * 297 / 210);
-  const bottomPad = Math.round(pageH * 0.04); // 하단 여백 (페이지 번호 영역)
-  const contentH = pageH - bottomPad;          // 실제 내용 영역
+  const bottomPad = Math.round(pageH * 0.04);
+  const contentH = pageH - bottomPad;
+  const searchRange = Math.round(contentH * 0.08); // ±8% 범위에서 최적 분할점 탐색
   const pages: HTMLCanvasElement[] = [];
   let y = 0;
   while (y < srcCanvas.height) {
+    const nomEnd = y + contentH;
+    const actualEnd = nomEnd < srcCanvas.height
+      ? findBestSplitRow(srcCanvas, nomEnd, searchRange)
+      : srcCanvas.height;
     const dest = document.createElement('canvas');
     dest.width = pageW;
     dest.height = pageH;
     const ctx = dest.getContext('2d')!;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, pageW, pageH);
-    const sliceH = Math.min(contentH, srcCanvas.height - y);
+    const sliceH = Math.min(actualEnd - y, srcCanvas.height - y);
     ctx.drawImage(srcCanvas, 0, y, pageW, sliceH, 0, 0, pageW, sliceH);
     pages.push(dest);
-    y += contentH;
+    y = actualEnd;
   }
   return pages;
 }
@@ -754,10 +790,21 @@ export default function App() {
         allContentPages.map(pg => new Promise<Blob>((resolve) => pg.toBlob((b) => resolve(b!), 'image/jpeg', 0.92)))
       );
 
-      const filesArray = [
+      const filesArray: File[] = [
         new File([coverBlob], `${baseName}_표지.jpg`, { type: 'image/jpeg' }),
         ...contentBlobs.map((b, i) => new File([b], `${baseName}_${i + 1}.jpg`, { type: 'image/jpeg' })),
       ];
+
+      // 카톡에서 첫 장(표지)이 단독 전체폭으로 표시되려면 전체 파일 수가 홀수여야 함
+      if (filesArray.length % 2 === 0) {
+        const blankC = document.createElement('canvas');
+        blankC.width = allContentPages[0].width;
+        blankC.height = allContentPages[0].height;
+        blankC.getContext('2d')!.fillStyle = '#ffffff';
+        blankC.getContext('2d')!.fillRect(0, 0, blankC.width, blankC.height);
+        const blankBlob = await new Promise<Blob>((resolve) => blankC.toBlob((b) => resolve(b!), 'image/jpeg', 0.5));
+        filesArray.push(new File([blankBlob], `${baseName}_blank.jpg`, { type: 'image/jpeg' }));
+      }
 
       let sharedSuccessfully = false;
 
