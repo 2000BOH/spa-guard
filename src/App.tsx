@@ -51,10 +51,12 @@ function cropToA4(srcCanvas: HTMLCanvasElement): HTMLCanvasElement {
   return dest;
 }
 
-// 캔버스를 A4 높이 단위로 여러 페이지로 분할 (PDF용 — 내용 손실 없음)
+// 캔버스를 A4 단위로 분할 — 하단 4% 여백에 페이지 번호 공간 확보
 function splitCanvasToA4Pages(srcCanvas: HTMLCanvasElement): HTMLCanvasElement[] {
   const pageW = srcCanvas.width;
   const pageH = Math.round(srcCanvas.width * 297 / 210);
+  const bottomPad = Math.round(pageH * 0.04); // 하단 여백 (페이지 번호 영역)
+  const contentH = pageH - bottomPad;          // 실제 내용 영역
   const pages: HTMLCanvasElement[] = [];
   let y = 0;
   while (y < srcCanvas.height) {
@@ -64,10 +66,10 @@ function splitCanvasToA4Pages(srcCanvas: HTMLCanvasElement): HTMLCanvasElement[]
     const ctx = dest.getContext('2d')!;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, pageW, pageH);
-    const sliceH = Math.min(pageH, srcCanvas.height - y);
+    const sliceH = Math.min(contentH, srcCanvas.height - y);
     ctx.drawImage(srcCanvas, 0, y, pageW, sliceH, 0, 0, pageW, sliceH);
     pages.push(dest);
-    y += pageH;
+    y += contentH;
   }
   return pages;
 }
@@ -734,24 +736,27 @@ export default function App() {
 
       const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#0f172a' });
       const raw1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
-      const canvas1 = cropToA4(raw1);
-      addPageNumber(canvas1, 1, 2);
       const raw2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
-      const canvas2 = cropToA4(raw2);
-      addPageNumber(canvas2, 2, 2);
+
+      // A4 단위로 분할 (내용이 길면 3장 이상 가능)
+      const pages1 = splitCanvasToA4Pages(raw1);
+      const pages2 = splitCanvasToA4Pages(raw2);
+      const allContentPages = [...pages1, ...pages2];
+      const total = allContentPages.length;
+      allContentPages.forEach((pg, i) => addPageNumber(pg, i + 1, total));
 
       container.style.position = 'absolute';
       container.style.left = '-9999px';
 
-      // 표지 1장 + 페이지별 개별 이미지 (카톡 3장 전송)
+      // 표지 1장 + 분할된 내용 페이지들
       const coverBlob = await new Promise<Blob>((resolve) => canvasCover.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
-      const blob1 = await new Promise<Blob>((resolve) => canvas1.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
-      const blob2 = await new Promise<Blob>((resolve) => canvas2.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
+      const contentBlobs = await Promise.all(
+        allContentPages.map(pg => new Promise<Blob>((resolve) => pg.toBlob((b) => resolve(b!), 'image/jpeg', 0.92)))
+      );
 
       const filesArray = [
         new File([coverBlob], `${baseName}_표지.jpg`, { type: 'image/jpeg' }),
-        new File([blob1], `${baseName}_1.jpg`, { type: 'image/jpeg' }),
-        new File([blob2], `${baseName}_2.jpg`, { type: 'image/jpeg' }),
+        ...contentBlobs.map((b, i) => new File([b], `${baseName}_${i + 1}.jpg`, { type: 'image/jpeg' })),
       ];
 
       let sharedSuccessfully = false;
@@ -770,16 +775,10 @@ export default function App() {
         }
       }
 
-      // 2단계: 파일 공유 미지원/실패 시 이미지 3장 다운로드 + 클립보드 복사
+      // 2단계: 파일 공유 미지원/실패 시 전체 이미지 다운로드 + 클립보드 복사
       if (!sharedSuccessfully) {
-        // 표지 + 1페이지 + 2페이지 개별 다운로드
-        const dlFiles = [
-          { blob: coverBlob, name: `${baseName}_표지.jpg` },
-          { blob: blob1, name: `${baseName}_1.jpg` },
-          { blob: blob2, name: `${baseName}_2.jpg` },
-        ];
-        for (const f of dlFiles) {
-          const url = URL.createObjectURL(f.blob);
+        for (const f of filesArray) {
+          const url = URL.createObjectURL(f);
           const a = document.createElement('a');
           a.href = url;
           a.download = f.name;
@@ -788,7 +787,7 @@ export default function App() {
         }
         try {
           await navigator.clipboard.writeText(msg);
-          alert("📋 요약 보고서가 복사되었고 점검표 이미지 3장이 다운로드되었습니다!\n\n카카오톡 단체방에 [붙여넣기]하고 다운로드된 이미지 3장을 함께 올려주세요.");
+          alert(`📋 요약 보고서가 복사되었고 점검표 이미지 ${filesArray.length}장이 다운로드되었습니다!\n\n카카오톡 단체방에 [붙여넣기]하고 다운로드된 이미지를 함께 올려주세요.`);
         } catch (clipErr) {
           console.warn("클립보드 복사 실패:", clipErr);
           alert("📋 점검표 이미지 3장이 다운로드되었습니다.\n\n요약 보고서 텍스트를 카카오톡 단체방에 직접 공유해주세요.");
