@@ -599,24 +599,25 @@ export default function App() {
     const baseName = `${state.date}_${deptName}_${state.inspector || '점검자'}`;
 
     try {
-      const pdfWidth = 210; // A4 mm
-      const pdfHeight = 297; // A4 mm
-
       const page1El = document.getElementById('a4Page1')!;
       const page2El = document.getElementById('a4Page2')!;
 
-      const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
+      // JPG와 동일하게 A4 비율로 크롭 후 표준 A4 페이지에 삽입
+      const raw1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
+      const canvas1 = cropToA4(raw1);
       addPageNumber(canvas1, 1, 2);
-      const imgHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
-      // 첫 페이지: 내용 높이에 맞춘 커스텀 크기 (눌림 없음)
-      const pdf = new jsPDF({ unit: 'mm', format: [pdfWidth, Math.max(pdfHeight, imgHeight1)] });
-      pdf.addImage(canvas1.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, imgHeight1);
 
-      const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
+      const raw2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
+      const canvas2 = cropToA4(raw2);
       addPageNumber(canvas2, 2, 2);
-      const imgHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
-      pdf.addPage([pdfWidth, Math.max(pdfHeight, imgHeight2)]);
-      pdf.addImage(canvas2.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, imgHeight2);
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      pdf.addImage(canvas1.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      pdf.addPage();
+      pdf.addImage(canvas2.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, pdfHeight);
 
       container.style.position = 'absolute';
       container.style.left = '-9999px';
