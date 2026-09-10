@@ -36,7 +36,7 @@ function addPageNumber(canvas: HTMLCanvasElement, pageNum: number, totalPages: n
   ctx.fillText(`- ${pageNum} / ${totalPages} -`, canvas.width / 2, canvas.height - Math.round(fontSize * 0.7));
 }
 
-// 캔버스를 A4 세로 비율(210:297)로 정확히 자름
+// 캔버스를 A4 세로 비율(210:297)로 정확히 자름 (JPG용)
 function cropToA4(srcCanvas: HTMLCanvasElement): HTMLCanvasElement {
   const targetWidth = srcCanvas.width;
   const targetHeight = Math.round(srcCanvas.width * 297 / 210);
@@ -49,6 +49,27 @@ function cropToA4(srcCanvas: HTMLCanvasElement): HTMLCanvasElement {
   const drawH = Math.min(srcCanvas.height, targetHeight);
   ctx.drawImage(srcCanvas, 0, 0, srcCanvas.width, drawH, 0, 0, targetWidth, drawH);
   return dest;
+}
+
+// 캔버스를 A4 높이 단위로 여러 페이지로 분할 (PDF용 — 내용 손실 없음)
+function splitCanvasToA4Pages(srcCanvas: HTMLCanvasElement): HTMLCanvasElement[] {
+  const pageW = srcCanvas.width;
+  const pageH = Math.round(srcCanvas.width * 297 / 210);
+  const pages: HTMLCanvasElement[] = [];
+  let y = 0;
+  while (y < srcCanvas.height) {
+    const dest = document.createElement('canvas');
+    dest.width = pageW;
+    dest.height = pageH;
+    const ctx = dest.getContext('2d')!;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, pageW, pageH);
+    const sliceH = Math.min(pageH, srcCanvas.height - y);
+    ctx.drawImage(srcCanvas, 0, y, pageW, sliceH, 0, 0, pageW, sliceH);
+    pages.push(dest);
+    y += pageH;
+  }
+  return pages;
 }
 
 function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
@@ -602,22 +623,25 @@ export default function App() {
       const page1El = document.getElementById('a4Page1')!;
       const page2El = document.getElementById('a4Page2')!;
 
-      // JPG와 동일하게 A4 비율로 크롭 후 표준 A4 페이지에 삽입
+      // 내용이 길어도 A4 단위로 분할 → 내용 손실 없음
       const raw1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
-      const canvas1 = cropToA4(raw1);
-      addPageNumber(canvas1, 1, 2);
-
       const raw2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
-      const canvas2 = cropToA4(raw2);
-      addPageNumber(canvas2, 2, 2);
+
+      const pages1 = splitCanvasToA4Pages(raw1);
+      const pages2 = splitCanvasToA4Pages(raw2);
+      const allPages = [...pages1, ...pages2];
+      const total = allPages.length;
+
+      allPages.forEach((pg, i) => addPageNumber(pg, i + 1, total));
 
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = pdf.internal.pageSize.getHeight();
 
-      pdf.addImage(canvas1.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, pdfHeight);
-      pdf.addPage();
-      pdf.addImage(canvas2.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      allPages.forEach((pg, i) => {
+        if (i > 0) pdf.addPage();
+        pdf.addImage(pg.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfW, pdfH);
+      });
 
       container.style.position = 'absolute';
       container.style.left = '-9999px';
@@ -709,9 +733,11 @@ export default function App() {
       const page2El = document.getElementById('a4Page2')!;
 
       const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#0f172a' });
-      const canvas1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
+      const raw1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
+      const canvas1 = cropToA4(raw1);
       addPageNumber(canvas1, 1, 2);
-      const canvas2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
+      const raw2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
+      const canvas2 = cropToA4(raw2);
       addPageNumber(canvas2, 2, 2);
 
       container.style.position = 'absolute';
