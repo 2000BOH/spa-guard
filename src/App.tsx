@@ -51,33 +51,39 @@ function cropToA4(srcCanvas: HTMLCanvasElement): HTMLCanvasElement {
   return dest;
 }
 
-// 분할 지점 근처에서 가장 밝은(흰) 행을 찾아 표 행 중간 절단 방지
+// 분할 지점 근처에서 테이블 행 경계선(어두운 행 → 밝은 행 전환)을 찾아 행 중간 절단 방지
+// 왼쪽 15%(rowspan 열 - 항상 흰색)는 제외하고 나머지 열만 분석
 function findBestSplitRow(srcCanvas: HTMLCanvasElement, nominalY: number, range: number): number {
   const ctx = srcCanvas.getContext('2d');
-  if (!ctx || nominalY <= 0 || nominalY >= srcCanvas.height) return nominalY;
+  if (!ctx || nominalY <= 2 || nominalY >= srcCanvas.height) return nominalY;
   const w = srcCanvas.width;
-  const searchStart = Math.max(0, nominalY - range);
-  const searchEnd = Math.min(srcCanvas.height - 1, nominalY + range);
-  const h = searchEnd - searchStart + 1;
-  const data = ctx.getImageData(0, searchStart, w, h).data;
+  const skipX = Math.floor(w * 0.15); // rowspan 열 건너뜀
+  const sampleW = w - skipX;
+  const searchStart = Math.max(2, nominalY - range);
+  const searchEnd = Math.min(srcCanvas.height - 2, nominalY + range);
+  const h = searchEnd - searchStart;
+  if (h <= 0) return nominalY;
+  const data = ctx.getImageData(skipX, searchStart, sampleW, h).data;
 
-  const rowLight = (row: number) => {
-    let light = 0;
-    for (let x = 0; x < w; x++) {
-      const i = (row * w + x) * 4;
-      if ((data[i] + data[i + 1] + data[i + 2]) / 3 > 230) light++;
+  const rowAvg = (row: number) => {
+    let sum = 0;
+    for (let x = 0; x < sampleW; x++) {
+      const i = (row * sampleW + x) * 4;
+      sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
     }
-    return light / w;
+    return sum / sampleW;
   };
 
   const base = nominalY - searchStart;
-  // 위쪽 방향 우선 탐색
-  for (let d = 0; d <= base; d++) {
-    if (rowLight(base - d) > 0.85) return searchStart + base - d;
+  // 위쪽 방향 탐색: 어두운 행(경계선) 바로 다음 밝은 행을 찾음
+  for (let d = 0; d <= base - 1; d++) {
+    const row = base - d;
+    if (rowAvg(row) > 235 && rowAvg(row - 1) < 215) return searchStart + row;
   }
   // 아래쪽 탐색
-  for (let d = 1; d < h - base; d++) {
-    if (rowLight(base + d) > 0.85) return searchStart + base + d;
+  for (let d = 1; d < h - base - 1; d++) {
+    const row = base + d;
+    if (rowAvg(row) > 235 && rowAvg(row - 1) < 215) return searchStart + row;
   }
   return nominalY;
 }
