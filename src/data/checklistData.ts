@@ -3,8 +3,8 @@ import type { DepartmentId } from '../types';
 export const TAB_INFO: Record<string, { id: string; name: string; htmlName: string; title: string }> = {
   tab1: { id: 'tab1', name: '2층', htmlName: '2층', title: '2층 점검' },
   tab2: { id: 'tab2', name: '지하', htmlName: '지하', title: '지하 점검' },
-  tab3: { id: 'tab3', name: '3층 찜질', htmlName: '3층 찜질', title: '3층 찜질 점검' },
-  tab4: { id: 'tab4', name: '여과/기타', htmlName: '여과/기타', title: '여과기, 펌프 및 기타설비 점검' },
+  tab3: { id: 'tab3', name: '3층', htmlName: '3층', title: '3층 점검' },
+  tab4: { id: 'tab4', name: '기계실', htmlName: '기계실', title: '기계실 점검' },
   tab5: { id: 'tab5', name: '온도체크', htmlName: '온도체크', title: '수온 및 실내 온도체크 점검' },
   // 미화팀 전용 탭
   cTabW: { id: 'cTabW', name: '여자 미화', htmlName: '여자 미화', title: '여자 구역 미화 점검' },
@@ -30,7 +30,7 @@ export const TAB_INFO: Record<string, { id: string; name: string; htmlName: stri
 };
 
 export const DEPT_TABS_MAP: Record<DepartmentId, string[]> = {
-  facilities: ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'],
+  facilities: ['tab1', 'tab3', 'tab2', 'tab4'],
   reception: ['rTab1', 'rTab2', 'rTab3'],
   cleaning: ['cTabM'], // Default fallback
   food: ['fTab1', 'fTab2'],
@@ -414,6 +414,25 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
         { "id": "f1_18", "text": "주차장 조명, 차단기 및 소방 배관 동파/누수 확인" },
         { "id": "f1_19", "text": "옥상 출입문 통제/자동폐쇄 및 실외기 팬 점검" }
       ]
+    },
+    {
+      "category": "◆ 2층 남탕 수온 및 사우나 온도",
+      "items": [
+        { "id": "tab5_m1", "text": "2층 남탕 온탕" },
+        { "id": "tab5_m2", "text": "2층 남탕 열탕" },
+        { "id": "tab5_m3", "text": "2층 남탕 냉탕" },
+        { "id": "tab5_m4", "text": "2층 남탕 사우나" }
+      ]
+    },
+    {
+      "category": "◆ 2층 여탕 수온 및 사우나 온도",
+      "items": [
+        { "id": "tab5_w1", "text": "2층 여탕 온탕" },
+        { "id": "tab5_w2", "text": "2층 여탕 열탕" },
+        { "id": "tab5_w3", "text": "2층 여탕 냉탕" },
+        { "id": "tab5_w4", "text": "2층 여탕 건식" },
+        { "id": "tab5_w5", "text": "2층 여탕 습식" }
+      ]
     }
   ],
   "tab2": [
@@ -477,6 +496,16 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
         { "id": "f3_7", "text": "바닥 배수구 트랩 물빠짐 상태 및 머리카락 청소" },
         { "id": "f3_8", "text": "탕 바닥/계단 위험물 확인" },
         { "id": "f3_9", "text": "탕 내부 방수 상태 및 누전 차단기 점검" }
+      ]
+    },
+    {
+      "category": "◆ 3층 찜질방 테마룸 온도",
+      "items": [
+        { "id": "tab5_s1", "text": "3층 찜질방 불가마" },
+        { "id": "tab5_s2", "text": "3층 찜질방 소금방" },
+        { "id": "tab5_s3", "text": "3층 찜질방 맥반석" },
+        { "id": "tab5_s4", "text": "3층 찜질방 아이스방" },
+        { "id": "tab5_s5", "text": "3층 찜질방 편백방" }
       ]
     }
   ],

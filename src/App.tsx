@@ -26,96 +26,6 @@ const DEPT_NAMES: Record<string, string> = {
   snack: '스낵'
 };
 
-function addPageNumber(canvas: HTMLCanvasElement, pageNum: number, totalPages: number) {
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-  const fontSize = Math.round(canvas.width * 0.022);
-  ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-  ctx.fillStyle = '#475569';
-  ctx.textAlign = 'center';
-  ctx.fillText(`- ${pageNum} / ${totalPages} -`, canvas.width / 2, canvas.height - Math.round(fontSize * 0.7));
-}
-
-// 캔버스를 A4 세로 비율(210:297)로 정확히 자름 (JPG용)
-function cropToA4(srcCanvas: HTMLCanvasElement): HTMLCanvasElement {
-  const targetWidth = srcCanvas.width;
-  const targetHeight = Math.round(srcCanvas.width * 297 / 210);
-  const dest = document.createElement('canvas');
-  dest.width = targetWidth;
-  dest.height = targetHeight;
-  const ctx = dest.getContext('2d')!;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, targetWidth, targetHeight);
-  const drawH = Math.min(srcCanvas.height, targetHeight);
-  ctx.drawImage(srcCanvas, 0, 0, srcCanvas.width, drawH, 0, 0, targetWidth, drawH);
-  return dest;
-}
-
-// 분할 지점 근처에서 테이블 행 경계선(어두운 행 → 밝은 행 전환)을 찾아 행 중간 절단 방지
-// 왼쪽 15%(rowspan 열 - 항상 흰색)는 제외하고 나머지 열만 분석
-function findBestSplitRow(srcCanvas: HTMLCanvasElement, nominalY: number, range: number): number {
-  const ctx = srcCanvas.getContext('2d');
-  if (!ctx || nominalY <= 2 || nominalY >= srcCanvas.height) return nominalY;
-  const w = srcCanvas.width;
-  const skipX = Math.floor(w * 0.15); // rowspan 열 건너뜀
-  const sampleW = w - skipX;
-  const searchStart = Math.max(2, nominalY - range);
-  const searchEnd = Math.min(srcCanvas.height - 2, nominalY + range);
-  const h = searchEnd - searchStart;
-  if (h <= 0) return nominalY;
-  const data = ctx.getImageData(skipX, searchStart, sampleW, h).data;
-
-  const rowAvg = (row: number) => {
-    let sum = 0;
-    for (let x = 0; x < sampleW; x++) {
-      const i = (row * sampleW + x) * 4;
-      sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
-    }
-    return sum / sampleW;
-  };
-
-  const base = nominalY - searchStart;
-  // 위쪽 방향 탐색: 어두운 행(경계선) 바로 다음 밝은 행을 찾음
-  for (let d = 0; d <= base - 1; d++) {
-    const row = base - d;
-    if (rowAvg(row) > 235 && rowAvg(row - 1) < 215) return searchStart + row;
-  }
-  // 아래쪽 탐색
-  for (let d = 1; d < h - base - 1; d++) {
-    const row = base + d;
-    if (rowAvg(row) > 235 && rowAvg(row - 1) < 215) return searchStart + row;
-  }
-  return nominalY;
-}
-
-// 캔버스를 A4 단위로 분할 — 표 행 경계에서 끊고 상단 2%·하단 4% 여백 확보
-function splitCanvasToA4Pages(srcCanvas: HTMLCanvasElement): HTMLCanvasElement[] {
-  const pageW = srcCanvas.width;
-  const pageH = Math.round(srcCanvas.width * 297 / 210);
-  const topPad = Math.round(pageH * 0.02);    // 상단 여백
-  const bottomPad = Math.round(pageH * 0.04); // 하단 여백 (페이지 번호 영역)
-  const contentH = pageH - topPad - bottomPad;
-  const searchRange = Math.round(contentH * 0.08);
-  const pages: HTMLCanvasElement[] = [];
-  let y = 0;
-  while (y < srcCanvas.height) {
-    const nomEnd = y + contentH;
-    const actualEnd = nomEnd < srcCanvas.height
-      ? findBestSplitRow(srcCanvas, nomEnd, searchRange)
-      : srcCanvas.height;
-    const dest = document.createElement('canvas');
-    dest.width = pageW;
-    dest.height = pageH;
-    const ctx = dest.getContext('2d')!;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, pageW, pageH);
-    const sliceH = Math.min(actualEnd - y, srcCanvas.height - y);
-    ctx.drawImage(srcCanvas, 0, y, pageW, sliceH, 0, topPad, pageW, sliceH);
-    pages.push(dest);
-    y = actualEnd;
-  }
-  return pages;
-}
 
 function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
   let tabs = DEPT_TABS_MAP[dept] || [];
@@ -610,7 +520,7 @@ export default function App() {
   // Image & PDF Export Logic
   const downloadA4SplitImages = async () => {
     setIsSaveModalOpen(false);
-    showToast("⏳ A4 규격 이미지 생성 중...");
+    showToast("⏳ 이미지 생성 중...");
 
     const container = document.getElementById('printDocumentHiddenContainer');
     if (!container) return;
@@ -621,30 +531,17 @@ export default function App() {
     const baseName = `${state.date}_${deptName}_${state.inspector || '점검자'}`;
 
     try {
-      const page1El = document.getElementById('a4Page1')!;
-      const page2El = document.getElementById('a4Page2')!;
+      const contentEl = document.getElementById('a4PageContent')!;
+      const raw = await html2canvas(contentEl, { scale: 2, backgroundColor: '#ffffff' });
+      
+      const link = document.createElement('a');
+      link.download = `${baseName}.jpg`;
+      link.href = raw.toDataURL('image/jpeg', 0.95);
+      link.click();
 
-      const raw1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
-      const canvas1 = cropToA4(raw1);
-      addPageNumber(canvas1, 1, 2);
-      const link1 = document.createElement('a');
-      link1.download = `${baseName}_1.jpg`;
-      link1.href = canvas1.toDataURL('image/jpeg', 0.95);
-      link1.click();
-
-      setTimeout(async () => {
-        const raw2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
-        const canvas2 = cropToA4(raw2);
-        addPageNumber(canvas2, 2, 2);
-        const link2 = document.createElement('a');
-        link2.download = `${baseName}_2.jpg`;
-        link2.href = canvas2.toDataURL('image/jpeg', 0.95);
-        link2.click();
-
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        showToast("✅ A4 비율 JPG 2장 다운로드 완료");
-      }, 300);
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      showToast("✅ 통합본 이미지 다운로드 완료");
     } catch (err) {
       container.style.position = 'absolute';
       container.style.left = '-9999px';
@@ -654,7 +551,7 @@ export default function App() {
 
   const downloadA4MultipagePDF = async () => {
     setIsSaveModalOpen(false);
-    showToast("⏳ A4 2페이지 PDF 생성 중...");
+    showToast("⏳ PDF 생성 중...");
 
     const container = document.getElementById('printDocumentHiddenContainer');
     if (!container) return;
@@ -665,28 +562,15 @@ export default function App() {
     const baseName = `${state.date}_${deptName}_${state.inspector || '점검자'}`;
 
     try {
-      const page1El = document.getElementById('a4Page1')!;
-      const page2El = document.getElementById('a4Page2')!;
-
-      // 내용이 길어도 A4 단위로 분할 → 내용 손실 없음
-      const raw1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
-      const raw2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
-
-      const pages1 = splitCanvasToA4Pages(raw1);
-      const pages2 = splitCanvasToA4Pages(raw2);
-      const allPages = [...pages1, ...pages2];
-      const total = allPages.length;
-
-      allPages.forEach((pg, i) => addPageNumber(pg, i + 1, total));
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = pdf.internal.pageSize.getHeight();
-
-      allPages.forEach((pg, i) => {
-        if (i > 0) pdf.addPage();
-        pdf.addImage(pg.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfW, pdfH);
+      const contentEl = document.getElementById('a4PageContent')!;
+      const raw = await html2canvas(contentEl, { scale: 2, backgroundColor: '#ffffff' });
+      
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'px',
+        format: [raw.width, raw.height]
       });
+      pdf.addImage(raw.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, raw.width, raw.height);
 
       container.style.position = 'absolute';
       container.style.left = '-9999px';
@@ -774,39 +658,27 @@ export default function App() {
 
     try {
       const coverEl = document.getElementById('a4PageCover')!;
-      const page1El = document.getElementById('a4Page1')!;
-      const page2El = document.getElementById('a4Page2')!;
+      const contentEl = document.getElementById('a4PageContent')!;
 
       const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#0f172a' });
-      const raw1 = await html2canvas(page1El, { scale: 2, backgroundColor: '#ffffff' });
-      const raw2 = await html2canvas(page2El, { scale: 2, backgroundColor: '#ffffff' });
-
-      // A4 단위로 분할 (내용이 길면 3장 이상 가능)
-      const pages1 = splitCanvasToA4Pages(raw1);
-      const pages2 = splitCanvasToA4Pages(raw2);
-      const allContentPages = [...pages1, ...pages2];
-      const total = allContentPages.length;
-      allContentPages.forEach((pg, i) => addPageNumber(pg, i + 1, total));
+      const raw = await html2canvas(contentEl, { scale: 2, backgroundColor: '#ffffff' });
 
       container.style.position = 'absolute';
       container.style.left = '-9999px';
 
-      // 표지 1장 + 분할된 내용 페이지들
       const coverBlob = await new Promise<Blob>((resolve) => canvasCover.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
-      const contentBlobs = await Promise.all(
-        allContentPages.map(pg => new Promise<Blob>((resolve) => pg.toBlob((b) => resolve(b!), 'image/jpeg', 0.92)))
-      );
+      const contentBlob = await new Promise<Blob>((resolve) => raw.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
 
       const filesArray: File[] = [
         new File([coverBlob], `${baseName}_표지.jpg`, { type: 'image/jpeg' }),
-        ...contentBlobs.map((b, i) => new File([b], `${baseName}_${i + 1}.jpg`, { type: 'image/jpeg' })),
+        new File([contentBlob], `${baseName}_내용.jpg`, { type: 'image/jpeg' }),
       ];
 
       // 카톡에서 첫 장(표지)이 단독 전체폭으로 표시되려면 전체 파일 수가 홀수여야 함
       if (filesArray.length % 2 === 0) {
         const blankC = document.createElement('canvas');
-        blankC.width = allContentPages[0].width;
-        blankC.height = allContentPages[0].height;
+        blankC.width = raw.width;
+        blankC.height = raw.height;
         blankC.getContext('2d')!.fillStyle = '#ffffff';
         blankC.getContext('2d')!.fillRect(0, 0, blankC.width, blankC.height);
         const blankBlob = await new Promise<Blob>((resolve) => blankC.toBlob((b) => resolve(b!), 'image/jpeg', 0.5));
@@ -844,7 +716,7 @@ export default function App() {
           alert(`📋 요약 보고서가 복사되었고 점검표 이미지 ${filesArray.length}장이 다운로드되었습니다!\n\n카카오톡 단체방에 [붙여넣기]하고 다운로드된 이미지를 함께 올려주세요.`);
         } catch (clipErr) {
           console.warn("클립보드 복사 실패:", clipErr);
-          alert("📋 점검표 이미지 3장이 다운로드되었습니다.\n\n요약 보고서 텍스트를 카카오톡 단체방에 직접 공유해주세요.");
+          alert(`📋 점검표 이미지 ${filesArray.length}장이 다운로드되었습니다.\n\n요약 보고서 텍스트를 카카오톡 단체방에 직접 공유해주세요.`);
         }
       }
 

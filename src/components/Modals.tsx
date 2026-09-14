@@ -19,18 +19,18 @@ export const SaveModal: React.FC<SaveModalProps> = ({
     <div className="modal-overlay open" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>💾 A4 규격 분할 저장</h3>
+          <h3>💾 통합본 저장 (비율 맞춤)</h3>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div style={{ fontSize: '12.5px', color: 'var(--gray-600)', lineHeight: '1.5', marginBottom: '6px' }}>
-          스마트폰 갤러리나 인쇄 시 글자가 한눈에 쏙 들어오도록 <b>A4 2페이지(앞/뒷면) 규격</b>으로 나누어 저장합니다.
+          전체 내용이 한 장에 이어지도록 <b>원본 비율에 맞춘 통합본</b>으로 저장합니다.
         </div>
         <div className="modal-btn-grid">
           <button className="modal-choice-btn" onClick={onDownloadJPG}>
-            <span>🖼️ A4 이미지 2장 저장 (JPG)</span>
+            <span>🖼️ 비율 맞춤 이미지 저장 (JPG)</span>
           </button>
           <button className="modal-choice-btn" onClick={onDownloadPDF}>
-            <span>📄 A4 2쪽 문서 저장 (PDF)</span>
+            <span>📄 비율 맞춤 문서 저장 (PDF)</span>
           </button>
         </div>
       </div>

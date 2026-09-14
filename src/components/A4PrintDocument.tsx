@@ -263,15 +263,11 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state, departm
         </div>
       </div>
 
-      {/* 1페이지 (앞면 - 시설 I, II) */}
-      <div className="a4-page-box" id="a4Page1">
+      {/* 통합본 페이지 (단일 이미지/PDF로 저장됨) */}
+      <div className="a4-page-box" id="a4PageContent" style={{ height: 'auto', minHeight: '1120px' }}>
         <div>
           <div className="a4-header">
-            <div className="a4-prefix">
-              <span></span>
-              <span>페이지: 1 / 2</span>
-            </div>
-            <h1 className="a4-title">{departmentName} 점검일지 (앞면)</h1>
+            <h1 className="a4-title">{departmentName} 점검일지</h1>
           </div>
 
           <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 시 설 현 황 및 점 검 자</div>
@@ -294,7 +290,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state, departm
             </tbody>
           </table>
 
-          <div className="a4-subhead">2. 구역별 점검사항 및 결과 (전반부)</div>
+          <div className="a4-subhead">2. 구역별 점검사항 및 결과</div>
           <table className="a4-table">
             <thead>
               <tr>
@@ -305,57 +301,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state, departm
               </tr>
             </thead>
             <tbody>
-              {renderTableRows(availableTabs.slice(0, Math.ceil(availableTabs.length / 2)))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="a4-page-number">- 1 -</div>
-      </div>
-
-      {/* 2페이지 (뒷면 - 시설 III, IV, V) */}
-      <div className="a4-page-box" id="a4Page2">
-        <div>
-          <div className="a4-header">
-            <div className="a4-prefix">
-              <span></span>
-              <span>페이지: 2 / 2</span>
-            </div>
-            <h1 className="a4-title">{departmentName} 점검일지 (뒷면)</h1>
-          </div>
-
-          <div className="a4-subhead" style={{ marginTop: '4px' }}>1. 시 설 현 황 및 점 검 자</div>
-          <table className="a4-table" style={{ marginBottom: '14px' }}>
-            <tbody>
-              <tr>
-                <th style={{ width: '15%' }}>업 소 명</th>
-                <td style={{ width: '35%' }}>블루오션 웰니스 스파</td>
-                <th style={{ width: '18%' }}>인 증 코 드</th>
-                <td style={{ width: '32%', fontFamily: 'monospace', fontWeight: 700, color: '#1d4ed8', fontSize: '11px' }}>
-                  {state.securityCode}
-                </td>
-              </tr>
-              <tr>
-                <th>점검일시</th>
-                <td>{checkDateDot}</td>
-                <th>점 검 자</th>
-                <td style={{ fontWeight: 700, color: '#1d4ed8' }}>{state.inspector || '점검자'}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div className="a4-subhead">2. 구역별 점검사항 및 결과 (후반부)</div>
-          <table className="a4-table">
-            <thead>
-              <tr>
-                <th style={{ width: '12%', whiteSpace: 'nowrap' }}>점검분야</th>
-                <th style={{ width: '37%', whiteSpace: 'nowrap' }}>점 검 항 목</th>
-                <th style={{ width: '21%', whiteSpace: 'nowrap' }}>점검결과</th>
-                <th style={{ width: '30%', whiteSpace: 'nowrap' }}>비고 및 조치</th>
-              </tr>
-            </thead>
-            <tbody>
-              {renderTableRows(availableTabs.slice(Math.ceil(availableTabs.length / 2)))}
+              {renderTableRows(availableTabs)}
             </tbody>
           </table>
 
@@ -376,8 +322,6 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state, departm
             </div>
           </div>
         </div>
-
-        <div className="a4-page-number">- 2 -</div>
       </div>
     </div>
   );
