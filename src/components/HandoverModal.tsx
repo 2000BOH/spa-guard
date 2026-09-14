@@ -119,7 +119,12 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
 
       const res = await fetchInspectionFromSupabase(date);
       if (res.success && res.log) {
-        baseState = { ...baseState, ...res.log, handovers: res.log.handovers || {} };
+        baseState = { 
+          ...baseState, 
+          ...res.log, 
+          items: res.log.items_state || {},
+          handovers: res.log.handovers || {} 
+        };
       } else {
         const raw = localStorage.getItem(getStorageKey(date));
         if (raw) {
@@ -150,8 +155,8 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
   };
 
   return (
-    <div className="modal-overlay open">
-      <div className="modal-content admin-modal" style={{ maxWidth: "700px", width: "90%" }}>
+    <div className="modal-overlay open" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: "700px", width: "90%", maxHeight: "90vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <h2 style={{ margin: 0, fontSize: "20px", display: "flex", alignItems: "center", gap: "8px", color: "#0f172a" }}>
             📝 인수인계 및 관리자 지시사항
