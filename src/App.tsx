@@ -762,7 +762,10 @@ export default function App() {
         <Toast message={toastMsg} />
         {isHandoverModalOpen && (
           <HandoverModal 
-            onClose={() => setIsHandoverModalOpen(false)}
+            onClose={() => {
+              setIsHandoverModalOpen(false);
+              syncWithSupabase(state.date);
+            }}
             adminSettings={adminSettings}
           />
         )}
