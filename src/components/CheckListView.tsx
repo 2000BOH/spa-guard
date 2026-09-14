@@ -61,6 +61,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   const adminSettings = loadAdminSettings();
   const sections = getEffectiveChecklistData(currentTab, adminSettings.customChecklists);
   const tabNameClean = TAB_INFO[currentTab]?.name || '';
+  const tempSections = sections.filter(s => s.category.includes('수온') || s.category.includes('온도'));
+  const standardSections = sections.filter(s => !s.category.includes('수온') && !s.category.includes('온도'));
 
   // Pressure options 1.0 to 2.4 (step 0.1)
   const pressureOptions: number[] = [];
@@ -68,219 +70,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
     pressureOptions.push(Math.round(p * 10) / 10);
   }
 
-  // Render Excel Table View for Tab 5 (온도체크)
-  if (currentTab === 'tab5') {
-    return (
-      <main className="main-container">
-        <div className="section-card">
-          <div className="section-title">
-            <span>수온 및 실내 온도 점검표 (시간대별 엑셀 표)</span>
-            <span className="badge-count" style={{ color: '#2563eb', fontWeight: 600 }}>
-              * 기본 기준온도 10.0℃ (변경 가능)
-            </span>
-          </div>
-
-          <div style={{ overflow: 'auto', maxHeight: 'calc(100vh - 250px)', border: '1px solid #cbd5e1' }}>
-            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
-              <thead>
-                <tr>
-                  <th style={{
-                    position: 'sticky',
-                    top: 0,
-                    left: 0,
-                    zIndex: 20,
-                    background: '#e2e8f0',
-                    color: '#0f172a',
-                    padding: '8px 8px',
-                    borderRight: '2px solid #94a3b8',
-                    borderBottom: '2px solid #94a3b8',
-                    textAlign: 'left',
-                    whiteSpace: 'nowrap',
-                    width: '1%'
-                  }}>
-                    구역 / 시설명
-                  </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
-                    기준 온도 (℃)
-                  </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
-                    측정 온도 (자동분류)
-                  </th>
-                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8' }}>
-                    비고 및 특이사항
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sections.map((section, sIdx) => (
-                  <React.Fragment key={sIdx}>
-                    <tr>
-                      <td 
-                        colSpan={6} 
-                        style={{
-                          background: '#f8fafc',
-                          fontWeight: 700,
-                          fontSize: '12px',
-                          color: '#1e293b',
-                          padding: '6px 8px',
-                          borderBottom: '1px solid #cbd5e1',
-                          borderTop: sIdx > 0 ? '2px solid #cbd5e1' : 'none'
-                        }}
-                      >
-                        {section.category}
-                      </td>
-                    </tr>
-
-                    {section.items.map((item: CheckItem, iIdx) => {
-                      const state = itemsState[item.id] || {};
-                      // Default all target temperatures to 10.0 ℃ as requested
-                      const target = state.targetTemp !== undefined && state.targetTemp !== null ? state.targetTemp : 10.0;
-                      const rowBg = iIdx % 2 === 1 ? '#f8fafc' : '#ffffff';
-
-                      const currentHour = new Date().getHours();
-                      let currentField: 'tempDawn' | 'tempMorning' | 'tempAfternoon' = 'tempDawn';
-                      let currentLabel = '야간';
-                      if (currentHour >= 6 && currentHour < 12) {
-                        currentField = 'tempMorning';
-                        currentLabel = '오전';
-                      } else if (currentHour >= 12 && currentHour < 18) {
-                        currentField = 'tempAfternoon';
-                        currentLabel = '오후';
-                      }
-
-                      const renderSingleTempCell = () => {
-                        const val = state[currentField] ?? null;
-                        let diffText = '';
-                        let diffColor = '#6b7280';
-
-                        if (val !== null && target !== null && typeof val === 'number' && typeof target === 'number') {
-                          const diff = Math.round((val - target) * 10) / 10;
-                          if (diff > 0) {
-                            diffText = `+${diff.toFixed(1)}`;
-                            diffColor = '#dc2626';
-                          } else if (diff < 0) {
-                            diffText = `${diff.toFixed(1)}`;
-                            diffColor = '#2563eb';
-                          } else {
-                            diffText = `±0.0`;
-                          }
-                        }
-
-                        // 이전에 저장된 다른 시간대 값들도 보여주기 위함
-                        const history = [];
-                        if (currentField !== 'tempDawn' && state.tempDawn) history.push(`야간: ${state.tempDawn}℃`);
-                        if (currentField !== 'tempMorning' && state.tempMorning) history.push(`오전: ${state.tempMorning}℃`);
-                        if (currentField !== 'tempAfternoon' && state.tempAfternoon) history.push(`오후: ${state.tempAfternoon}℃`);
-
-                        return (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#3b82f6' }}>[{currentLabel}]</span>
-                              <input 
-                                type="number"
-                                step="0.1"
-                                placeholder="℃"
-                                style={{ width: '56px', height: '24px', fontSize: '12px', textAlign: 'center', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                                value={val ?? ''}
-                                disabled={isReadOnly}
-                                onChange={(e) => {
-                                  const num = e.target.value !== '' ? parseFloat(e.target.value) : null;
-                                  onUpdateTab4ItemBatch(item.id, { [currentField]: num });
-                                }}
-                              />
-                              {diffText && (
-                                <span style={{ fontSize: '11px', fontWeight: 700, color: diffColor }}>
-                                  ({diffText})
-                                </span>
-                              )}
-                            </div>
-                            {history.length > 0 && (
-                              <div style={{ fontSize: '10px', color: '#64748b' }}>
-                                {history.join(', ')}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      };
-
-                      return (
-                        <tr key={item.id} style={{ background: rowBg }}>
-                          {/* Column 1: 구역/시설명 */}
-                          <td style={{
-                            position: 'sticky',
-                            left: 0,
-                            zIndex: 10,
-                            background: rowBg,
-                            fontWeight: 600,
-                            color: '#1e293b',
-                            padding: '6px 8px',
-                            borderRight: '2px solid #cbd5e1',
-                            borderBottom: '1px solid #e2e8f0',
-                            whiteSpace: 'nowrap',
-                            width: '1%'
-                          }}>
-                            {item.text}
-                          </td>
-
-                          {/* Column 2: 기준 온도 (℃) - 기본값 10.0 ℃ */}
-                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
-                            <input 
-                              type="number"
-                              step="0.1"
-                              placeholder="10.0"
-                              style={{ width: '54px', height: '23px', fontSize: '11px', textAlign: 'center', fontWeight: 700, borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f1f5f9' }}
-                              value={target}
-                              disabled={isReadOnly}
-                              onChange={(e) => {
-                                const num = e.target.value !== '' ? parseFloat(e.target.value) : 10.0;
-                                onUpdateTab4ItemBatch(item.id, { targetTemp: num });
-                              }}
-                            />
-                          </td>
-
-                          {/* Column 3: 측정 온도 (자동분류) */}
-                          <td style={{ padding: '6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                            {renderSingleTempCell()}
-                          </td>
-
-                          {/* Column 4: 비고 및 특이사항 */}
-                          <td style={{ padding: '4px 6px', borderBottom: '1px solid #e2e8f0' }}>
-                            <input 
-                              type="text"
-                              className="slim-note-input"
-                              style={{ height: '24px', fontSize: '11px', width: '100%' }}
-                              placeholder="온도 이상/특이사항"
-                              value={state.note || ''}
-                              disabled={isReadOnly}
-                              onChange={(e) => !isReadOnly && onSaveNote(item.id, e.target.value)}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 종합 의견 */}
-        <div className="summary-box">
-          <label htmlFor="summaryText">
-            <span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}
-          </label>
-          <textarea
-            id="summaryText"
-            placeholder="온도 상태의 특이사항이나 관리 의견을 기재하세요."
-            value={summaryText || ''}
-            disabled={isReadOnly}
-            onChange={(e) => !isReadOnly && onChangeSummary(e.target.value)}
-          />
-        </div>
-      </main>
-    );
-  }
+  
 
   // Render Excel Table View for Tab 4
   if (currentTab === 'tab4') {
@@ -619,7 +409,202 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
         })}
 
         {/* 종합 의견 */}
-        <div className="summary-box">
+        {tempSections.length > 0 && (
+        <div className="section-card">
+          <div className="section-title">
+            <span>수온 및 실내 온도 점검표 (시간대별 엑셀 표)</span>
+            <span className="badge-count" style={{ color: '#2563eb', fontWeight: 600 }}>
+              * 기본 기준온도 10.0℃ (변경 가능)
+            </span>
+          </div>
+
+          <div style={{ overflow: 'auto', maxHeight: 'calc(100vh - 250px)', border: '1px solid #cbd5e1' }}>
+            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
+              <thead>
+                <tr>
+                  <th style={{
+                    position: 'sticky',
+                    top: 0,
+                    left: 0,
+                    zIndex: 20,
+                    background: '#e2e8f0',
+                    color: '#0f172a',
+                    padding: '8px 8px',
+                    borderRight: '2px solid #94a3b8',
+                    borderBottom: '2px solid #94a3b8',
+                    textAlign: 'left',
+                    whiteSpace: 'nowrap',
+                    width: '1%'
+                  }}>
+                    구역 / 시설명
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
+                    기준 온도 (℃)
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', whiteSpace: 'nowrap', width: '1%' }}>
+                    측정 온도 (자동분류)
+                  </th>
+                  <th style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f1f5f9', color: '#334155', padding: '8px 6px', borderBottom: '2px solid #94a3b8' }}>
+                    비고 및 특이사항
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {tempSections.map((section, sIdx) => (
+                  <React.Fragment key={sIdx}>
+                    <tr>
+                      <td 
+                        colSpan={6} 
+                        style={{
+                          background: '#f8fafc',
+                          fontWeight: 700,
+                          fontSize: '12px',
+                          color: '#1e293b',
+                          padding: '6px 8px',
+                          borderBottom: '1px solid #cbd5e1',
+                          borderTop: sIdx > 0 ? '2px solid #cbd5e1' : 'none'
+                        }}
+                      >
+                        {section.category}
+                      </td>
+                    </tr>
+
+                    {section.items.map((item: CheckItem, iIdx) => {
+                      const state = itemsState[item.id] || {};
+                      // Default all target temperatures to 10.0 ℃ as requested
+                      const target = state.targetTemp !== undefined && state.targetTemp !== null ? state.targetTemp : 10.0;
+                      const rowBg = iIdx % 2 === 1 ? '#f8fafc' : '#ffffff';
+
+                      const currentHour = new Date().getHours();
+                      let currentField: 'tempDawn' | 'tempMorning' | 'tempAfternoon' = 'tempDawn';
+                      let currentLabel = '야간';
+                      if (currentHour >= 6 && currentHour < 12) {
+                        currentField = 'tempMorning';
+                        currentLabel = '오전';
+                      } else if (currentHour >= 12 && currentHour < 18) {
+                        currentField = 'tempAfternoon';
+                        currentLabel = '오후';
+                      }
+
+                      const renderSingleTempCell = () => {
+                        const val = state[currentField] ?? null;
+                        let diffText = '';
+                        let diffColor = '#6b7280';
+
+                        if (val !== null && target !== null && typeof val === 'number' && typeof target === 'number') {
+                          const diff = Math.round((val - target) * 10) / 10;
+                          if (diff > 0) {
+                            diffText = `+${diff.toFixed(1)}`;
+                            diffColor = '#dc2626';
+                          } else if (diff < 0) {
+                            diffText = `${diff.toFixed(1)}`;
+                            diffColor = '#2563eb';
+                          } else {
+                            diffText = `±0.0`;
+                          }
+                        }
+
+                        // 이전에 저장된 다른 시간대 값들도 보여주기 위함
+                        const history = [];
+                        if (currentField !== 'tempDawn' && state.tempDawn) history.push(`야간: ${state.tempDawn}℃`);
+                        if (currentField !== 'tempMorning' && state.tempMorning) history.push(`오전: ${state.tempMorning}℃`);
+                        if (currentField !== 'tempAfternoon' && state.tempAfternoon) history.push(`오후: ${state.tempAfternoon}℃`);
+
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#3b82f6' }}>[{currentLabel}]</span>
+                              <input 
+                                type="number"
+                                step="0.1"
+                                placeholder="℃"
+                                style={{ width: '56px', height: '24px', fontSize: '12px', textAlign: 'center', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                                value={val ?? ''}
+                                disabled={isReadOnly}
+                                onChange={(e) => {
+                                  const num = e.target.value !== '' ? parseFloat(e.target.value) : null;
+                                  onUpdateTab4ItemBatch(item.id, { [currentField]: num });
+                                }}
+                              />
+                              {diffText && (
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: diffColor }}>
+                                  ({diffText})
+                                </span>
+                              )}
+                            </div>
+                            {history.length > 0 && (
+                              <div style={{ fontSize: '10px', color: '#64748b' }}>
+                                {history.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      };
+
+                      return (
+                        <tr key={item.id} style={{ background: rowBg }}>
+                          {/* Column 1: 구역/시설명 */}
+                          <td style={{
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 10,
+                            background: rowBg,
+                            fontWeight: 600,
+                            color: '#1e293b',
+                            padding: '6px 8px',
+                            borderRight: '2px solid #cbd5e1',
+                            borderBottom: '1px solid #e2e8f0',
+                            whiteSpace: 'nowrap',
+                            width: '1%'
+                          }}>
+                            {item.text}
+                          </td>
+
+                          {/* Column 2: 기준 온도 (℃) - 기본값 10.0 ℃ */}
+                          <td style={{ padding: '4px 6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap', width: '1%' }}>
+                            <input 
+                              type="number"
+                              step="0.1"
+                              placeholder="10.0"
+                              style={{ width: '54px', height: '23px', fontSize: '11px', textAlign: 'center', fontWeight: 700, borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f1f5f9' }}
+                              value={target}
+                              disabled={isReadOnly}
+                              onChange={(e) => {
+                                const num = e.target.value !== '' ? parseFloat(e.target.value) : 10.0;
+                                onUpdateTab4ItemBatch(item.id, { targetTemp: num });
+                              }}
+                            />
+                          </td>
+
+                          {/* Column 3: 측정 온도 (자동분류) */}
+                          <td style={{ padding: '6px', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            {renderSingleTempCell()}
+                          </td>
+
+                          {/* Column 4: 비고 및 특이사항 */}
+                          <td style={{ padding: '4px 6px', borderBottom: '1px solid #e2e8f0' }}>
+                            <input 
+                              type="text"
+                              className="slim-note-input"
+                              style={{ height: '24px', fontSize: '11px', width: '100%' }}
+                              placeholder="온도 이상/특이사항"
+                              value={state.note || ''}
+                              disabled={isReadOnly}
+                              onChange={(e) => !isReadOnly && onSaveNote(item.id, e.target.value)}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <div className="summary-box">
           <label htmlFor="summaryText" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span><span>{tabNameClean}</span> 종합 의견 {isReadOnly && '(조회 전용)'}</span>
           </label>
@@ -638,7 +623,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   // Standard View for Tabs 1, 2, 3
   return (
     <main className="main-container">
-      {sections.map((section, sIdx) => {
+      {standardSections.map((section, sIdx) => {
         const secStartIndex = sections.slice(0, sIdx).reduce((acc, s) => acc + s.items.length, 0);
 
         return (

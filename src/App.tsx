@@ -34,7 +34,7 @@ function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
     if (roleName && roleName.includes('야간')) {
       return ['tab1', 'tab3'];
     }
-    return ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
+    return ['tab1', 'tab2', 'tab3', 'tab4'];
   }
   
   if (dept === 'reception' && roleName) {
