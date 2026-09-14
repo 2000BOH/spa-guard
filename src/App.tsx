@@ -17,6 +17,7 @@ import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
 import MachineRoomPanel from './components/MachineRoomPanel';
 import { ChecklistEditorPage } from './components/ChecklistEditorPage';
+import { HandoverModal } from './components/HandoverModal';
 
 const DEPT_NAMES: Record<string, string> = {
   facilities: '시설',
@@ -93,6 +94,7 @@ export default function App() {
   const [availableTabs, setAvailableTabs] = useState<TabId[]>([]);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
+  const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(loadAdminSettings);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -106,6 +108,7 @@ export default function App() {
       inspector: '점검자',
       items: {},
       summaries: { tab1: '', tab2: '', tab3: '', tab4: '', tab5: '' },
+      handovers: {},
       securityCode: '',
       lastModified: ''
     };
@@ -147,6 +150,7 @@ export default function App() {
           inspector: saved.inspector || '점검자',
           items: saved.items || {},
           summaries: saved.summaries || { tab1: '', tab2: '', tab3: '', tab4: '', tab5: '' },
+          handovers: saved.handovers || {},
           securityCode: saved.securityCode || '',
           lastModified: saved.lastModified || ''
         };
@@ -160,6 +164,7 @@ export default function App() {
       inspector: '점검자',
       items: {},
       summaries: { tab1: '', tab2: '', tab3: '', tab4: '', tab5: '' },
+      handovers: {},
       securityCode: '',
       lastModified: ''
     };
@@ -176,6 +181,7 @@ export default function App() {
         inspector: log.inspector || '점검자',
         items: log.items_state || {},
         summaries: log.summaries || { tab1: '', tab2: '', tab3: '', tab4: '', tab5: '' },
+        handovers: log.handovers || {},
         securityCode: log.security_code || '',
         lastModified: log.recorded_at || ''
       };
@@ -192,11 +198,15 @@ export default function App() {
         const mergedSummaries = remoteTime >= prevTime
           ? { ...prev.summaries, ...remoteState.summaries }
           : { ...remoteState.summaries, ...prev.summaries };
+        const mergedHandovers = remoteTime >= prevTime
+          ? { ...prev.handovers, ...remoteState.handovers }
+          : { ...remoteState.handovers, ...prev.handovers };
         const finalState = {
           ...prev,
           ...remoteState,
           items: mergedItems,
           summaries: mergedSummaries,
+          handovers: mergedHandovers,
           inspector: remoteTime >= prevTime ? remoteState.inspector : prev.inspector
         };
         try {
@@ -743,8 +753,19 @@ export default function App() {
   if (currentView === 'main') {
     return (
       <>
-        <MainIndex onSelectDepartment={handleSelectDepartment} onOpenPanel={handleOpenPanel} adminSettings={adminSettings} />
+        <MainIndex 
+          onSelectDepartment={handleSelectDepartment} 
+          onOpenPanel={handleOpenPanel} 
+          adminSettings={adminSettings}
+          onOpenHandover={() => setIsHandoverModalOpen(true)}
+        />
         <Toast message={toastMsg} />
+        {isHandoverModalOpen && (
+          <HandoverModal 
+            onClose={() => setIsHandoverModalOpen(false)}
+            adminSettings={adminSettings}
+          />
+        )}
       </>
     );
   }
@@ -911,6 +932,23 @@ export default function App() {
         onSaveNote={handleSaveNote}
         onChangeSummary={handleChangeSummary}
         onUpdateTab4ItemBatch={handleUpdateTab4ItemBatch}
+        handovers={state.handovers[`${selectedDept}_${state.roleName}`] || []}
+        onSetHandoverStatus={(id, st) => {
+          updateStateAndSave((p) => {
+            const key = `${selectedDept}_${state.roleName}`;
+            const ho = p.handovers[key] || [];
+            const updated = ho.map(h => h.id === id ? { ...h, status: st, note: st === 'incomplete' ? h.note : '' } : h);
+            return { ...p, handovers: { ...p.handovers, [key]: updated } };
+          });
+        }}
+        onSaveHandoverNote={(id, note) => {
+          updateStateAndSave((p) => {
+            const key = `${selectedDept}_${state.roleName}`;
+            const ho = p.handovers[key] || [];
+            const updated = ho.map(h => h.id === id ? { ...h, note } : h);
+            return { ...p, handovers: { ...p.handovers, [key]: updated } };
+          });
+        }}
       />
 
       {/* 3개 버튼 하단 액션바: 저장 (좌) - 카톡제출 (중앙) - 출력 (우) */}

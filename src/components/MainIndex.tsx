@@ -9,6 +9,7 @@ interface MainIndexProps {
   onSelectDepartment: (dept: DepartmentId, inspector: string, roleName?: string) => void;
   onOpenPanel: (timeLabel: string) => void;
   adminSettings?: AdminSettings;
+  onOpenHandover?: () => void;
 }
 
 const DEPTS: Record<DepartmentId, { name: string; icon: string }> = {
@@ -27,7 +28,7 @@ function getTodayStr(): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpenPanel, adminSettings }) => {
+export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpenPanel, adminSettings, onOpenHandover }) => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [workRulesDept, setWorkRulesDept] = useState<DepartmentId | null>(null);
   const [settings, setSettings] = useState<AdminSettings>(() => adminSettings || loadAdminSettings());
@@ -190,7 +191,17 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
             점검할 부서와 담당자를 선택하세요
           </p>
         </div>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <button
+            onClick={() => onOpenHandover?.()}
+            style={{
+              background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: '6px',
+              padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '4px', height: 'fit-content'
+            }}
+          >
+            <span style={{ fontSize: '12px' }}>📝</span> 인수인계
+          </button>
           <button
             onClick={() => setIsAdminOpen(true)}
             style={{

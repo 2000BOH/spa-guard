@@ -1,5 +1,5 @@
 import React from 'react';
-import type { TabId, ItemState, StatusType, CheckItem } from '../types';
+import type { TabId, ItemState, StatusType, CheckItem, HandoverItem, HandoverStatus } from '../types';
 import { TAB_INFO } from '../data/checklistData';
 import { loadAdminSettings, getEffectiveChecklistData } from '../lib/adminSettings';
 
@@ -12,6 +12,9 @@ interface CheckListViewProps {
   onSaveNote: (itemId: string, note: string) => void;
   onChangeSummary: (summaryText: string) => void;
   onUpdateTab4ItemBatch: (itemId: string, updates: Partial<ItemState>) => void;
+  handovers?: HandoverItem[];
+  onSetHandoverStatus?: (id: string, status: HandoverStatus) => void;
+  onSaveHandoverNote?: (id: string, note: string) => void;
 }
 
 // Helper: Calculate item-specific historical average pressure across all saved dates in localStorage
@@ -56,11 +59,62 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   onSetStatus,
   onSaveNote,
   onChangeSummary,
-  onUpdateTab4ItemBatch
+  onUpdateTab4ItemBatch,
+  handovers,
+  onSetHandoverStatus,
+  onSaveHandoverNote
 }) => {
   const adminSettings = loadAdminSettings();
   const sections = getEffectiveChecklistData(currentTab, adminSettings.customChecklists);
   const tabNameClean = TAB_INFO[currentTab]?.name || '';
+
+  const renderHandovers = () => {
+    if (!handovers || handovers.length === 0) return null;
+    return (
+      <div className="section-card handover-section" style={{ border: '2px solid #0ea5e9', marginBottom: '16px' }}>
+        <div className="section-title" style={{ background: '#e0f2fe', color: '#0369a1' }}>
+          <span>📝 인수인계 / 관리자 지시 사항</span>
+        </div>
+        <div className="items-list">
+          {handovers.map((item, idx) => (
+            <div key={item.id} className="item-row" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '15px', fontWeight: 600, color: '#334155' }}>
+                  {idx + 1}. {item.text}
+                </span>
+                <div className="btn-group" style={{ flexShrink: 0, marginLeft: '12px' }}>
+                  <button
+                    className={`btn-status normal ${item.status === 'completed' ? 'active' : ''}`}
+                    onClick={() => onSetHandoverStatus?.(item.id, 'completed')}
+                    disabled={isReadOnly}
+                  >
+                    완료
+                  </button>
+                  <button
+                    className={`btn-status issue ${item.status === 'incomplete' ? 'active' : ''}`}
+                    onClick={() => onSetHandoverStatus?.(item.id, 'incomplete')}
+                    disabled={isReadOnly}
+                  >
+                    미완료
+                  </button>
+                </div>
+              </div>
+              <div className={`slim-note-box ${item.status === 'incomplete' ? 'show' : ''}`}>
+                <input
+                  type="text"
+                  className="slim-note-input"
+                  placeholder="⚠️ 미완료 사유 입력"
+                  value={item.note || ''}
+                  disabled={isReadOnly}
+                  onChange={(e) => !isReadOnly && onSaveHandoverNote?.(item.id, e.target.value)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   // Pressure options 1.0 to 2.4 (step 0.1)
   const pressureOptions: number[] = [];
@@ -264,6 +318,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
             </table>
           </div>
         </div>
+
+        {renderHandovers()}
 
         {/* 종합 의견 */}
         <div className="summary-box">
@@ -618,6 +674,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
           );
         })}
 
+        {renderHandovers()}
+
         {/* 종합 의견 */}
         <div className="summary-box">
           <label htmlFor="summaryText" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -707,6 +765,8 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
           </div>
         );
       })}
+
+      {renderHandovers()}
 
       <div className="summary-box">
         <label htmlFor="summaryText" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

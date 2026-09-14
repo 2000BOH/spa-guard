@@ -20,6 +20,15 @@ export interface ItemState {
   tempAfternoon?: number | null; // 오후 온도 (12:00 ~ 17:59)
 }
 
+export type HandoverStatus = 'none' | 'completed' | 'incomplete';
+
+export interface HandoverItem {
+  id: string;
+  text: string;
+  status: HandoverStatus;
+  note?: string;
+}
+
 export interface TabSummaryState {
   [key: string]: string;
 }
@@ -31,6 +40,7 @@ export interface AppState {
   roleName?: string;
   items: Record<string, ItemState>;
   summaries: TabSummaryState;
+  handovers: Record<string, HandoverItem[]>; // Key format: `${department}_${roleName}`
   securityCode: string;
   lastModified: string;
 }
