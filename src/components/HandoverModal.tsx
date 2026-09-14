@@ -125,7 +125,7 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
   };
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay open">
       <div className="modal-content admin-modal">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
