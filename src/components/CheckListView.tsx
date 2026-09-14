@@ -61,8 +61,9 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   const adminSettings = loadAdminSettings();
   const sections = getEffectiveChecklistData(currentTab, adminSettings.customChecklists);
   const tabNameClean = TAB_INFO[currentTab]?.name || '';
-  const tempSections = sections.filter(s => s.category.includes('수온') || s.category.includes('온도'));
-  const standardSections = sections.filter(s => !s.category.includes('수온') && !s.category.includes('온도'));
+  // tab5_ 접두사를 가진 아이템이 포함된 섹션을 온도 섹션으로 판단
+  const tempSections = sections.filter(s => s.items.some((i: CheckItem) => i.id.startsWith('tab5_')));
+  const standardSections = sections.filter(s => s.items.every((i: CheckItem) => !i.id.startsWith('tab5_')));
 
   // Pressure options 1.0 to 2.4 (step 0.1)
   const pressureOptions: number[] = [];
@@ -429,7 +430,7 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   return (
     <main className="main-container">
       {standardSections.map((section, sIdx) => {
-        const secStartIndex = sections.slice(0, sIdx).reduce((acc, s) => acc + s.items.length, 0);
+        const secStartIndex = standardSections.slice(0, sIdx).reduce((acc, s) => acc + s.items.length, 0);
 
         return (
           <div key={sIdx} className="section-card">
