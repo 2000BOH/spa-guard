@@ -71,22 +71,27 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
   const renderHandovers = () => {
     if (!handovers || handovers.length === 0) return null;
     return (
-      <div className="section-card handover-section" style={{ border: '2px solid #0ea5e9', marginBottom: '16px' }}>
-        <div className="section-title" style={{ background: '#e0f2fe', color: '#0369a1' }}>
-          <span>📝 인수인계 / 관리자 지시 사항</span>
+      <div className="section-card handover-section" style={{ border: '2px solid #0ea5e9', marginBottom: '20px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(14, 165, 233, 0.1)' }}>
+        <div className="section-title" style={{ background: '#e0f2fe', color: '#0369a1', padding: '12px 16px', borderTopLeftRadius: '10px', borderTopRightRadius: '10px' }}>
+          <span style={{ fontSize: '16px', fontWeight: 800 }}>📝 인수인계 및 관리자 지시 사항</span>
         </div>
-        <div className="items-list">
+        <div className="items-list" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {handovers.map((item, idx) => (
-            <div key={item.id} className="item-row" style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '15px', fontWeight: 600, color: '#334155' }}>
-                  {idx + 1}. {item.text}
+            <div key={item.id} className="item-row" style={{ 
+              display: 'flex', flexDirection: 'column', background: 'white', padding: '16px', 
+              borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', flex: 1, whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                  <span style={{ color: '#0ea5e9', marginRight: '6px' }}>{idx + 1}.</span>
+                  {item.text}
                 </span>
-                <div className="btn-group" style={{ flexShrink: 0, marginLeft: '12px' }}>
+                <div className="btn-group" style={{ flexShrink: 0, marginLeft: '16px', display: 'flex', gap: '8px' }}>
                   <button
                     className={`btn-status normal ${item.status === 'completed' ? 'active' : ''}`}
                     onClick={() => onSetHandoverStatus?.(item.id, 'completed')}
                     disabled={isReadOnly}
+                    style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '6px' }}
                   >
                     완료
                   </button>
@@ -94,19 +99,24 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                     className={`btn-status issue ${item.status === 'incomplete' ? 'active' : ''}`}
                     onClick={() => onSetHandoverStatus?.(item.id, 'incomplete')}
                     disabled={isReadOnly}
+                    style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '6px' }}
                   >
                     미완료
                   </button>
                 </div>
               </div>
-              <div className={`slim-note-box ${item.status === 'incomplete' ? 'show' : ''}`}>
+              <div className={`slim-note-box ${item.status === 'incomplete' ? 'show' : ''}`} style={{ marginTop: item.status === 'incomplete' ? '12px' : '0' }}>
                 <input
                   type="text"
                   className="slim-note-input"
-                  placeholder="⚠️ 미완료 사유 입력"
+                  placeholder="⚠️ 미완료 사유를 상세하게 기재해주세요"
                   value={item.note || ''}
                   disabled={isReadOnly}
                   onChange={(e) => !isReadOnly && onSaveHandoverNote?.(item.id, e.target.value)}
+                  style={{ 
+                    padding: '10px 12px', borderRadius: '6px', border: '1px solid #f87171', 
+                    background: '#fef2f2', color: '#991b1b', fontSize: '14px', width: '100%', outline: 'none'
+                  }}
                 />
               </div>
             </div>

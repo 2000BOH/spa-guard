@@ -27,6 +27,7 @@ export interface HandoverItem {
   text: string;
   status: HandoverStatus;
   note?: string;
+  targetDate?: string; // YYYY-MM-DD
 }
 
 export interface TabSummaryState {

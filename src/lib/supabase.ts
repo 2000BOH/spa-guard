@@ -80,6 +80,40 @@ export async function fetchInspectionFromSupabase(checkDate: string) {
   }
 }
 
+export async function fetchFutureInspectionsFromSupabase(startDate: string, storeName: string) {
+  if (!supabase) return { success: false, reason: 'unconfigured' };
+  try {
+    const { data, error } = await supabase
+      .from('inspection_logs')
+      .select('*')
+      .eq('store_name', storeName)
+      .gte('check_date', startDate)
+      .order('check_date', { ascending: true })
+      .order('recorded_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase Fetch Future Error:', error);
+      return { success: false, error };
+    }
+
+    // data may contain multiple rows for the same check_date (since we sort by recorded_at descending)
+    // we should only return the latest one for each date.
+    const latestPerDate = new Map<string, any>();
+    if (data) {
+      for (const row of data) {
+        if (!latestPerDate.has(row.check_date)) {
+          latestPerDate.set(row.check_date, row);
+        }
+      }
+    }
+    
+    return { success: true, logs: Array.from(latestPerDate.values()) };
+  } catch (err) {
+    console.error('Supabase Fetch Future Exception:', err);
+    return { success: false, error: err };
+  }
+}
+
 export async function saveAdminSettingsToSupabase(settings: unknown) {
   if (!supabase) return { success: false, reason: 'unconfigured' };
   try {

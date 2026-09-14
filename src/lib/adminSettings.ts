@@ -49,8 +49,10 @@ export function getDeptFlatRoles(dept: DepartmentId, deptConfig?: DeptConfig): F
   if (config && config.groups) {
     config.groups.forEach((grp, gIdx) => {
       grp.roles.forEach((r, rIdx) => {
-        const label = grp.label ? `${grp.label} ${r.role}` : r.role;
-        const finalLabel = (r.isWomen && !label.includes('(여)')) ? `${label} (여)` : label;
+        const namesString = (r.names && r.names.length > 0) ? r.names.join(', ') : r.name;
+        const nameSuffix = namesString ? ` (${namesString})` : '';
+        const label = grp.label ? `${grp.label} ${r.role}${nameSuffix}` : `${r.role}${nameSuffix}`;
+        const finalLabel = (r.isWomen && !label.includes('(여)')) ? `${label.replace(nameSuffix, '')} (여)${nameSuffix}` : label;
         items.push({
           roleLabel: finalLabel,
           groupIndex: gIdx,
