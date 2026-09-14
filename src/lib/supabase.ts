@@ -23,9 +23,8 @@ export async function saveInspectionToSupabase(state: AppState) {
       inspector: state.inspector,
       security_code: state.securityCode,
       recorded_at: state.lastModified,
-      items_state: state.items,
+      items_state: { ...state.items, __handovers__: state.handovers || {} },
       summaries: state.summaries,
-      handovers: state.handovers || {},
       created_at: new Date().toISOString()
     };
 
@@ -71,7 +70,12 @@ export async function fetchInspectionFromSupabase(checkDate: string) {
     }
 
     if (data && data.length > 0) {
-      return { success: true, log: data[0] };
+      const log = data[0];
+      if (log.items_state && log.items_state.__handovers__) {
+        log.handovers = log.items_state.__handovers__;
+        delete log.items_state.__handovers__;
+      }
+      return { success: true, log };
     }
 
     return { success: true, log: null };
@@ -103,6 +107,10 @@ export async function fetchFutureInspectionsFromSupabase(startDate: string, stor
     if (data) {
       for (const row of data) {
         if (!latestPerDate.has(row.check_date)) {
+          if (row.items_state && row.items_state.__handovers__) {
+            row.handovers = row.items_state.__handovers__;
+            delete row.items_state.__handovers__;
+          }
           latestPerDate.set(row.check_date, row);
         }
       }
