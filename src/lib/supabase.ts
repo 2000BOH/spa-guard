@@ -25,6 +25,7 @@ export async function saveInspectionToSupabase(state: AppState) {
       recorded_at: state.lastModified,
       items_state: state.items,
       summaries: state.summaries,
+      handovers: state.handovers || {},
       created_at: new Date().toISOString()
     };
 
