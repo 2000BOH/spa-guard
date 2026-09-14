@@ -34,7 +34,7 @@ function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
     if (roleName && roleName.includes('야간')) {
       return ['tab1', 'tab3'];
     }
-    return ['tab1', 'tab2', 'tab3', 'tab4'];
+    return ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
   }
   
   if (dept === 'reception' && roleName) {
@@ -181,17 +181,8 @@ export default function App() {
       };
 
       setState(prev => {
-        // 원격 데이터의 시간과 로컬 데이터의 시간을 비교
-        const prevTime = prev.lastModified ? new Date(prev.lastModified).getTime() : 0;
-        const remoteTime = remoteState.lastModified ? new Date(remoteState.lastModified).getTime() : 0;
-
-        // 원격이 더 최신이면 원격 우선, 로컬이 더 최신이면 로컬 우선 (단, 아이템은 항상 병합)
-        const mergedItems = remoteTime >= prevTime
-          ? { ...prev.items, ...remoteState.items }
-          : { ...remoteState.items, ...prev.items };
-        const mergedSummaries = remoteTime >= prevTime
-          ? { ...prev.summaries, ...remoteState.summaries }
-          : { ...remoteState.summaries, ...prev.summaries };
+        const mergedItems = { ...prev.items, ...remoteState.items };
+        const mergedSummaries = { ...prev.summaries, ...remoteState.summaries };
         const finalState = {
           ...prev,
           ...remoteState,

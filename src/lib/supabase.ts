@@ -28,21 +28,13 @@ export async function saveInspectionToSupabase(state: AppState) {
       created_at: new Date().toISOString()
     };
 
-    // UPSERT: check_date + inspector + store_name 조합으로 충돌 시 업데이트
-    // 이렇게 해야 레코드가 무한히 쌓이지 않고 같은 날짜/점검자 데이터가 올바르게 갱신됨
     const { data, error } = await supabase
       .from('inspection_logs')
-      .upsert([payload], { onConflict: 'check_date,store_name' });
+      .insert([payload]);
 
     if (error) {
-      console.error('Supabase Upsert Error:', error);
-      // upsert 실패 시 insert로 fallback
-      const fallback = await supabase.from('inspection_logs').insert([payload]);
-      if (fallback.error) {
-        console.error('Supabase Insert Fallback Error:', fallback.error);
-        return { success: false, error: fallback.error };
-      }
-      return { success: true, data: fallback.data };
+      console.error('Supabase Insert Error:', error);
+      return { success: false, error };
     }
     return { success: true, data };
   } catch (err) {
