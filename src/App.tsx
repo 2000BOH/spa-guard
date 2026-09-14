@@ -4,7 +4,7 @@ import { jsPDF } from 'jspdf';
 
 import type { AppState, TabId, StatusType, ItemState, CheckItem, DepartmentId, AdminSettings } from './types';
 import { NFC_BASE_NUMBERS } from './types';
-import { TAB_INFO, DEPT_TABS_MAP } from './data/checklistData';
+import { TAB_INFO, getDeptTabs } from './data/checklistData';
 import { Header } from './components/Header';
 import { MetaStrip } from './components/MetaStrip';
 import { CheckListView } from './components/CheckListView';
@@ -26,44 +26,6 @@ const DEPT_NAMES: Record<string, string> = {
   food: '푸드',
   snack: '스낵'
 };
-
-
-function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
-  let tabs = DEPT_TABS_MAP[dept] || [];
-  
-  if (dept === 'facilities') {
-    if (roleName && roleName.includes('야간')) {
-      return ['tab1', 'tab3'];
-    }
-    return ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
-  }
-  
-  if (dept === 'reception' && roleName) {
-    if (roleName.includes('오전')) return ['rTab1'];
-    if (roleName.includes('오후')) return ['rTab2'];
-    if (roleName.includes('야간') || roleName.includes('마감')) return ['rTab3'];
-  }
-  
-  if (dept === 'food' && roleName) {
-    if (roleName.includes('오픈')) return ['fTab1'];
-    if (roleName.includes('마감')) return ['fTab2'];
-  }
-  
-  if (dept === 'snack' && roleName) {
-    if (roleName.includes('오픈')) return ['sTab1'];
-    if (roleName.includes('마감')) return ['sTab2'];
-  }
-  
-  if (dept === 'cleaning') {
-    if (roleName && roleName.includes('(여)')) {
-      return ['cTabW'];
-    } else {
-      return ['cTabM'];
-    }
-  }
-  
-  return tabs;
-}
 
 const getStorageKey = (date: string) => `spa_date_data_${date}`;
 
@@ -935,21 +897,36 @@ export default function App() {
         onSaveNote={handleSaveNote}
         onChangeSummary={handleChangeSummary}
         onUpdateTab4ItemBatch={handleUpdateTab4ItemBatch}
-        handovers={state.handovers[`${selectedDept}_${state.roleName}`] || []}
+        handovers={[
+          ...(state.handovers[`${selectedDept}_${state.roleName}`] || []),
+          ...(state.handovers[`${selectedDept}_${state.roleName}_${currentTab}`] || [])
+        ]}
         onSetHandoverStatus={(id, st) => {
           updateStateAndSave((p) => {
-            const key = `${selectedDept}_${state.roleName}`;
-            const ho = p.handovers[key] || [];
-            const updated = ho.map(h => h.id === id ? { ...h, status: st, note: st === 'incomplete' ? h.note : '' } : h);
-            return { ...p, handovers: { ...p.handovers, [key]: updated } };
+            const oldKey = `${selectedDept}_${state.roleName}`;
+            const newKey = `${selectedDept}_${state.roleName}_${currentTab}`;
+            let hoOld = p.handovers[oldKey] || [];
+            let hoNew = p.handovers[newKey] || [];
+            if (hoOld.some(h => h.id === id)) {
+              hoOld = hoOld.map(h => h.id === id ? { ...h, status: st, note: st === 'incomplete' ? h.note : '' } : h);
+            } else {
+              hoNew = hoNew.map(h => h.id === id ? { ...h, status: st, note: st === 'incomplete' ? h.note : '' } : h);
+            }
+            return { ...p, handovers: { ...p.handovers, [oldKey]: hoOld, [newKey]: hoNew } };
           });
         }}
         onSaveHandoverNote={(id, note) => {
           updateStateAndSave((p) => {
-            const key = `${selectedDept}_${state.roleName}`;
-            const ho = p.handovers[key] || [];
-            const updated = ho.map(h => h.id === id ? { ...h, note } : h);
-            return { ...p, handovers: { ...p.handovers, [key]: updated } };
+            const oldKey = `${selectedDept}_${state.roleName}`;
+            const newKey = `${selectedDept}_${state.roleName}_${currentTab}`;
+            let hoOld = p.handovers[oldKey] || [];
+            let hoNew = p.handovers[newKey] || [];
+            if (hoOld.some(h => h.id === id)) {
+              hoOld = hoOld.map(h => h.id === id ? { ...h, note } : h);
+            } else {
+              hoNew = hoNew.map(h => h.id === id ? { ...h, note } : h);
+            }
+            return { ...p, handovers: { ...p.handovers, [oldKey]: hoOld, [newKey]: hoNew } };
           });
         }}
       />

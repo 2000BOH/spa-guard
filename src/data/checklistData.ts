@@ -669,3 +669,40 @@ export const CHECKLIST_DATA: Record<string, { category: string; items: { id: str
     }
   ]
 };
+
+export function getDeptTabs(dept: DepartmentId, roleName?: string): string[] {
+  let tabs = DEPT_TABS_MAP[dept] || [];
+  
+  if (dept === 'facilities') {
+    if (roleName && roleName.includes('야간')) {
+      return ['tab1', 'tab3'];
+    }
+    return ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
+  }
+  
+  if (dept === 'reception' && roleName) {
+    if (roleName.includes('오전')) return ['rTab1'];
+    if (roleName.includes('오후')) return ['rTab2'];
+    if (roleName.includes('야간') || roleName.includes('마감')) return ['rTab3'];
+  }
+  
+  if (dept === 'food' && roleName) {
+    if (roleName.includes('오픈')) return ['fTab1'];
+    if (roleName.includes('마감')) return ['fTab2'];
+  }
+  
+  if (dept === 'snack' && roleName) {
+    if (roleName.includes('오픈')) return ['sTab1'];
+    if (roleName.includes('마감')) return ['sTab2'];
+  }
+  
+  if (dept === 'cleaning') {
+    if (roleName && roleName.includes('(여)')) {
+      return ['cTabW'];
+    } else {
+      return ['cTabM'];
+    }
+  }
+
+  return tabs;
+}

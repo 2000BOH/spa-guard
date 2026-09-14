@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import type { AdminSettings, DepartmentId, HandoverItem, AppState } from "../types";
 import { getDeptFlatRoles } from "../lib/adminSettings";
+import { getDeptTabs, TAB_INFO } from "../data/checklistData";
 import { fetchInspectionFromSupabase, saveInspectionToSupabase, fetchFutureInspectionsFromSupabase } from "../lib/supabase";
 
 interface HandoverModalProps {
@@ -25,6 +26,7 @@ const getTodayStr = () => {
 export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSettings }) => {
   const [selectedDept, setSelectedDept] = useState<DepartmentId | null>(null);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<string | null>(null);
   const [items, setItems] = useState<HandoverItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadedDates, setLoadedDates] = useState<Set<string>>(new Set());
@@ -32,9 +34,14 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
   // Load data when dept or role changes
   useEffect(() => {
     if (!selectedDept || !selectedRole) return;
+    const tabs = getDeptTabs(selectedDept, selectedRole);
+    if (tabs.length > 1 && !selectedTab) return; // Wait for tab selection
+    
+    const currentTab = tabs.length > 1 ? selectedTab : tabs[0];
+
     const loadData = async () => {
       setIsLoading(true);
-      const key = `${selectedDept}_${selectedRole}`;
+      const key = currentTab ? `${selectedDept}_${selectedRole}_${currentTab}` : `${selectedDept}_${selectedRole}`;
       const todayStr = getTodayStr();
       
       const res = await fetchFutureInspectionsFromSupabase(todayStr, "블루오션 웰니스 스파");
@@ -60,7 +67,7 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
     };
 
     loadData();
-  }, [selectedDept, selectedRole]);
+  }, [selectedDept, selectedRole, selectedTab]);
 
   const handleAddItem = () => {
     setItems(prev => [...prev, { 
@@ -90,7 +97,9 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
     // Clean empty items
     const cleanItems = items.filter(i => i.text.trim() !== "" && i.targetDate);
 
-    const key = `${selectedDept}_${selectedRole}`;
+    const tabs = getDeptTabs(selectedDept, selectedRole);
+    const currentTab = tabs.length > 1 ? selectedTab : tabs[0];
+    const key = currentTab ? `${selectedDept}_${selectedRole}_${currentTab}` : `${selectedDept}_${selectedRole}`;
     
     // Determine all dates we need to update
     const datesToUpdate = new Set(loadedDates);
@@ -199,12 +208,41 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
               ))}
             </div>
           </div>
+        ) : (getDeptTabs(selectedDept, selectedRole).length > 1 && !selectedTab) ? (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", marginBottom: "16px", gap: "12px" }}>
+              <button onClick={() => setSelectedRole(null)} style={{ background: "#f1f5f9", padding: "6px 12px", borderRadius: "6px", border: "none", cursor: "pointer", fontSize: "14px", color: "#475569", fontWeight: 600 }}>← 담당자 재선택</button>
+              <h3 style={{ margin: 0, fontSize: "18px", color: "#1e293b" }}>{DEPT_NAMES[selectedDept]} &gt; {selectedRole} - 구역 선택</h3>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              {getDeptTabs(selectedDept, selectedRole).map(tabId => (
+                <button
+                  key={tabId}
+                  onClick={() => setSelectedTab(tabId)}
+                  style={{
+                    background: "white", color: "#334155", padding: "16px", borderRadius: "12px",
+                    border: "2px solid #e2e8f0", cursor: "pointer", fontSize: "15px", fontWeight: 700,
+                    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+                    transition: "all 0.2s",
+                    textAlign: "center"
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "#0ea5e9"}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = "#e2e8f0"}
+                >
+                  {TAB_INFO[tabId]?.name || tabId}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", height: "100%", maxHeight: "600px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", paddingBottom: "12px", borderBottom: "2px solid #f1f5f9" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <button onClick={() => setSelectedRole(null)} style={{ background: "#f1f5f9", padding: "6px 12px", borderRadius: "6px", border: "none", cursor: "pointer", fontSize: "14px", color: "#475569", fontWeight: 600 }}>← 돌아가기</button>
-                <h3 style={{ margin: 0, fontSize: "18px", color: "#0ea5e9", fontWeight: 800 }}>{DEPT_NAMES[selectedDept]} &gt; {selectedRole}</h3>
+                <button onClick={() => getDeptTabs(selectedDept, selectedRole).length > 1 ? setSelectedTab(null) : setSelectedRole(null)} style={{ background: "#f1f5f9", padding: "6px 12px", borderRadius: "6px", border: "none", cursor: "pointer", fontSize: "14px", color: "#475569", fontWeight: 600 }}>← 돌아가기</button>
+                <h3 style={{ margin: 0, fontSize: "18px", color: "#0ea5e9", fontWeight: 800 }}>
+                  {DEPT_NAMES[selectedDept]} &gt; {selectedRole}
+                  {getDeptTabs(selectedDept, selectedRole).length > 1 && selectedTab ? ` > ${TAB_INFO[selectedTab]?.name}` : ""}
+                </h3>
               </div>
             </div>
             
