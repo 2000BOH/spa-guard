@@ -43,6 +43,7 @@ export interface AppState {
   summaries: TabSummaryState;
   handovers: Record<string, HandoverItem[]>; // Key format: `${department}_${roleName}`
   securityCode: string;
+  documentVersion?: number;
   lastModified: string;
 }
 

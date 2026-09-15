@@ -585,25 +585,41 @@ export default function App() {
     }
   };
 
-  // Kakao Submit Logic with COVER IMAGE as Image 1
+  // 문서번호 발급 헬퍼 함수
+  const getDocumentNumber = (dateStr: string, deptName: string, increment: boolean = false) => {
+    const dStr = dateStr || new Date().toISOString().split('T')[0];
+    const yy = dStr.slice(2, 4);
+    const mm = dStr.slice(5, 7);
+    const dd = dStr.slice(8, 10);
+    const yymmdd = `${yy}${mm}${dd}`;
+    const key = `doc_seq_${yymmdd}_${deptName}`;
+    const seq = parseInt(localStorage.getItem(key) || '1');
+    if (increment) {
+      localStorage.setItem(key, String(seq + 1));
+    }
+    return `BOWS-${deptName}-${yymmdd}-${String(seq).padStart(2, '0')}`;
+  };
+
+  // Kakao Submit Logic (텍스트 전용)
   const handleSubmitToKakao = async () => {
-    showToast("⏳ 표지 포함 카톡 전송 데이터 준비 중...");
+    const deptName = (selectedDept && DEPT_NAMES[selectedDept]) || '점검';
+    const docNum = getDocumentNumber(state.date || todayStr, deptName, true); // 카톡 전송 시에만 +1 증가
 
+    showToast("⏳ 카톡 전송 데이터 준비 중...");
     saveInspectionToSupabase(state);
-
+    
     const markCompleted = () => {
       if (selectedDept) {
         updateDeptInspectionStatus(state.date || todayStr, selectedDept, state.roleName, 'completed', state.inspector);
       }
     };
 
-    let msg = `{시설 점검 보고}\n`;
+    let msg = `${deptName} 점검 보고_${state.date || todayStr}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `🏢 업소명: 블루오션 웰니스 스파\n`;
-    msg += `📅 점검일자: ${state.date}\n`;
-    msg += `👤 점검자: ${state.inspector || '점검자'}\n`;
-    msg += `🔒 인증코드: ${state.securityCode}\n`;
-    msg += `⏰ 기록시간: ${state.lastModified}\n`;
+    msg += `❍ 업소명: 블루오션 웰니스 스파\n`;
+    msg += `❍ 점검자: ${state.inspector || '점검자'}\n`;
+    msg += `❍ 문서번호: ${docNum}\n`;
+    msg += `❍ 기록시간: ${state.lastModified || '-'}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     availableTabs.forEach((tid) => {
@@ -639,105 +655,66 @@ export default function App() {
         }
       });
 
-      msg += `■ ${tabInfo.name} (정상/기록 ${n} / 이상 ${i})\n`;
+      msg += `❏ ${tabInfo.name} (정상/기록 ${n} / 이상 ${i})\n`;
       msg += issues.length > 0 ? `${issues.join('\n')}\n` : `  ✅ 전 항목 '이상무 (O)' 적합\n`;
-
-      const sumText = state.summaries[tid];
-      if (sumText) {
-        msg += `  📝 의견: ${sumText}\n`;
-      }
-      msg += `\n`;
     });
 
-    const container = document.getElementById('printDocumentHiddenContainer');
-    if (!container) return;
-    container.style.position = 'absolute';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.zIndex = '-100';
-    container.style.opacity = '1';
-
-    const deptName = (selectedDept && DEPT_NAMES[selectedDept]) || '점검';
-    const baseName = `${state.date}_${deptName}_${state.inspector || '점검자'}`;
-
-    try {
-      const coverEl = document.getElementById('a4PageCover')!;
-      const contentEls = document.querySelectorAll('.a4-content-page');
-
-      const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#ffffff' });
-      const coverBlob = await new Promise<Blob>((resolve) => canvasCover.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
-
-      const filesArray: File[] = [
-        new File([coverBlob], `${baseName}_표지.jpg`, { type: 'image/jpeg' })
-      ];
-
-      for (let i = 0; i < contentEls.length; i++) {
-        const el = contentEls[i] as HTMLElement;
-        const raw = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
-        const blob = await new Promise<Blob>((resolve) => raw.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
-        filesArray.push(new File([blob], `${baseName}_내용_${i + 1}.jpg`, { type: 'image/jpeg' }));
-      }
-
-      container.style.position = 'absolute';
-      container.style.top = '-9999px';
-      container.style.left = '-9999px';
-      container.style.opacity = '0';
-
-      // 카톡에서 첫 장(표지)이 단독 전체폭으로 표시되려면 전체 파일 수가 홀수여야 함
-      if (filesArray.length % 2 === 0) {
-        const blankC = document.createElement('canvas');
-        blankC.width = 800 * 2;
-        blankC.height = 1131 * 2;
-        blankC.getContext('2d')!.fillStyle = '#ffffff';
-        blankC.getContext('2d')!.fillRect(0, 0, blankC.width, blankC.height);
-        const blankBlob = await new Promise<Blob>((resolve) => blankC.toBlob((b) => resolve(b!), 'image/jpeg', 0.5));
-        filesArray.push(new File([blankBlob], `${baseName}_blank.jpg`, { type: 'image/jpeg' }));
-      }
-
-      let sharedSuccessfully = false;
-
-      // 1단계: 모바일 공유 API (파일 3개 직접 공유) — 카카오톡 공유창 열림
-      if (navigator.canShare && navigator.canShare({ files: filesArray })) {
-        try {
-          await navigator.share({
-            title: '{시설 점검 보고}',
-            text: msg,
-            files: filesArray
-          });
-          sharedSuccessfully = true;
-        } catch (shareErr) {
-          console.warn("파일 포함 공유 실패 또는 사용자 취소:", shareErr);
-        }
-      }
-
-      // 2단계: 파일 공유 미지원/실패 시 전체 이미지 다운로드 + 클립보드 복사
-      if (!sharedSuccessfully) {
-        for (const f of filesArray) {
-          const url = URL.createObjectURL(f);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = f.name;
-          a.click();
-          URL.revokeObjectURL(url);
-        }
-        try {
-          await navigator.clipboard.writeText(msg);
-          alert(`📋 요약 보고서가 복사되었고 점검표 이미지 ${filesArray.length}장이 다운로드되었습니다!\n\n카카오톡 단체방에 [붙여넣기]하고 다운로드된 이미지를 함께 올려주세요.`);
-        } catch (clipErr) {
-          console.warn("클립보드 복사 실패:", clipErr);
-          alert(`📋 점검표 이미지 ${filesArray.length}장이 다운로드되었습니다.\n\n요약 보고서 텍스트를 카카오톡 단체방에 직접 공유해주세요.`);
-        }
-      }
-
-      markCompleted();
-    } catch (e) {
-      if (container) {
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-      }
-      console.error(e);
-      alert("카카오톡 전송 처리 중 오류가 발생했습니다: " + e);
+    // 인수인계 사항
+    msg += `\n❏ 인수인계 및 관리자 지시 사항\n`;
+    const handoverList = selectedDept && state.roleName ? state.handovers[`${selectedDept}_${state.roleName}`] || [] : [];
+    if (handoverList.length > 0) {
+      handoverList.forEach(h => {
+        const statusText = h.status === 'completed' ? '완료' : h.status === 'incomplete' ? '미완료' : '';
+        msg += `   ✅ ${h.text} [${statusText}]\n`;
+        if (h.note) msg += `     ↳ 사유: ${h.note}\n`;
+      });
+    } else {
+      msg += `   - 없음 -\n`;
     }
+
+    // 종합 의견
+    msg += `\n❏ 종합 의견\n`;
+    let hasSummary = false;
+    availableTabs.forEach(tid => {
+      const sumText = state.summaries[tid];
+      if (sumText) {
+        msg += `   - [${TAB_INFO[tid].name}] ${sumText}\n`;
+        hasSummary = true;
+      }
+    });
+    if (!hasSummary) {
+      msg += `   - 없음 -\n`;
+    }
+
+    msg += `\n이상.`;
+
+    // 1단계: 모바일 Web Share API
+    let sharedSuccessfully = false;
+    if (navigator.canShare && navigator.canShare({ text: msg })) {
+      try {
+        await navigator.share({
+          title: `${deptName} 점검 보고`,
+          text: msg
+        });
+        sharedSuccessfully = true;
+      } catch (shareErr) {
+        console.warn("텍스트 공유 실패 또는 사용자 취소:", shareErr);
+      }
+    }
+
+    // 2단계: 실패 시 클립보드 복사
+    if (!sharedSuccessfully) {
+      try {
+        await navigator.clipboard.writeText(msg);
+        alert(`📋 요약 보고서가 복사되었습니다!\n\n카카오톡에 [붙여넣기] 해주세요.`);
+      } catch (clipErr) {
+        console.warn("클립보드 복사 실패:", clipErr);
+        alert(`공유 기능을 지원하지 않는 브라우저입니다.\n아래 텍스트를 복사해주세요:\n\n${msg}`);
+      }
+    }
+
+    markCompleted();
+    showToast("✅ 요약 보고서 복사/공유 완료");
   };
 
   if (currentView === 'main') {

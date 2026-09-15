@@ -18,6 +18,16 @@ type FlatItem = {
 export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state, departmentId, departmentName, availableTabs }) => {
   const checkDateDot = state.date.replace(/-/g, '.');
 
+  // 문서번호 생성 (조회용이므로 increment는 false)
+  const dStr = state.date || new Date().toISOString().split('T')[0];
+  const yy = dStr.slice(2, 4);
+  const mm = dStr.slice(5, 7);
+  const dd = dStr.slice(8, 10);
+  const yymmdd = `${yy}${mm}${dd}`;
+  const key = `doc_seq_${yymmdd}_${departmentName}`;
+  const seq = parseInt(localStorage.getItem(key) || '1');
+  const documentNumber = `BOWS-${departmentName}-${yymmdd}-${String(seq).padStart(2, '0')}`;
+
   // 1. Calculate stats for the cover page
   let cntN = 0;
   let cntI = 0;
@@ -274,7 +284,7 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state, departm
             </span>
           </div>
           <span style={{ fontSize: '16px', fontWeight: 800, color: '#2563eb', background: '#eff6ff', padding: '8px 16px', borderRadius: '8px', border: '1.5px solid #bfdbfe' }}>
-            인증코드: {state.securityCode}
+            문서번호: {documentNumber}
           </span>
         </div>
 
@@ -323,9 +333,9 @@ export const A4PrintDocument: React.FC<A4PrintDocumentProps> = ({ state, departm
                     <tr>
                       <th style={{ width: '15%' }}>업 소 명</th>
                       <td style={{ width: '35%' }}>블루오션 웰니스 스파</td>
-                      <th style={{ width: '18%' }}>인 증 코 드</th>
+                      <th style={{ width: '18%' }}>문 서 번 호</th>
                       <td style={{ width: '32%', fontFamily: 'monospace', fontWeight: 700, color: '#1d4ed8', fontSize: '11px' }}>
-                        {state.securityCode}
+                        {documentNumber}
                       </td>
                     </tr>
                     <tr>
