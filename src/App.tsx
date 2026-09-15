@@ -631,32 +631,45 @@ export default function App() {
       let n = 0;
       let i = 0;
       const issues: string[] = [];
+      const notes: string[] = [];
 
       items.forEach((item: CheckItem) => {
         const itemState = state.items[item.id] || {};
+        const hasNote = itemState.note && itemState.note.trim() !== '';
+
         if (item.type === 'filter' || item.type === 'pump') {
           const isIssue = itemState.sound === 'issue' || itemState.leak === 'issue' || itemState.vibration === 'issue';
           if (isIssue) {
             i++;
             issues.push(`  ⚠️ [이상] ${item.text}\n    ↳ 조치: ${itemState.note || '상세 없음'}`);
-          } else if (itemState.pressure !== undefined || itemState.sound !== undefined || itemState.backwash !== undefined || itemState.hairCatcher !== undefined) {
-            n++;
+          } else {
+            if (itemState.pressure !== undefined || itemState.sound !== undefined || itemState.backwash !== undefined || itemState.hairCatcher !== undefined) n++;
+            if (hasNote) notes.push(`  ℹ️ [참고] ${item.text}: ${itemState.note}`);
           }
         } else if (item.type === 'temp') {
           const isInspected = itemState.tempDawn !== undefined || itemState.tempMorning !== undefined || itemState.tempAfternoon !== undefined;
           if (isInspected) n++;
+          if (hasNote) notes.push(`  ℹ️ [참고] ${item.text}: ${itemState.note}`);
         } else {
           const st = itemState.status;
-          if (st === 'normal') n++;
-          else if (st === 'issue') {
+          if (st === 'normal') {
+            n++;
+            if (hasNote) notes.push(`  ℹ️ [참고] ${item.text}: ${itemState.note}`);
+          } else if (st === 'issue') {
             i++;
             issues.push(`  ⚠️ [이상] ${item.text}\n    ↳ 조치: ${itemState.note || '상세 없음'}`);
+          } else if (hasNote) {
+            // 기록은 안 했지만 특이사항만 적은 경우
+            notes.push(`  ℹ️ [참고] ${item.text}: ${itemState.note}`);
           }
         }
       });
 
       msg += `❏ ${tabInfo.name} (정상/기록 ${n} / 이상 ${i})\n`;
       msg += issues.length > 0 ? `${issues.join('\n')}\n` : `  ✅ 전 항목 '이상무 (O)' 적합\n`;
+      if (notes.length > 0) {
+        msg += `${notes.join('\n')}\n`;
+      }
     });
 
     // 인수인계 사항
