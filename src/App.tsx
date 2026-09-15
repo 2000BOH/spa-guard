@@ -616,10 +616,10 @@ export default function App() {
 
     let msg = `${deptName} 점검 보고_${state.date || todayStr}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `❍ 업소명: 블루오션 웰니스 스파\n`;
+    msg += `❍ 파트명: ${deptName}\n`;
     msg += `❍ 점검자: ${state.inspector || '점검자'}\n`;
     msg += `❍ 문서번호: ${docNum}\n`;
-    msg += `❍ 기록시간: ${state.lastModified || '-'}\n`;
+    msg += `❍ 기록시간: ${state.lastModified ? state.lastModified.split(' ')[1] || state.lastModified : '-'}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     availableTabs.forEach((tid) => {
