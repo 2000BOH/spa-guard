@@ -117,38 +117,27 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
         lastModified: new Date().toISOString()
       };
 
+      // 1단계: 로컬 localStorage를 우선 기반으로 사용 (로컬이 항상 최신 상태)
       let localState: any = null;
       try {
         const raw = localStorage.getItem(getStorageKey(date));
         if (raw) localState = JSON.parse(raw);
       } catch (e) {}
 
-      let remoteState: any = null;
-      const res = await fetchInspectionFromSupabase(date);
-      if (res.success && res.log) {
-        remoteState = {
-          ...res.log,
-          items: res.log.items_state || {},
-          handovers: res.log.handovers || {}
-        };
-      }
-
-      if (localState && remoteState) {
-        const getSafeTime = (d: string) => d ? new Date(d.includes('T') ? d : d.replace(/-/g, '/')).getTime() || 0 : 0;
-        const prevTime = getSafeTime(localState.lastModified);
-        const remoteTime = getSafeTime(remoteState.lastModified);
-
-        baseState = {
-          ...baseState,
-          ...(remoteTime >= prevTime ? remoteState : localState),
-          items: remoteTime >= prevTime ? { ...localState.items, ...remoteState.items } : { ...remoteState.items, ...localState.items },
-          summaries: remoteTime >= prevTime ? { ...localState.summaries, ...remoteState.summaries } : { ...remoteState.summaries, ...localState.summaries },
-          handovers: remoteTime >= prevTime ? { ...localState.handovers, ...remoteState.handovers } : { ...remoteState.handovers, ...localState.handovers }
-        };
-      } else if (localState) {
-        baseState = { ...baseState, ...localState, handovers: localState.handovers || {} };
-      } else if (remoteState) {
-        baseState = { ...baseState, ...remoteState, handovers: remoteState.handovers || {} };
+      if (localState) {
+        // 로컬이 있으면 로컬 기반으로 시작
+        baseState = { ...baseState, ...localState, handovers: { ...(localState.handovers || {}) } };
+      } else {
+        // 로컬이 없으면 서버에서 가져오되 handovers만 병합
+        const res = await fetchInspectionFromSupabase(date);
+        if (res.success && res.log) {
+          baseState = {
+            ...baseState,
+            ...res.log,
+            items: res.log.items_state || {},
+            handovers: res.log.handovers || {}
+          };
+        }
       }
 
       const itemsForThisDate = cleanItems.filter(i => i.targetDate === date);

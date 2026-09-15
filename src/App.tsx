@@ -84,10 +84,11 @@ export default function App() {
   };
 
   const generateSecurityLog = (items: Record<string, ItemState>, inspector: string) => {
+    // ISO 8601 포맷으로 통일하여 모든 브라우저에서 정확한 시간 비교 보장
     const now = new Date();
-    const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    const isoStr = now.toISOString();
 
-    const payload = `${timeStr}_${inspector || '점검자'}_${JSON.stringify(items)}`;
+    const payload = `${isoStr}_${inspector || '점검자'}_${JSON.stringify(items)}`;
     let hashNum = 0;
     for (let idx = 0; idx < payload.length; idx++) {
       hashNum = (hashNum << 5) - hashNum + payload.charCodeAt(idx);
@@ -96,7 +97,7 @@ export default function App() {
     const hexCode = Math.abs(hashNum).toString(16).toUpperCase().padStart(8, '0');
     const finalCode = `SPA-AUTH-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}-${hexCode}`;
 
-    return { lastModified: timeStr, securityCode: finalCode };
+    return { lastModified: isoStr, securityCode: finalCode };
   };
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -149,29 +150,30 @@ export default function App() {
       };
 
       setState(prev => {
-        // 원격 데이터의 시간과 로컬 데이터의 시간을 비교
-        // Safari 브라우저 파싱 버그(NaN) 방지를 위해 '-'를 '/'로 치환하되 ISO 포맷(T 포함)은 원본 유지
-        const getSafeTime = (d: string) => d ? new Date(d.includes('T') ? d : d.replace(/-/g, '/')).getTime() || 0 : 0;
+        // ISO 포맷으로 통일되어 있으므로 직접 new Date() 파싱 가능
+        const getSafeTime = (d: string) => d ? new Date(d).getTime() || 0 : 0;
         const prevTime = getSafeTime(prev.lastModified);
         const remoteTime = getSafeTime(remoteState.lastModified);
 
-        // 원격이 더 최신이면 원격 우선, 로컬이 더 최신이면 로컬 우선 (단, 아이템은 항상 병합)
-        const mergedItems = remoteTime >= prevTime
-          ? { ...prev.items, ...remoteState.items }
-          : { ...remoteState.items, ...prev.items };
-        const mergedSummaries = remoteTime >= prevTime
-          ? { ...prev.summaries, ...remoteState.summaries }
-          : { ...remoteState.summaries, ...prev.summaries };
-        const mergedHandovers = remoteTime >= prevTime
-          ? { ...prev.handovers, ...remoteState.handovers }
-          : { ...remoteState.handovers, ...prev.handovers };
+        // 로컬이 더 최신이면 원격 데이터로 덮어쓰지 않음
+        // 원격이 더 최신일 때만 병합하여 반영
+        if (prevTime > remoteTime) {
+          // 로컬이 더 최신: 원격 handovers만 병합(누락 방지), 나머지는 로컬 유지
+          const mergedHandovers = { ...remoteState.handovers, ...prev.handovers };
+          return { ...prev, handovers: mergedHandovers };
+        }
+
+        // 원격이 더 최신: 원격 우선으로 모두 병합
+        const mergedItems = { ...prev.items, ...remoteState.items };
+        const mergedSummaries = { ...prev.summaries, ...remoteState.summaries };
+        const mergedHandovers = { ...prev.handovers, ...remoteState.handovers };
         const finalState = {
           ...prev,
           ...remoteState,
           items: mergedItems,
           summaries: mergedSummaries,
           handovers: mergedHandovers,
-          inspector: remoteTime >= prevTime ? remoteState.inspector : prev.inspector
+          inspector: remoteState.inspector !== '점검자' ? remoteState.inspector : prev.inspector
         };
         try {
           localStorage.setItem(getStorageKey(targetDate), JSON.stringify(finalState));
@@ -766,9 +768,12 @@ export default function App() {
         <Toast message={toastMsg} />
         {isHandoverModalOpen && (
           <HandoverModal 
-            onClose={() => {
+            onClose={async () => {
               setIsHandoverModalOpen(false);
-              syncWithSupabase(state.date);
+              // 인수인계 저장 후 서버에 반영될 시간 확보를 위해 2초 뒤에 동기화
+              // 즉시 sync하면 방금 저장한 데이터가 아직 서버에 없어서 덮어쓰일 수 있음
+              await new Promise(r => setTimeout(r, 2000));
+              syncWithSupabase(state.date, true);
             }}
             adminSettings={adminSettings}
           />

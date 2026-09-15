@@ -17,15 +17,18 @@ export async function saveInspectionToSupabase(state: AppState) {
   try {
     // UPDATE RLS 정책 없이도 동작하도록 항상 INSERT
     // (fetchInspection은 recorded_at 최신순으로 가져오므로 최신 레코드가 자동 사용됨)
+    // recorded_at을 저장 시점의 ISO 시간으로 항상 갱신하여 최신 데이터임을 보장
+    // state.lastModified는 로컬 기록 시간이므로 서버 저장 시간과 다를 수 있음
+    const savedAt = new Date().toISOString();
     const payload = {
       store_name: state.storeName,
       check_date: state.date,
       inspector: state.inspector,
       security_code: state.securityCode,
-      recorded_at: state.lastModified,
+      recorded_at: savedAt,
       items_state: { ...state.items, __handovers__: state.handovers || {} },
       summaries: state.summaries,
-      created_at: new Date().toISOString()
+      created_at: savedAt
     };
 
     // UPSERT: check_date + inspector + store_name 조합으로 충돌 시 업데이트
