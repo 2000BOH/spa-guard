@@ -150,8 +150,10 @@ export default function App() {
 
       setState(prev => {
         // 원격 데이터의 시간과 로컬 데이터의 시간을 비교
-        const prevTime = prev.lastModified ? new Date(prev.lastModified).getTime() : 0;
-        const remoteTime = remoteState.lastModified ? new Date(remoteState.lastModified).getTime() : 0;
+        // Safari 브라우저 파싱 버그(NaN) 방지를 위해 '-'를 '/'로 치환
+        const getSafeTime = (d: string) => d ? new Date(d.replace(/-/g, '/')).getTime() || 0 : 0;
+        const prevTime = getSafeTime(prev.lastModified);
+        const remoteTime = getSafeTime(remoteState.lastModified);
 
         // 원격이 더 최신이면 원격 우선, 로컬이 더 최신이면 로컬 우선 (단, 아이템은 항상 병합)
         const mergedItems = remoteTime >= prevTime
@@ -606,7 +608,17 @@ export default function App() {
     const docNum = getDocumentNumber(state.date || todayStr, deptName, true); // 카톡 전송 시에만 +1 증가
 
     showToast("⏳ 카톡 전송 데이터 준비 중...");
-    saveInspectionToSupabase(state);
+    
+    // 비동기 closure 이슈 방지: 로컬 스토리지에서 가장 최신 상태를 강제로 가져와서 저장
+    let latestState = state;
+    try {
+      const raw = localStorage.getItem(getStorageKey(state.date || todayStr));
+      if (raw) {
+        latestState = JSON.parse(raw);
+      }
+    } catch (e) { console.error(e); }
+    
+    saveInspectionToSupabase(latestState);
     
     const markCompleted = () => {
       if (selectedDept) {
@@ -614,12 +626,12 @@ export default function App() {
       }
     };
 
-    let msg = `${deptName} 점검 보고_${state.date || todayStr}\n`;
+    let msg = `${deptName} 점검 보고_${latestState.date || todayStr}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n`;
     msg += `❍ 파트명: ${deptName}\n`;
-    msg += `❍ 점검자: ${state.inspector || '점검자'}\n`;
+    msg += `❍ 점검자: ${latestState.inspector || '점검자'}\n`;
     msg += `❍ 문서번호: ${docNum}\n`;
-    msg += `❍ 기록시간: ${state.lastModified ? state.lastModified.split(' ')[1] || state.lastModified : '-'}\n`;
+    msg += `❍ 기록시간: ${latestState.lastModified ? latestState.lastModified.split(' ')[1] || latestState.lastModified : '-'}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     availableTabs.forEach((tid) => {
@@ -634,7 +646,7 @@ export default function App() {
       const notes: string[] = [];
 
       items.forEach((item: CheckItem) => {
-        const itemState = state.items[item.id] || {};
+        const itemState = latestState.items[item.id] || {};
         const hasNote = itemState.note && itemState.note.trim() !== '';
 
         if (item.type === 'filter' || item.type === 'pump') {
@@ -674,7 +686,7 @@ export default function App() {
 
     // 인수인계 사항
     msg += `\n❏ 인수인계 및 관리자 지시 사항\n`;
-    const handoverList = selectedDept && state.roleName ? state.handovers[`${selectedDept}_${state.roleName}`] || [] : [];
+    const handoverList = selectedDept && latestState.roleName ? latestState.handovers[`${selectedDept}_${latestState.roleName}`] || [] : [];
     if (handoverList.length > 0) {
       handoverList.forEach(h => {
         const statusText = h.status === 'completed' ? '완료' : h.status === 'incomplete' ? '미완료' : '';
@@ -689,7 +701,7 @@ export default function App() {
     msg += `\n❏ 종합 의견\n`;
     let hasSummary = false;
     availableTabs.forEach(tid => {
-      const sumText = state.summaries[tid];
+      const sumText = latestState.summaries[tid];
       if (sumText) {
         msg += `   - [${TAB_INFO[tid].name}] ${sumText}\n`;
         hasSummary = true;
