@@ -117,20 +117,38 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
         lastModified: new Date().toISOString()
       };
 
+      let localState: any = null;
+      try {
+        const raw = localStorage.getItem(getStorageKey(date));
+        if (raw) localState = JSON.parse(raw);
+      } catch (e) {}
+
+      let remoteState: any = null;
       const res = await fetchInspectionFromSupabase(date);
       if (res.success && res.log) {
-        baseState = { 
-          ...baseState, 
-          ...res.log, 
+        remoteState = {
+          ...res.log,
           items: res.log.items_state || {},
-          handovers: res.log.handovers || {} 
+          handovers: res.log.handovers || {}
         };
-      } else {
-        const raw = localStorage.getItem(getStorageKey(date));
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          baseState = { ...baseState, ...parsed, handovers: parsed.handovers || {} };
-        }
+      }
+
+      if (localState && remoteState) {
+        const getSafeTime = (d: string) => d ? new Date(d.includes('T') ? d : d.replace(/-/g, '/')).getTime() || 0 : 0;
+        const prevTime = getSafeTime(localState.lastModified);
+        const remoteTime = getSafeTime(remoteState.lastModified);
+
+        baseState = {
+          ...baseState,
+          ...(remoteTime >= prevTime ? remoteState : localState),
+          items: remoteTime >= prevTime ? { ...localState.items, ...remoteState.items } : { ...remoteState.items, ...localState.items },
+          summaries: remoteTime >= prevTime ? { ...localState.summaries, ...remoteState.summaries } : { ...remoteState.summaries, ...localState.summaries },
+          handovers: remoteTime >= prevTime ? { ...localState.handovers, ...remoteState.handovers } : { ...remoteState.handovers, ...localState.handovers }
+        };
+      } else if (localState) {
+        baseState = { ...baseState, ...localState, handovers: localState.handovers || {} };
+      } else if (remoteState) {
+        baseState = { ...baseState, ...remoteState, handovers: remoteState.handovers || {} };
       }
 
       const itemsForThisDate = cleanItems.filter(i => i.targetDate === date);
