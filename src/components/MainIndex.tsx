@@ -181,9 +181,9 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
       padding: '10px 10px 6px'
     }}>
       {/* ── 타이틀 ── */}
-      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px', flexShrink: 0, padding: '0 4px' }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexShrink: 0, padding: '0 4px' }}>
         <div style={{ flex: 1 }} />
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', flexShrink: 0 }}>
           <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 2px' }}>
             Blue Ocean Wellness Spa
           </h1>
@@ -196,8 +196,9 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
             onClick={() => onOpenHandover?.()}
             style={{
               background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px',
-              padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '4px', height: 'fit-content'
+              padding: '6px 12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '4px', height: 'fit-content',
+              whiteSpace: 'nowrap'
             }}
           >
             인수인계
@@ -206,11 +207,12 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
             onClick={() => setIsAdminOpen(true)}
             style={{
               background: '#1e293b', color: '#fff', border: 'none', borderRadius: '6px',
-              padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '4px', height: 'fit-content'
+              padding: '6px 12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '4px', height: 'fit-content',
+              whiteSpace: 'nowrap'
             }}
           >
-            <span style={{ fontSize: '12px' }}>🔒</span> 관리자
+            <span style={{ fontSize: '14px' }}>🔒</span> 관리자
           </button>
         </div>
       </header>
