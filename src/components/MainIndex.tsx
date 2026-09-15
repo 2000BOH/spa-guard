@@ -195,12 +195,12 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
           <button
             onClick={() => onOpenHandover?.()}
             style={{
-              background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: '6px',
+              background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px',
               padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: '4px', height: 'fit-content'
             }}
           >
-            <span style={{ fontSize: '12px' }}>📝</span> 인수인계
+            인수인계
           </button>
           <button
             onClick={() => setIsAdminOpen(true)}

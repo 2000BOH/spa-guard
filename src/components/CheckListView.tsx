@@ -88,18 +88,16 @@ export const CheckListView: React.FC<CheckListViewProps> = ({
                 </span>
                 <div className="btn-group" style={{ flexShrink: 0, marginLeft: '16px', display: 'flex', gap: '8px' }}>
                   <button
-                    className={`btn-status normal ${item.status === 'completed' ? 'active' : ''}`}
+                    className={`btn-toggle btn-normal ${item.status === 'completed' ? 'active' : ''}`}
                     onClick={() => onSetHandoverStatus?.(item.id, 'completed')}
                     disabled={isReadOnly}
-                    style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '6px' }}
                   >
-                    완료
+                    완료(확인)
                   </button>
                   <button
-                    className={`btn-status issue ${item.status === 'incomplete' ? 'active' : ''}`}
+                    className={`btn-toggle btn-issue ${item.status === 'incomplete' ? 'active' : ''}`}
                     onClick={() => onSetHandoverStatus?.(item.id, 'incomplete')}
                     disabled={isReadOnly}
-                    style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '6px' }}
                   >
                     미완료
                   </button>

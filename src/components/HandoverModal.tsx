@@ -150,8 +150,7 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
     }
     
     setIsLoading(false);
-    alert("인수인계 사항이 성공적으로 저장되었습니다.");
-    onClose();
+    // Optionally, show a brief success state here if desired, but user requested no message box
   };
 
   return (
