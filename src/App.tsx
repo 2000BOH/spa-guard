@@ -686,9 +686,21 @@ export default function App() {
 
     // 인수인계 사항
     msg += `\n❏ 인수인계 및 관리자 지시 사항\n`;
-    const handoverList = selectedDept && latestState.roleName ? latestState.handovers[`${selectedDept}_${latestState.roleName}`] || [] : [];
-    if (handoverList.length > 0) {
-      handoverList.forEach(h => {
+    let allHandovers: any[] = [];
+    if (selectedDept && latestState.roleName) {
+      const keysToCheck = availableTabs.length > 1 
+        ? availableTabs.map(t => `${selectedDept}_${latestState.roleName}_${t}`)
+        : [`${selectedDept}_${latestState.roleName}`];
+
+      keysToCheck.forEach(key => {
+        if (latestState.handovers && latestState.handovers[key]) {
+          allHandovers = [...allHandovers, ...latestState.handovers[key]];
+        }
+      });
+    }
+
+    if (allHandovers.length > 0) {
+      allHandovers.forEach(h => {
         const statusText = h.status === 'completed' ? '완료' : h.status === 'incomplete' ? '미완료' : '';
         msg += `   ✅ ${h.text} [${statusText}]\n`;
         if (h.note) msg += `     ↳ 사유: ${h.note}\n`;
