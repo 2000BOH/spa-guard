@@ -521,11 +521,15 @@ export default function App() {
       link.click();
 
       container.style.position = 'absolute';
+      container.style.top = '-9999px';
       container.style.left = '-9999px';
+      container.style.opacity = '0';
       showToast("✅ 통합본 이미지 다운로드 완료");
     } catch (err) {
       container.style.position = 'absolute';
+      container.style.top = '-9999px';
       container.style.left = '-9999px';
+      container.style.opacity = '0';
       alert("이미지 생성 오류: " + err);
     }
   };
@@ -536,31 +540,47 @@ export default function App() {
 
     const container = document.getElementById('printDocumentHiddenContainer');
     if (!container) return;
-    container.style.position = 'relative';
+    container.style.position = 'absolute';
+    container.style.top = '0';
     container.style.left = '0';
+    container.style.zIndex = '-100';
+    container.style.opacity = '1';
 
     const deptName = (selectedDept && DEPT_NAMES[selectedDept]) || '점검';
     const baseName = `${state.date}_${deptName}_${state.inspector || '점검자'}`;
 
     try {
-      const contentEl = document.getElementById('a4PageContent')!;
-      const raw = await html2canvas(contentEl, { scale: 2, backgroundColor: '#ffffff' });
-      
+      const coverEl = document.getElementById('a4PageCover')!;
+      const contentEls = document.querySelectorAll('.a4-content-page');
+
+      const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#ffffff' });
+
       const pdf = new jsPDF({
         orientation: 'p',
         unit: 'px',
-        format: [raw.width, raw.height]
+        format: [canvasCover.width / 2, canvasCover.height / 2]
       });
-      pdf.addImage(raw.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, raw.width, raw.height);
+      pdf.addImage(canvasCover.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, canvasCover.width / 2, canvasCover.height / 2);
+
+      for (let i = 0; i < contentEls.length; i++) {
+        const el = contentEls[i] as HTMLElement;
+        const raw = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
+        pdf.addPage();
+        pdf.addImage(raw.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, raw.width / 2, raw.height / 2);
+      }
 
       container.style.position = 'absolute';
+      container.style.top = '-9999px';
       container.style.left = '-9999px';
+      container.style.opacity = '0';
 
       pdf.save(`${baseName}.pdf`);
       showToast("✅ PDF 다운로드 완료");
     } catch (err) {
       container.style.position = 'absolute';
+      container.style.top = '-9999px';
       container.style.left = '-9999px';
+      container.style.opacity = '0';
       alert("PDF 생성 오류: " + err);
     }
   };
@@ -631,35 +651,43 @@ export default function App() {
 
     const container = document.getElementById('printDocumentHiddenContainer');
     if (!container) return;
-    container.style.position = 'relative';
+    container.style.position = 'absolute';
+    container.style.top = '0';
     container.style.left = '0';
+    container.style.zIndex = '-100';
+    container.style.opacity = '1';
 
     const deptName = (selectedDept && DEPT_NAMES[selectedDept]) || '점검';
     const baseName = `${state.date}_${deptName}_${state.inspector || '점검자'}`;
 
     try {
       const coverEl = document.getElementById('a4PageCover')!;
-      const contentEl = document.getElementById('a4PageContent')!;
+      const contentEls = document.querySelectorAll('.a4-content-page');
 
-      const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#0f172a' });
-      const raw = await html2canvas(contentEl, { scale: 2, backgroundColor: '#ffffff' });
-
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-
+      const canvasCover = await html2canvas(coverEl, { scale: 2, backgroundColor: '#ffffff' });
       const coverBlob = await new Promise<Blob>((resolve) => canvasCover.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
-      const contentBlob = await new Promise<Blob>((resolve) => raw.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
 
       const filesArray: File[] = [
-        new File([coverBlob], `${baseName}_표지.jpg`, { type: 'image/jpeg' }),
-        new File([contentBlob], `${baseName}_내용.jpg`, { type: 'image/jpeg' }),
+        new File([coverBlob], `${baseName}_표지.jpg`, { type: 'image/jpeg' })
       ];
+
+      for (let i = 0; i < contentEls.length; i++) {
+        const el = contentEls[i] as HTMLElement;
+        const raw = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
+        const blob = await new Promise<Blob>((resolve) => raw.toBlob((b) => resolve(b!), 'image/jpeg', 0.92));
+        filesArray.push(new File([blob], `${baseName}_내용_${i + 1}.jpg`, { type: 'image/jpeg' }));
+      }
+
+      container.style.position = 'absolute';
+      container.style.top = '-9999px';
+      container.style.left = '-9999px';
+      container.style.opacity = '0';
 
       // 카톡에서 첫 장(표지)이 단독 전체폭으로 표시되려면 전체 파일 수가 홀수여야 함
       if (filesArray.length % 2 === 0) {
         const blankC = document.createElement('canvas');
-        blankC.width = raw.width;
-        blankC.height = raw.height;
+        blankC.width = 800 * 2;
+        blankC.height = 1131 * 2;
         blankC.getContext('2d')!.fillStyle = '#ffffff';
         blankC.getContext('2d')!.fillRect(0, 0, blankC.width, blankC.height);
         const blankBlob = await new Promise<Blob>((resolve) => blankC.toBlob((b) => resolve(b!), 'image/jpeg', 0.5));
@@ -947,7 +975,15 @@ export default function App() {
         </button>
       </footer>
 
-      <A4PrintDocument state={state} departmentName={(selectedDept && DEPT_NAMES[selectedDept]) || '점검'} availableTabs={availableTabs} />
+      {/* 백그라운드에서 A4 PDF/이미지 렌더링용 숨김 영역 */}
+      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', opacity: 0, pointerEvents: 'none' }}>
+        <A4PrintDocument 
+          state={state}
+          departmentId={selectedDept}
+          departmentName={selectedDept ? DEPT_NAMES[selectedDept] : '점검'}
+          availableTabs={availableTabs}
+        />
+      </div>
 
       <SaveModal
         isOpen={isSaveModalOpen}
