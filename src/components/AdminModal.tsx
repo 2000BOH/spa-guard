@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MachineRoomPanel from './MachineRoomPanel';
 import { ChecklistEditorPage } from './ChecklistEditorPage';
+import { HandoverModal } from './HandoverModal';
 import type { AdminSettings, DepartmentId } from '../types';
 import {
   DEFAULT_DEPT_CONFIGS,
@@ -76,6 +77,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const [showPannelEditor, setShowPannelEditor] = useState(false);
   const [editingDeptPage, setEditingDeptPage] = useState<DepartmentId | null>(null);
   const [showLinks, setShowLinks] = useState(false);
+  const [showHandover, setShowHandover] = useState(false);
 
   const skipAutoSaveRef = useRef(true);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -337,6 +339,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
+    <>
     <div className="modal-overlay open" onClick={onClose} style={{ zIndex: 9999 }}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto', width: '92%', maxWidth: '650px' }}>
         <div className="modal-header">
@@ -345,6 +348,24 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div style={{ padding: '6px 0' }}>
+
+          {/* ── 인수인계 ── */}
+          <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
+            📝 인수인계 및 관리자 지시사항
+          </h4>
+          <div style={{ marginBottom: '16px' }}>
+            <button
+              onClick={() => setShowHandover(true)}
+              style={{
+                width: '100%', height: '46px', background: '#7c3aed', color: '#fff',
+                border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 700,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                boxShadow: '0 2px 6px rgba(124,58,237,0.3)'
+              }}
+            >
+              <span>📝</span> 인수인계 작성 / 조회
+            </button>
+          </div>
 
           {/* ── 파트별 체크리스트 편집 버튼 ── */}
           <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
@@ -503,5 +524,15 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
         </div>
       </div>
     </div>
+
+    {showHandover && (
+      <HandoverModal
+        onClose={async () => {
+          setShowHandover(false);
+        }}
+        adminSettings={settings}
+      />
+    )}
+    </>
   );
 };

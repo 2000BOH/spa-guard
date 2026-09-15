@@ -17,7 +17,7 @@ import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
 import MachineRoomPanel from './components/MachineRoomPanel';
 import { ChecklistEditorPage } from './components/ChecklistEditorPage';
-import { HandoverModal } from './components/HandoverModal';
+
 
 const DEPT_NAMES: Record<string, string> = {
   facilities: '시설',
@@ -56,7 +56,6 @@ export default function App() {
   const [availableTabs, setAvailableTabs] = useState<TabId[]>([]);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
-  const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(loadAdminSettings);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -155,25 +154,34 @@ export default function App() {
         const prevTime = getSafeTime(prev.lastModified);
         const remoteTime = getSafeTime(remoteState.lastModified);
 
-        // 로컬이 더 최신이면 원격 데이터로 덮어쓰지 않음
-        // 원격이 더 최신일 때만 병합하여 반영
-        if (prevTime > remoteTime) {
-          // 로컬이 더 최신: 원격 handovers만 병합(누락 방지), 나머지는 로컬 유지
-          const mergedHandovers = { ...remoteState.handovers, ...prev.handovers };
-          return { ...prev, handovers: mergedHandovers };
-        }
+        // 아이템 병합: 항상 두 쪽 모두 합치되, 더 최신인 쪽이 우선
+        const mergedItems = remoteTime >= prevTime
+          ? { ...prev.items, ...remoteState.items }
+          : { ...remoteState.items, ...prev.items };
 
-        // 원격이 더 최신: 원격 우선으로 모두 병합
-        const mergedItems = { ...prev.items, ...remoteState.items };
-        const mergedSummaries = { ...prev.summaries, ...remoteState.summaries };
-        const mergedHandovers = { ...prev.handovers, ...remoteState.handovers };
+        // summaries 병합
+        const mergedSummaries = remoteTime >= prevTime
+          ? { ...prev.summaries, ...remoteState.summaries }
+          : { ...remoteState.summaries, ...prev.summaries };
+
+        // handovers 병합: 항상 양쪽 다 유지 (인수인계는 누락 없도록)
+        const mergedHandovers = { ...remoteState.handovers, ...prev.handovers };
+
+        // 점검자 결정: 어느 쪽이든 실제 이름이 있으면 우선 사용
+        // 원격 실제이름 > 로컬 실제이름 > 기본값 순
+        const remoteInspector = remoteState.inspector && remoteState.inspector !== '점검자' ? remoteState.inspector : null;
+        const localInspector = prev.inspector && prev.inspector !== '점검자' ? prev.inspector : null;
+        const resolvedInspector = (remoteTime >= prevTime ? remoteInspector : localInspector)
+          ?? (remoteTime >= prevTime ? localInspector : remoteInspector)
+          ?? '점검자';
+
         const finalState = {
           ...prev,
-          ...remoteState,
+          ...(remoteTime >= prevTime ? remoteState : prev),
           items: mergedItems,
           summaries: mergedSummaries,
           handovers: mergedHandovers,
-          inspector: remoteState.inspector !== '점검자' ? remoteState.inspector : prev.inspector
+          inspector: resolvedInspector
         };
         try {
           localStorage.setItem(getStorageKey(targetDate), JSON.stringify(finalState));
@@ -401,11 +409,20 @@ export default function App() {
         setCurrentView('comingSoon');
       }
 
-      // 기존 기록 확인 (점검자가 들어가서 자기 이름을 지정한 상태일 때만 유지)
+      // 점검자 결정 우선순위:
+      // 1위: 현재 state의 점검자가 이미 실제 이름인 경우 그대로 유지
+      // 2위: deptStatus에 저장된 점검자
+      // 3위: 기본값 '점검자'
+      const localInspector = state.inspector;
       const currentStatus = getDeptInspectionStatus(state.date || todayStr, dept, roleName);
-      const activeInspector = (currentStatus.status !== 'none' && currentStatus.inspector && currentStatus.inspector !== '점검자')
-        ? currentStatus.inspector
-        : '점검자';
+
+      let activeInspector = '점검자';
+      if (localInspector && localInspector !== '점검자') {
+        // 이미 실제 이름이 설정되어 있으면 그대로 유지
+        activeInspector = localInspector;
+      } else if (currentStatus.status !== 'none' && currentStatus.inspector && currentStatus.inspector !== '점검자') {
+        activeInspector = currentStatus.inspector;
+      }
 
       updateStateAndSave((prev) => ({ ...prev, inspector: activeInspector, roleName }));
   };
@@ -763,21 +780,8 @@ export default function App() {
           onSelectDepartment={handleSelectDepartment} 
           onOpenPanel={handleOpenPanel} 
           adminSettings={adminSettings}
-          onOpenHandover={() => setIsHandoverModalOpen(true)}
         />
         <Toast message={toastMsg} />
-        {isHandoverModalOpen && (
-          <HandoverModal 
-            onClose={async () => {
-              setIsHandoverModalOpen(false);
-              // 인수인계 저장 후 서버에 반영될 시간 확보를 위해 2초 뒤에 동기화
-              // 즉시 sync하면 방금 저장한 데이터가 아직 서버에 없어서 덮어쓰일 수 있음
-              await new Promise(r => setTimeout(r, 2000));
-              syncWithSupabase(state.date, true);
-            }}
-            adminSettings={adminSettings}
-          />
-        )}
       </>
     );
   }

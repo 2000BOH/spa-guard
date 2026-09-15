@@ -9,7 +9,6 @@ interface MainIndexProps {
   onSelectDepartment: (dept: DepartmentId, inspector: string, roleName?: string) => void;
   onOpenPanel: (timeLabel: string) => void;
   adminSettings?: AdminSettings;
-  onOpenHandover?: () => void;
 }
 
 const DEPTS: Record<DepartmentId, { name: string; icon: string }> = {
@@ -28,7 +27,7 @@ function getTodayStr(): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpenPanel, adminSettings, onOpenHandover }) => {
+export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpenPanel, adminSettings }) => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [workRulesDept, setWorkRulesDept] = useState<DepartmentId | null>(null);
   const [settings, setSettings] = useState<AdminSettings>(() => adminSettings || loadAdminSettings());
@@ -192,17 +191,6 @@ export const MainIndex: React.FC<MainIndexProps> = ({ onSelectDepartment, onOpen
           </p>
         </div>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button
-            onClick={() => onOpenHandover?.()}
-            style={{
-              background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px',
-              padding: '6px 12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '4px', height: 'fit-content',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            인수인계
-          </button>
           <button
             onClick={() => setIsAdminOpen(true)}
             style={{
