@@ -150,8 +150,8 @@ export default function App() {
 
       setState(prev => {
         // 원격 데이터의 시간과 로컬 데이터의 시간을 비교
-        // Safari 브라우저 파싱 버그(NaN) 방지를 위해 '-'를 '/'로 치환
-        const getSafeTime = (d: string) => d ? new Date(d.replace(/-/g, '/')).getTime() || 0 : 0;
+        // Safari 브라우저 파싱 버그(NaN) 방지를 위해 '-'를 '/'로 치환하되 ISO 포맷(T 포함)은 원본 유지
+        const getSafeTime = (d: string) => d ? new Date(d.includes('T') ? d : d.replace(/-/g, '/')).getTime() || 0 : 0;
         const prevTime = getSafeTime(prev.lastModified);
         const remoteTime = getSafeTime(remoteState.lastModified);
 
