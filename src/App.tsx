@@ -17,6 +17,7 @@ import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
 import MachineRoomPanel from './components/MachineRoomPanel';
 import { ChecklistEditorPage } from './components/ChecklistEditorPage';
+import { DeptAdminPage } from './components/DeptAdminPage';
 
 
 const DEPT_NAMES: Record<string, string> = {
@@ -47,9 +48,12 @@ function getYesterdayStr(): string {
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'main' | 'checklist' | 'comingSoon' | 'panel' | 'editor'>('main');
+  const [currentView, setCurrentView] = useState<'main' | 'checklist' | 'comingSoon' | 'panel' | 'editor' | 'deptAdmin'>('main');
   const [selectedDept, setSelectedDept] = useState<DepartmentId | null>(null);
   const [directEditorDept, setDirectEditorDept] = useState<DepartmentId | null>(null);
+  const [deptAdminDept, setDeptAdminDept] = useState<DepartmentId | null>(null);
+  // NFC 직접 접속 여부 - true이면 체크리스트에서 뒤로가기 버튼 숨김
+  const [isNfcDirect, setIsNfcDirect] = useState(false);
   const [panelTimeLabel, setPanelTimeLabel] = useState('');
 
   const [currentTab, setCurrentTab] = useState<TabId>('tab2');
@@ -303,7 +307,23 @@ export default function App() {
         }
       }
     }
+    // NFC 주소(업무용):
+    // nfc=11~52 범위로 접속한 경우는 직접 접속으로 간주 → 뽌로가기 버튼 숨김
+    if (nfcParam) {
+      const nNum = parseInt(nfcParam, 10);
+      if (!isNaN(nNum) && nNum >= 11 && nNum <= 59) {
+        setIsNfcDirect(true);
+      }
+    }
     
+    // ?admin=파트명 주소 처리: 파트별 관리자 전용 페이지
+    const adminParam = params.get('admin') as DepartmentId | null;
+    if (adminParam && ['facilities', 'reception', 'cleaning', 'food', 'snack'].includes(adminParam)) {
+      setDeptAdminDept(adminParam);
+      setCurrentView('deptAdmin');
+      return;
+    }
+
     const viewParam = params.get('view');
     if (viewParam === 'panel') {
       const timeParam = params.get('time') || '00시';
@@ -840,6 +860,11 @@ export default function App() {
     );
   }
 
+  // ?admin=파트명 접속: 파트별 관리자 전용 페이지
+  if (currentView === 'deptAdmin' && deptAdminDept) {
+    return <DeptAdminPage dept={deptAdminDept} />;
+  }
+
   if (currentView === 'comingSoon' && selectedDept) {
     return (
       <>
@@ -864,6 +889,7 @@ export default function App() {
         progressPct={progressPct}
         departmentName={(selectedDept && DEPT_NAMES[selectedDept]) || '점검'}
         availableTabs={availableTabs}
+        hideBack={isNfcDirect}
         onBack={() => {
           window.history.replaceState({}, '', window.location.pathname);
           setCurrentView('main');

@@ -23,29 +23,58 @@ const DEPT_LABELS: Record<DepartmentId, string> = {
   snack: '스낵'
 };
 
-const LINKS = [
-  { label: '시설 점검리스트 (91번)', url: 'https://spa-guard.vercel.app/?nfc=91' },
-  { label: '리셉션 점검리스트 (92번)', url: 'https://spa-guard.vercel.app/?nfc=92' },
-  { label: '미화 점검리스트 (93번)', url: 'https://spa-guard.vercel.app/?nfc=93' },
-  { label: '푸드 점검리스트 (94번)', url: 'https://spa-guard.vercel.app/?nfc=94' },
-  { label: '스낵 점검리스트 (95번)', url: 'https://spa-guard.vercel.app/?nfc=95' },
-  null,
-  { label: '기계실 패널 (00시)', url: 'https://spa-guard.vercel.app/?view=panel&time=00시' },
-  { label: '기계실 패널 (03시)', url: 'https://spa-guard.vercel.app/?view=panel&time=03시' },
-  { label: '기계실 패널 (06시)', url: 'https://spa-guard.vercel.app/?view=panel&time=06시' },
-  null,
-  { label: '시설 주간 (11번)', url: 'https://spa-guard.vercel.app/?nfc=11' },
-  { label: '시설 야간 (12번)', url: 'https://spa-guard.vercel.app/?nfc=12' },
-  { label: '리셉션 오전 (21번)', url: 'https://spa-guard.vercel.app/?nfc=21' },
-  { label: '리셉션 오후 (22번)', url: 'https://spa-guard.vercel.app/?nfc=22' },
-  { label: '리셉션 야간 (23번)', url: 'https://spa-guard.vercel.app/?nfc=23' },
-  { label: '미화 남주 (31번)', url: 'https://spa-guard.vercel.app/?nfc=31' },
-  { label: '미화 남야 (32번)', url: 'https://spa-guard.vercel.app/?nfc=32' },
-  { label: '미화 여주 (33번)', url: 'https://spa-guard.vercel.app/?nfc=33' },
-  { label: '푸드 오픈 (41번)', url: 'https://spa-guard.vercel.app/?nfc=41' },
-  { label: '푸드 마감 (42번)', url: 'https://spa-guard.vercel.app/?nfc=42' },
-  { label: '스낵 오픈 (51번)', url: 'https://spa-guard.vercel.app/?nfc=51' },
-  { label: '스낵 마감 (52번)', url: 'https://spa-guard.vercel.app/?nfc=52' },
+// bowspa.kr 기준 파트별 바로가기 링크
+const LINK_GROUPS = [
+  {
+    groupLabel: '🛠️ 시설',
+    items: [
+      { label: '시설 주간', url: 'https://bowspa.kr/?nfc=11' },
+      { label: '시설 야간', url: 'https://bowspa.kr/?nfc=12' },
+      { label: '기계실 패널 (00시)', url: 'https://bowspa.kr/?view=panel&time=00시' },
+      { label: '기계실 패널 (03시)', url: 'https://bowspa.kr/?view=panel&time=03시' },
+      { label: '기계실 패널 (06시)', url: 'https://bowspa.kr/?view=panel&time=06시' },
+    ]
+  },
+  {
+    groupLabel: '🛎️ 리셉션',
+    items: [
+      { label: '리셉션 오전', url: 'https://bowspa.kr/?nfc=21' },
+      { label: '리셉션 오후', url: 'https://bowspa.kr/?nfc=22' },
+      { label: '리셉션 야간', url: 'https://bowspa.kr/?nfc=23' },
+    ]
+  },
+  {
+    groupLabel: '🧹 미화',
+    items: [
+      { label: '미화 주간(남)', url: 'https://bowspa.kr/?nfc=31' },
+      { label: '미화 야간', url: 'https://bowspa.kr/?nfc=32' },
+      { label: '미화 주간(여)', url: 'https://bowspa.kr/?nfc=33' },
+    ]
+  },
+  {
+    groupLabel: '🍽️ 푸드',
+    items: [
+      { label: '푸드 오픈', url: 'https://bowspa.kr/?nfc=41' },
+      { label: '푸드 마감', url: 'https://bowspa.kr/?nfc=42' },
+    ]
+  },
+  {
+    groupLabel: '☕ 스낵',
+    items: [
+      { label: '스낵 오픈', url: 'https://bowspa.kr/?nfc=51' },
+      { label: '스낵 마감', url: 'https://bowspa.kr/?nfc=52' },
+    ]
+  },
+  {
+    groupLabel: '🔑 파트 관리자',
+    items: [
+      { label: '시설 관리자', url: 'https://bowspa.kr/?admin=facilities' },
+      { label: '리셉션 관리자', url: 'https://bowspa.kr/?admin=reception' },
+      { label: '미화 관리자', url: 'https://bowspa.kr/?admin=cleaning' },
+      { label: '푸드 관리자', url: 'https://bowspa.kr/?admin=food' },
+      { label: '스낵 관리자', url: 'https://bowspa.kr/?admin=snack' },
+    ]
+  },
 ];
 
 function CopyButton({ text }: { text: string }) {
@@ -505,19 +534,22 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
           {showLinks && (
             <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '10px', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                {LINKS.map((item, i) =>
-                  item === null ? (
-                    <hr key={i} style={{ border: 'none', borderTop: '1px solid #dbeafe', margin: '2px 0' }} />
-                  ) : (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', padding: '6px 8px', borderRadius: '5px', border: '1px solid #dbeafe' }}>
-                      <span style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 600, minWidth: '130px', flexShrink: 0 }}>{item.label}</span>
-                      <span style={{ fontSize: '10px', color: '#475569', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{item.url}</span>
-                      <CopyButton text={item.url} />
-                    </div>
-                  )
-                )}
-              </div>
+              {LINK_GROUPS.map((group, gi) => (
+                <div key={gi} style={{ marginBottom: gi < LINK_GROUPS.length - 1 ? '10px' : '0' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e40af', marginBottom: '5px', padding: '2px 4px', background: '#dbeafe', borderRadius: '4px' }}>
+                    {group.groupLabel}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {group.items.map((item, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', padding: '6px 8px', borderRadius: '5px', border: '1px solid #dbeafe' }}>
+                        <span style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 600, minWidth: '100px', flexShrink: 0 }}>{item.label}</span>
+                        <span style={{ fontSize: '10px', color: '#475569', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{item.url}</span>
+                        <CopyButton text={item.url} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
