@@ -1,0 +1,19 @@
+{
+    "rewrites": [
+          {
+                  "source": "/spa-guard",
+                  "destination": "/index.html"
+          },
+          {
+                  "source": "/spa-guard/(.*)",
+                  "destination": "/$1"
+          }
+    ],
+    "redirects": [
+          {
+                  "source": "/",
+                  "destination": "/spa-guard",
+                  "statusCode": 301
+          }
+    ]
+}
