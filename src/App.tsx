@@ -226,8 +226,6 @@ export default function App() {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'inspection_logs' },
           async () => {
-            // payload.new 데이터에 의존하지 않고 직접 re-fetch
-            // (REPLICA IDENTITY FULL 미설정 시 payload에 컬럼 데이터가 없을 수 있음)
             const adminRes = await fetchAdminSettingsFromSupabase();
             if (adminRes.success && adminRes.settings) {
               const prevJson = localStorage.getItem('spa_admin_settings');
@@ -247,13 +245,19 @@ export default function App() {
         client.removeChannel(channel);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    // Parse URL params for QR scanning direct access
+  // ─────────────────────────────────────────────────────────────
+  // URL 파라미터 파싱 (별도 useEffect — Supabase return과 분리)
+  // Supabase 구독 return 이후 코드가 실행 안 되는 문제 방지
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     let deptParam = params.get('dept') as DepartmentId | null;
     let inspectorParam = params.get('inspector');
     let roleNameParam = params.get('roleName') || undefined;
-    
+
     // NFC 태그 파싱 (자동 배정 및 편집 파트 파싱)
     const nfcParam = params.get('nfc');
     if (nfcParam) {
@@ -272,7 +276,7 @@ export default function App() {
           }
         }
 
-        // 어느 부서인지 파악 (예: 11~19 -> facilities)
+        // 어느 부서인지 파악 (예: 11~19 → facilities)
         let foundDept: DepartmentId | null = null;
         for (const [dept, baseNum] of Object.entries(NFC_BASE_NUMBERS)) {
           if (nfcNum >= baseNum && nfcNum < baseNum + 10) {
@@ -290,13 +294,11 @@ export default function App() {
           if (matchedRole) {
             deptParam = foundDept;
             roleNameParam = matchedRole.roleLabel;
-            
-            // 관리자 설정에서 입력된 이름 탐색
+
             const pool = deptConfig?.inspectorPool || [];
             const grp = deptConfig?.groups?.[matchedRole.groupIndex];
             const nameInGroup = grp?.roles?.[matchedRole.roleIndex]?.name;
             const nameInPool = pool[matchedRole.flatIndex] || '';
-
             const assignedName = nameInGroup || nameInPool;
             inspectorParam = assignedName || '점검자';
           } else {
@@ -307,16 +309,16 @@ export default function App() {
         }
       }
     }
-    // NFC 주소(업무용):
-    // nfc=11~52 범위로 접속한 경우는 직접 접속으로 간주 → 뽌로가기 버튼 숨김
+
+    // nfc=11~52 범위: 직접 접속 → 뒤로가기 버튼 숨김
     if (nfcParam) {
       const nNum = parseInt(nfcParam, 10);
       if (!isNaN(nNum) && nNum >= 11 && nNum <= 59) {
         setIsNfcDirect(true);
       }
     }
-    
-    // ?admin=파트명 주소 처리: 파트별 관리자 전용 페이지
+
+    // ?admin=파트명 → 파트별 관리자 전용 페이지
     const adminParam = params.get('admin') as DepartmentId | null;
     if (adminParam && ['facilities', 'reception', 'cleaning', 'food', 'snack'].includes(adminParam)) {
       setDeptAdminDept(adminParam);
@@ -324,6 +326,7 @@ export default function App() {
       return;
     }
 
+    // ?view=panel
     const viewParam = params.get('view');
     if (viewParam === 'panel') {
       const timeParam = params.get('time') || '00시';
@@ -339,7 +342,7 @@ export default function App() {
       } else {
         setCurrentView('comingSoon');
       }
-      
+
       setState(prev => {
         const next = { ...prev, inspector: inspectorParam, roleName: roleNameParam };
         const updatedSec = generateSecurityLog(next.items, next.inspector);
@@ -348,6 +351,7 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   // 모바일 <-> PC 실시간 연동 (10초 주기 서버 동기화 폴링)
   useEffect(() => {
