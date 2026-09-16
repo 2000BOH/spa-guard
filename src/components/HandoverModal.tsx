@@ -7,6 +7,7 @@ import { fetchInspectionFromSupabase, saveInspectionToSupabase, fetchFutureInspe
 interface HandoverModalProps {
   onClose: () => void;
   adminSettings: AdminSettings;
+  initialDept?: DepartmentId;
 }
 
 const DEPT_NAMES: Record<DepartmentId, string> = {
@@ -23,8 +24,8 @@ const getTodayStr = () => {
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 };
 
-export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSettings }) => {
-  const [selectedDept, setSelectedDept] = useState<DepartmentId | null>(null);
+export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSettings, initialDept }) => {
+  const [selectedDept, setSelectedDept] = useState<DepartmentId | null>(initialDept || null);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<string | null>(null);
   const [items, setItems] = useState<HandoverItem[]>([]);
@@ -196,7 +197,9 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({ onClose, adminSett
         ) : !selectedRole ? (
           <div>
             <div style={{ display: "flex", alignItems: "center", marginBottom: "16px", gap: "12px" }}>
-              <button onClick={() => setSelectedDept(null)} style={{ background: "#f1f5f9", padding: "6px 12px", borderRadius: "6px", border: "none", cursor: "pointer", fontSize: "14px", color: "#475569", fontWeight: 600 }}>← 부서 재선택</button>
+              {!initialDept && (
+                <button onClick={() => setSelectedDept(null)} style={{ background: "#f1f5f9", padding: "6px 12px", borderRadius: "6px", border: "none", cursor: "pointer", fontSize: "14px", color: "#475569", fontWeight: 600 }}>← 부서 재선택</button>
+              )}
               <h3 style={{ margin: 0, fontSize: "18px", color: "#1e293b" }}>{DEPT_NAMES[selectedDept]} - 담당자 선택</h3>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>

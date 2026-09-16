@@ -74,7 +74,7 @@ export const DeptAdminPage: React.FC<DeptAdminPageProps> = ({ dept }) => {
     setInspectorList((prev: string[]) => prev.map((v: string, i: number) => i === idx ? val : v));
 
   if (view === 'handover') {
-    return <HandoverModal onClose={() => setView('menu')} adminSettings={settings} />;
+    return <HandoverModal onClose={() => setView('menu')} adminSettings={settings} initialDept={dept} />;
   }
 
   if (view === 'editor') {
