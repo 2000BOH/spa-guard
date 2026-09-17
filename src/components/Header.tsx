@@ -8,6 +8,7 @@ interface HeaderProps {
   progressPct: number;
   onBack: () => void;
   departmentName: string;
+  roleName?: string;
   availableTabs: TabId[];
   hideBack?: boolean; // NFC 직접 접속 시 true: 뒤로가기 버튼 숨김
   children?: React.ReactNode;
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   progressPct,
   onBack,
   departmentName,
+  roleName,
   availableTabs,
   hideBack = false,
   children
@@ -36,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
           <img src="/logo.png" alt="Blue Ocean Wellness Spa Logo" className="header-logo-img" />
           <span>
             {departmentName} 점검일지
-            {availableTabs.length === 1 && ` (${TAB_INFO[currentTab]?.htmlName || ''})`}
+            {roleName ? ` (${roleName})` : ''}
           </span>
         </div>
         <div className="header-btns">

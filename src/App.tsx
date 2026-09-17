@@ -12,7 +12,7 @@ import { A4PrintDocument } from './components/A4PrintDocument';
 import { SaveModal, ShortcutModal, Toast } from './components/Modals';
 import { supabase, saveInspectionToSupabase, fetchInspectionFromSupabase, fetchAdminSettingsFromSupabase } from './lib/supabase';
 import { loadAdminSettings, applyAdminSettings, getDeptFlatRoles, getEffectiveChecklistData } from './lib/adminSettings';
-import { updateDeptInspectionStatus, getDeptInspectionStatus } from './lib/deptStatus';
+import { updateDeptInspectionStatus } from './lib/deptStatus';
 import { MainIndex } from './components/MainIndex';
 import { ComingSoon } from './components/ComingSoon';
 import MachineRoomPanel from './components/MachineRoomPanel';
@@ -433,19 +433,11 @@ export default function App() {
         setCurrentView('comingSoon');
       }
 
-      // 점검자 결정 우선순위:
-      // 1위: 현재 state의 점검자가 이미 실제 이름인 경우 그대로 유지
-      // 2위: deptStatus에 저장된 점검자
-      // 3위: 기본값 '점검자'
-      const localInspector = state.inspector;
-      const currentStatus = getDeptInspectionStatus(state.date || todayStr, dept, roleName);
-
+      // 1위: MainIndex에서 전달받은 _defaultInspector 
+      // 2위: 기본값 '점검자'
       let activeInspector = '점검자';
-      if (localInspector && localInspector !== '점검자') {
-        // 이미 실제 이름이 설정되어 있으면 그대로 유지
-        activeInspector = localInspector;
-      } else if (currentStatus.status !== 'none' && currentStatus.inspector && currentStatus.inspector !== '점검자') {
-        activeInspector = currentStatus.inspector;
+      if (_defaultInspector && _defaultInspector !== '점검자') {
+        activeInspector = _defaultInspector;
       }
 
       updateStateAndSave((prev) => ({ ...prev, inspector: activeInspector, roleName }));
@@ -892,6 +884,7 @@ export default function App() {
         onSelectTab={setCurrentTab}
         progressPct={progressPct}
         departmentName={(selectedDept && DEPT_NAMES[selectedDept]) || '점검'}
+        roleName={state.roleName}
         availableTabs={availableTabs}
         hideBack={isNfcDirect}
         onBack={() => {
